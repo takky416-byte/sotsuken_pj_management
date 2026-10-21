@@ -58,7 +58,7 @@
 - Firebaseプロジェクトは yoichiro.takikawa@trident.ac.jp (学校の個人アカウント) で作成。共同オーナーに別の教員を追加。
 - Firestore のロケーションは asia-northeast1。Googleログインは学生アカウントでも通る見込み (要・学生での確認、`login-check/`)。
 - 既存の Express+SQLite の試作 (`server/`, `client/`) は破棄して作り直す予定。
-- デプロイは Claude Code 側から行いたい。サービスアカウント鍵などの秘密情報は環境のシークレットに入れる (チャットに貼らない)。
+- デプロイは GitHub Actions (手動実行) で行う。サービスアカウントの鍵は GitHub リポジトリのシークレット `FIREBASE_SERVICE_ACCOUNT` に登録する (Claude Code の環境変数は全員に見えるため使わない。チャットにも貼らない)。ワークフローは `.github/workflows/`。運用が落ち着いたら鍵を削除する。
 
 ## 未決
 - WBS雛形の説明文は Claude が書く (確定済み)。
