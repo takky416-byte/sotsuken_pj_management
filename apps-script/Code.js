@@ -39,7 +39,8 @@ function goLive() { PropertiesService.getScriptProperties().setProperty('MODE', 
 function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 'test'); Logger.log('試験モードにしました。先生にだけ送ります。'); }
 
 // ---- 毎日のバックアップ (あなたの Google ドライブ「卒研PJ バックアップ」フォルダに、JSON を保存する) ----
-var BACKUP_FOLDER = '卒研PJ バックアップ';
+// 保存先は、ドライブの「バックアップ」フォルダ (ID は、フォルダの URL の末尾)。スクリプト プロパティ BACKUP_FOLDER_ID で変えられる。
+var BACKUP_FOLDER_ID = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP';
 var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw'];
 var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'evaluationsPublished'];
 
@@ -89,8 +90,15 @@ function backupDaily() {
 }
 
 function backupFolder_() {
-  var it = DriveApp.getFoldersByName(BACKUP_FOLDER);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(BACKUP_FOLDER);
+  var id = PropertiesService.getScriptProperties().getProperty('BACKUP_FOLDER_ID') || BACKUP_FOLDER_ID;
+  var folder = DriveApp.getFolderById(id);
+  // バックアップには、学生のメールアドレスと教員メモが入る。リンクを知っている人や、学校のドメインの全員
+  // (学生を含む) に見えるフォルダには、保存しない。
+  var access = String(folder.getSharingAccess());
+  if (access !== 'PRIVATE' && PropertiesService.getScriptProperties().getProperty('BACKUP_ALLOW_SHARED') !== 'true') {
+    throw new Error('バックアップ先のフォルダが、共有されています (' + access + ')。ドライブでフォルダの「一般的なアクセス」を「制限付き」に変えてください。');
+  }
+  return folder;
 }
 
 /** 名前 (sotsuken-backup-日付.json) が新しいものから keep 件を残し、古いものをごみ箱へ。返り値は、ごみ箱に移した数。 */

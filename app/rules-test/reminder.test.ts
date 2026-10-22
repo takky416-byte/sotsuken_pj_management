@@ -24,14 +24,18 @@ const driveFile = (m: Map<string, { content: string; trashed: boolean }>, name: 
   getName: () => name, setContent: (c: string) => { m.get(name)!.content = c; }, setTrashed: (t: boolean) => { m.get(name)!.trashed = t; },
 });
 const iter = <T,>(xs: T[]) => { let i = 0; return { hasNext: () => i < xs.length, next: () => xs[i++] }; };
+let driveAccess = 'PRIVATE';
 const folderApi = (m: Map<string, { content: string; trashed: boolean }>) => ({
+  getSharingAccess: () => driveAccess,
   getFilesByName: (n: string) => iter(m.has(n) && !m.get(n)!.trashed ? [driveFile(m, n)] : []),
   createFile: (n: string, c: string) => { m.set(n, { content: c, trashed: false }); },
   getFiles: () => iter([...m.keys()].filter((n) => !m.get(n)!.trashed).map((n) => driveFile(m, n))),
 });
 const drive = {
-  getFoldersByName: (n: string) => iter(driveFolders.has(n) ? [folderApi(driveFolders.get(n)!)] : []),
-  createFolder: (n: string) => { const m = new Map(); driveFolders.set(n, m); return folderApi(m); },
+  getFolderById: (id: string) => {
+    if (!driveFolders.has(id)) driveFolders.set(id, new Map());
+    return folderApi(driveFolders.get(id)!);
+  },
 };
 
 function loadScript(props: Record<string, string>) {
@@ -199,8 +203,8 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
   });
 
   describe('毎日のバックアップ (Drive)', () => {
-    const FOLDER = '卒研PJ バックアップ';
-    beforeEach(() => driveFolders.clear());
+    const FOLDER = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP'; // 保存先のフォルダ ID
+    beforeEach(() => { driveFolders.clear(); driveAccess = 'PRIVATE'; });
 
     test('全データを、アプリの書き出しと同じ形式の JSON で保存する (復元に使える)', async () => {
       await db.doc('teams/A/tasks/t1').set({ title: '要件定義', deleted: false, assignees: ['A1'], order: 1.5 });
@@ -229,6 +233,20 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
       s.call('backupDaily');
       const live = [...m.entries()].filter(([, v]) => !v.trashed).map(([k]) => k).sort();
       expect(live).toEqual(['sotsuken-backup-' + today + '.json', 'sotsuken-backup-2026-01-03.json', 'メモ.txt'].sort());
+    });
+
+    test('保存先が、リンクやドメインで共有されていたら、保存せずに先生に知らせる', async () => {
+      for (const access of ['ANYONE', 'ANYONE_WITH_LINK', 'DOMAIN', 'DOMAIN_WITH_LINK']) {
+        driveAccess = access; driveFolders.clear();
+        const s = loadScript({ ...baseProps });
+        expect(() => s.call('backupDaily')).toThrow('共有されています');
+        expect([...(driveFolders.get(FOLDER)?.keys() ?? [])]).toEqual([]);
+        expect(s.sent[0].subject).toContain('バックアップに失敗');
+      }
+      driveAccess = 'DOMAIN';
+      const ok = loadScript({ ...baseProps, BACKUP_ALLOW_SHARED: 'true' }); // 明示的に許可したときだけ
+      ok.call('backupDaily');
+      expect(driveFolders.get(FOLDER)!.size).toBe(1);
     });
 
     test('失敗したら、先生にメールで知らせる', async () => {
