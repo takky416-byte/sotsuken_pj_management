@@ -2,6 +2,7 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-do
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
 import { Notice } from './components/Notice';
+import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentDaily } from './features/student/StudentDaily';
 import { StudentHome } from './features/student/StudentHome';
 import { StudentWbs } from './features/student/StudentWbs';
@@ -30,6 +31,7 @@ function Shell() {
           {teacher ? (
             <>
               <NavLink to="/teacher" end>チーム</NavLink>
+              <NavLink to="/meeting">ミーティング</NavLink>
               <NavLink to="/teacher/attendance">欠席</NavLink>
               <NavLink to="/teacher/roster">名簿</NavLink>
               <NavLink to="/teacher/calendar">カレンダー</NavLink>
@@ -40,6 +42,7 @@ function Shell() {
               <NavLink to="/" end>ホーム</NavLink>
               <NavLink to="/wbs">WBS</NavLink>
               <NavLink to="/daily">日報</NavLink>
+              <NavLink to={`/meeting/${profile.teamId ?? 'A'}`}>ミーティング</NavLink>
             </>
           )}
         </nav>
@@ -51,6 +54,8 @@ function Shell() {
         {teacher ? (
           <Routes>
             <Route path="/teacher" element={<TeacherHome />} />
+            <Route path="/meeting" element={<MeetingIndex />} />
+            <Route path="/meeting/:teamId" element={<MeetingPage />} />
             <Route path="/teacher/team/:id" element={<TeacherTeam />} />
             <Route path="/teacher/kickoff/:id" element={<Kickoff />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
@@ -65,6 +70,8 @@ function Shell() {
             <Route path="/" element={<StudentHome />} />
             <Route path="/wbs" element={<StudentWbs />} />
             <Route path="/daily" element={<StudentDaily />} />
+            <Route path="/meeting" element={<MeetingIndex />} />
+            <Route path="/meeting/:teamId" element={<MeetingPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </Notice>

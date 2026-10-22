@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { setPeerDailyView } from '../../data/calendar';
+import { setSetting } from '../../data/calendar';
 import { useSettings } from '../../data/daily';
 import { updateTeam, useTeams } from '../../data/teams';
 
@@ -18,10 +18,17 @@ export function Settings() {
       {err && <p className="error">{err}</p>}
       <div className="card form">
         <label className="check">
-          <input type="checkbox" checked={settings.peerDailyView} onChange={(e) => run(() => setPeerDailyView(e.target.checked))} />
+          <input type="checkbox" checked={settings.peerDailyView} onChange={(e) => run(() => setSetting('peerDailyView', e.target.checked))} />
           同じチームの日報を、チームのメンバーどうしで見られるようにする
         </label>
         <p className="hint">オフにすると、学生は自分の日報だけが見えます。教員はどちらでも全員分を見られます。</p>
+      </div>
+      <div className="card form">
+        <label className="check">
+          <input type="checkbox" checked={settings.rotateOrder} onChange={(e) => run(() => setSetting('rotateOrder', e.target.checked))} />
+          ミーティングのチームの順番を、毎週ずらす
+        </label>
+        <p className="hint">オフにすると、いつもA〜Hの順になります。</p>
       </div>
       <h3>ミーティング記録の入力</h3>
       <p className="hint">初期は教員だけが入力します。自分たちで進められるチームは、チームの学生にも入力を許可できます。</p>

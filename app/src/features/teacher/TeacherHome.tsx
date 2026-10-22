@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
 import { useTeamDailies } from '../../data/daily';
+import { useMeetings } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
 import { useTeams } from '../../data/teams';
 import { formatDate, jstDate } from '../../lib/dates';
@@ -15,6 +16,8 @@ function TeamRow({ team, milestones, classDays }: { team: Team; milestones: Mile
   const today = jstDate();
   const { data: tasks } = useTasks(team.id);
   const { data: dailies } = useTeamDailies(team.id, daysAgo(today, 30));
+  const { data: meetings } = useMeetings(team.id);
+  const lastMeeting = (meetings ?? []).map((m) => m.date).sort().at(-1);
   const next = milestones.find((m) => (m.endDate ?? m.date) >= today && (m.teamId === null || m.teamId === team.id));
   const flags = tasks && dailies ? teamFlags(team, tasks, dailies, classDays, today) : null;
   const delayed = (tasks ?? []).filter((t) => !t.deleted && t.status !== 'done' && t.status !== 'hold'
@@ -41,6 +44,7 @@ function TeamRow({ team, milestones, classDays }: { team: Team; milestones: Mile
           </span>
         ) : '—'}
       </td>
+      <td>{lastMeeting ? formatDate(lastMeeting) : '—'}</td>
       <td>{next ? `${formatDate(next.date)} ${next.title}` : '—'}</td>
     </tr>
   );
@@ -61,7 +65,7 @@ export function TeacherHome() {
           <thead>
             <tr>
               <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th>
-              <th>日報(直近の授業日)</th><th>要確認</th><th>次の予定</th>
+              <th>日報(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
             </tr>
           </thead>
           <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} />)}</tbody>

@@ -31,4 +31,5 @@ export function useClassDays(): ClassDay[] | null {
 }
 
 export const saveClassDays = (days: ClassDay[]) => setDoc(doc(db, 'config', 'classDays'), { days });
-export const setPeerDailyView = (v: boolean) => updateDoc(doc(db, 'config', 'settings'), { peerDailyView: v });
+export const setSetting = (key: 'peerDailyView' | 'rotateOrder', v: boolean) =>
+  updateDoc(doc(db, 'config', 'settings'), { [key]: v });

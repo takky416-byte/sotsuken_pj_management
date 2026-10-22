@@ -297,3 +297,24 @@ describe('日報: アプリの書き込みの形', () => {
     await assertSucceeds(getDocs(query(collection(as(TEACHER), 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
   });
 });
+
+describe('ミーティング・コメント・教員メモ: アプリの書き込みの形', () => {
+  const rec = { date: '2026-10-29', createdBy: 'teacher', decided: 'x', actions: [{ text: 'やる', done: false }], note: '', updatedAt: 1 };
+  test('教員: 記録の作成・一部の更新 (前回のアクションのチェック)、コメント、メモ', async () => {
+    const db = as(TEACHER);
+    await assertSucceeds(setDoc(doc(db, 'teams/A/meetings/2026-10-29'), rec, { merge: true }));
+    await assertSucceeds(setDoc(doc(db, 'teams/A/meetings/2026-10-29'), { date: '2026-10-29', actions: [{ text: 'やる', done: true }], updatedAt: 2 }, { merge: true }));
+    await assertSucceeds(addDoc(collection(db, 'teams/A/comments'), { body: 'よい', target: { type: 'meeting', id: '2026-10-29' }, createdAt: 1 }));
+    await assertSucceeds(addDoc(collection(db, 'teacherNotes'), { teamId: 'A', body: '要フォロー', createdAt: 1 }));
+    await assertSucceeds(getDocs(query(collection(db, 'teacherNotes'), where('teamId', '==', 'A'))));
+  });
+  test('学生: 設定が許可されたチームだけ記録を書ける。教員メモは読めない', async () => {
+    const ref = doc(as(A1), 'teams/A/meetings/2026-10-29');
+    await assertFails(setDoc(ref, { ...rec, createdBy: 'A1' }, { merge: true }));
+    await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), 'teams/A'), { teamMeetingInput: true }));
+    await assertSucceeds(setDoc(ref, { ...rec, createdBy: 'A1' }, { merge: true }));
+    await assertFails(getDocs(query(collection(as(A1), 'teacherNotes'), where('teamId', '==', 'A'))));
+    await assertSucceeds(getDocs(collection(as(A1), 'teams/A/meetings')));
+    await assertFails(getDocs(collection(as(A1), 'teams/B/meetings')));
+  });
+});

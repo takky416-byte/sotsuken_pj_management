@@ -19,10 +19,15 @@ export function useMyDailies(teamId: string | null, sid: string | null, from: st
   );
 }
 
-export function useSettings(): { peerDailyView: boolean } | null {
-  const [s, setS] = useState<{ peerDailyView: boolean } | null>(null);
+export type Settings = { peerDailyView: boolean; rotateOrder: boolean };
+
+export function useSettings(): Settings | null {
+  const [s, setS] = useState<Settings | null>(null);
   useEffect(() => onSnapshot(doc(db, 'config', 'settings'), (d) =>
-    setS({ peerDailyView: d.exists() ? d.data().peerDailyView !== false : true })), []);
+    setS({
+      peerDailyView: d.exists() ? d.data().peerDailyView !== false : true,
+      rotateOrder: d.exists() ? d.data().rotateOrder !== false : true,
+    })), []);
   return s;
 }
 

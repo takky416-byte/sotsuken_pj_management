@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { TeacherNotes } from './TeacherNotes';
 import { DailyFeed, DailyMatrix } from '../../components/DailyViews';
 import { WbsEditor } from '../../components/WbsEditor';
 import { useClassDays } from '../../data/calendar';
@@ -22,7 +23,7 @@ export function TeacherTeam() {
 }
 
 function TeamDetail({ team }: { team: Team }) {
-  const [tab, setTab] = useState<'wbs' | 'daily'>('wbs');
+  const [tab, setTab] = useState<'wbs' | 'daily' | 'notes'>('wbs');
   return (
     <>
       <Link to="/teacher">← チーム一覧</Link>
@@ -33,6 +34,7 @@ function TeamDetail({ team }: { team: Team }) {
         <div className="label">企画</div>
         <div>{team.status === 'active' ? <strong>{team.projectName}</strong> : '企画検討中'}</div>
         <div className="row">
+          <Link to={`/meeting/${team.id}`} className="btn ghost-btn">ミーティング画面</Link>
           <Link to={`/teacher/kickoff/${team.id}`} className="btn">{team.status === 'active' ? 'キックオフの内容を編集' : 'キックオフ'}</Link>
           {team.driveUrl && isHttpUrl(team.driveUrl) && (
             <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダを開く</a>
@@ -42,8 +44,11 @@ function TeamDetail({ team }: { team: Team }) {
       <div className="tabs">
         <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・タスク</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>日報</button>
+        <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
-      {tab === 'wbs' ? <WbsEditor teamId={team.id} actor="teacher" members={team.members} /> : <TeamDaily team={team} />}
+      {tab === 'wbs' && <WbsEditor teamId={team.id} actor="teacher" members={team.members} />}
+      {tab === 'daily' && <TeamDaily team={team} />}
+      {tab === 'notes' && <TeacherNotes teamId={team.id} />}
     </>
   );
 }
