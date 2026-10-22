@@ -23,3 +23,4 @@ GitHub Actions を手動で実行する (リポジトリのシークレット `F
 
 - `Seed initial data`: 初回のみ。教員の名簿とチーム A〜H を作る。
 - `Deploy app`: テスト → ビルド → Hosting と Firestore ルールを公開する。
+- `Reset team data (pilot)`: 試運転のデータを消す。指定したチームのタスク・日報・ミーティング記録・コメントだけを削除する (名簿・設定・マイルストーン・ほかのチームには触れない)。`dry_run` が初期値で、件数の確認だけを行う。
