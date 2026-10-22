@@ -34,6 +34,11 @@ test.describe.serial('ガントの日付入力とバックアップの復元', (
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'バックアップ(JSON)をダウンロード' }).click()]);
     const file = await dl.path();
 
+    // 日報も、復元で元に戻る (教員が日報を書き込めるルールの確認)
+    const dailyRef = (await db().collection('teams/A/dailyReports').limit(1).get()).docs[0].ref;
+    const originalBlocker = (await dailyRef.get()).data()!.blocker;
+    await dailyRef.update({ blocker: 'いたずらで書き換えた' });
+
     // 壊す: タスクのタイトルを変え、あとから文書を足す
     await db().doc('teams/A/tasks/gantt-3').update({ title: '壊れたタイトル', deleted: true });
     await db().doc('teams/A/tasks/after-backup').set({
@@ -57,6 +62,7 @@ test.describe.serial('ガントの日付入力とバックアップの復元', (
     expect(before.suggestedFilename()).toContain('before-restore');
     await expect(page.getByText(/件を復元しました/)).toBeVisible();
 
+    expect((await dailyRef.get()).data()!.blocker).toBe(originalBlocker);
     const back = (await db().doc('teams/A/tasks/gantt-3').get()).data();
     expect(back).toMatchObject({ title: '日付入力の確認用', deleted: false, updatedBy: 'A1' }); // 元の更新者のまま
     expect((await db().doc('teams/A/tasks/after-backup').get()).exists).toBe(true); // 消えない

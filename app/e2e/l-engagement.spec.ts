@@ -105,4 +105,28 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(html).toHaveAttribute('data-palette', 'ocean');
     await page.getByLabel('配色').selectOption('pop');
   });
+
+  test('日報のチーム内閲覧がオフでも、チームのようすは崩れない (他の人の日報は集計しない)', async ({ page }) => {
+    const d = db();
+    await d.doc('config/settings').set({ peerDailyView: false }, { merge: true });
+    try {
+      await login(page, 'a1@trident.ac.jp');
+      await page.getByRole('link', { name: 'チーム', exact: true }).click();
+      const rows = page.locator('table.board tbody tr');
+      await expect(rows.filter({ hasText: 'A1' })).toBeVisible();
+      await expect(rows.filter({ hasText: 'A1' })).not.toContainText('—日'); // 自分の日報は出る
+      await expect(rows.filter({ hasText: 'A2' }).locator('td').nth(1)).toHaveText('—'); // 他の人は、読めないので集計しない
+      await expect(page.getByText('日報は、自分の分だけ表示されます')).toBeVisible();
+    } finally {
+      await d.doc('config/settings').set({ peerDailyView: true }, { merge: true });
+    }
+  });
+
+  test('教員の「学生の画面」プレビューでも、チームのようすが開く', async ({ page }) => {
+    await login(page, 'teacher@trident.ac.jp');
+    await page.goto('/teacher/preview/A1/team');
+    await expect(page.getByRole('heading', { name: 'チームのようす' })).toBeVisible();
+    await expect(page.locator('table.board tbody tr').filter({ hasText: 'A2' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /A2.*にありがとう/ })).toBeDisabled(); // 閲覧のみ
+  });
 });
