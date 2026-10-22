@@ -148,6 +148,28 @@ describe('日報リマインド (Apps Script) × Firestore エミュレータ', 
   });
 });
 
+describe('予行演習 (DATE_OVERRIDE): 学生には送らず、送信済みの記録を残さない', () => {
+  test('本番モードでも、先生にだけ送る。本番の日に、送られなくならない', async () => {
+    await seed();
+    // 予行演習 (本番モードのまま、今日の日付を DATE_OVERRIDE に指定)
+    const rehearsal = loadScript({ ...baseProps, MODE: 'live', DATE_OVERRIDE: today });
+    rehearsal.call('remindAfternoon');
+    expect(rehearsal.sent).toHaveLength(1);
+    expect(rehearsal.sent[0].to).toBe('teacher@trident.ac.jp');
+    expect(rehearsal.sent[0].subject).toContain('[試験]');
+    expect(rehearsal.store.LAST_SENT).toBeUndefined(); // 送信済みの記録を残さない
+    expect(rehearsal.logs.join('\n')).toContain('予行演習です');
+    // 何度でも、予行演習できる
+    rehearsal.call('remindAfternoon');
+    expect(rehearsal.sent).toHaveLength(2);
+
+    // 本番 (DATE_OVERRIDE を消した状態) は、ふつうに学生に送られる
+    const live = loadScript({ ...baseProps, MODE: 'live', LAST_SENT: rehearsal.store.LAST_SENT as string });
+    live.call('remindAfternoon');
+    expect(live.sent.map((m) => m.to)).toContain('a2@trident.ac.jp');
+  });
+});
+
 describe('試験モードは、送る相手がいなくても先生に送る (仕組みが動いていることの確認)', () => {
   test('0名でも、先生に1通', async () => {
     await seed();

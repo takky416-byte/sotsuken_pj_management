@@ -5,7 +5,7 @@
  * スクリプトのプロパティ:
  *   MODE          'test' (既定: 先生にだけ送る) / 'live' (学生に送る)
  *   PROJECT_ID    Firebase のプロジェクト ID (既定 'sotsuken-pj')
- *   DATE_OVERRIDE 予行演習用の日付 (YYYY-MM-DD)。空なら今日。
+ *   DATE_OVERRIDE 予行演習用の日付 (YYYY-MM-DD)。空なら今日。設定されていると、必ず試験モード (先生宛だけ)。
  *   LAST_SENT     二重送信の防止 (自動で設定される)
  */
 
@@ -39,10 +39,14 @@ function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 
 // ---- 本体 ----
 function runReminder_(slot, opts) {
   var props = PropertiesService.getScriptProperties();
-  var mode = props.getProperty('MODE') === 'live' ? 'live' : 'test';
+  // DATE_OVERRIDE があるときは予行演習。MODE にかかわらず、必ず試験モード (先生宛だけ) にし、
+  // 「送信済み」の記録も残さない (残すと、本番の同じ日に送られなくなる。消し忘れて学生に送る事故も防ぐ)。
+  var rehearsal = !!props.getProperty('DATE_OVERRIDE');
+  var mode = !rehearsal && props.getProperty('MODE') === 'live' ? 'live' : 'test';
   var today = props.getProperty('DATE_OVERRIDE') || Reminder.jstDate(Date.now());
   var key = today + ':' + slot;
-  if (!opts.force && props.getProperty('LAST_SENT') === key) {
+  if (rehearsal) Logger.log('予行演習です (DATE_OVERRIDE=' + today + ')。学生には送りません。');
+  if (!rehearsal && !opts.force && props.getProperty('LAST_SENT') === key) {
     Logger.log('今日のこの時間帯は、送信済みです (' + key + ')');
     return { skip: 'sent' };
   }
@@ -84,7 +88,7 @@ function runReminder_(slot, opts) {
     });
     send_(me, Reminder.teacherLiveSummary(plan, failed));
   }
-  props.setProperty('LAST_SENT', key);
+  if (!rehearsal) props.setProperty('LAST_SENT', key);
   return plan;
 }
 
