@@ -54,7 +54,7 @@
 
 ## 技術
 - Vite + React + TypeScript、Firebase (Hosting / Authentication / Firestore)、無料プラン (Spark)。支払い情報は登録できない。
-- Cloud Functions / Storage / 自動バックアップは使えない。バックアップは教員画面のCSV/JSON書き出し。
+- Cloud Functions / Storage / 自動バックアップは使えない。バックアップは教員画面の「書き出し」(JSON 1ファイル + CSV 6種。ブラウザ内で作成。月1回程度を目安)。復元の手順は必要になったときに用意する。
 - Firebaseプロジェクトは yoichiro.takikawa@trident.ac.jp (学校の個人アカウント) で作成。共同オーナーに別の教員を追加。
 - Firestore のロケーションは asia-northeast1。Googleログインは学生アカウントでも通る見込み (要・学生での確認、`login-check/`)。
 - 既存の Express+SQLite の試作 (`server/`, `client/`) は破棄して作り直す予定。

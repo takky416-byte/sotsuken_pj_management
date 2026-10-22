@@ -6,6 +6,7 @@ import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
 import { Attendance } from './features/teacher/Attendance';
 import { CalendarPage } from './features/teacher/CalendarPage';
+import { Export } from './features/teacher/Export';
 import { Kickoff } from './features/teacher/Kickoff';
 import { Preview } from './features/teacher/Preview';
 import { Roster } from './features/teacher/Roster';
@@ -34,6 +35,7 @@ function Shell() {
             <NavLink to="/teacher/attendance">欠席</NavLink>
             <NavLink to="/teacher/roster">名簿</NavLink>
             <NavLink to="/teacher/calendar">カレンダー</NavLink>
+            <NavLink to="/teacher/export">書き出し</NavLink>
             <NavLink to="/teacher/settings">設定</NavLink>
           </nav>
         ) : (
@@ -55,6 +57,7 @@ function Shell() {
             <Route path="/teacher/preview/:sid/*" element={<Preview />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
             <Route path="/teacher/roster" element={<Roster />} />
+            <Route path="/teacher/export" element={<Export />} />
             <Route path="/teacher/settings" element={<Settings />} />
             <Route path="/teacher/calendar" element={<CalendarPage />} />
             <Route path="*" element={<Navigate to="/teacher" replace />} />

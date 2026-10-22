@@ -126,3 +126,5 @@ header h1, nav a, .who, button { white-space:nowrap; }
   .table th, .table td { padding:6px; }
   .meeting-head h2 { font-size:18px; }
 }
+.warn-box { border-left:3px solid var(--warn); background:var(--card); padding:8px 12px; border-radius:4px; }
+.counts { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:2px 16px; }

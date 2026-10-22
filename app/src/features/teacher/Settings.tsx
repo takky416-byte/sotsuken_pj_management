@@ -9,6 +9,7 @@ import { updateTeam, useTeams } from '../../data/teams';
 export function Settings() {
   const me = useProfile();
   const [myName, setMyName] = useState(me.name);
+  const [saved, setSaved] = useState(false);
   const settings = useSettings();
   const { data: teams } = useTeams();
   const [err, setErr] = useState('');
@@ -27,7 +28,12 @@ export function Settings() {
         </label>
         <div className="row">
           <button disabled={!myName.trim() || myName.trim() === me.name}
-            onClick={() => run(() => updateDoc(doc(db, 'roster', me.email), { name: myName.trim() }))}>表示名を保存</button>
+            onClick={() => run(async () => {
+              setSaved(false);
+              await updateDoc(doc(db, 'roster', me.email), { name: myName.trim() });
+              setSaved(true); // サーバーへの保存が終わってから表示する
+            })}>表示名を保存</button>
+          {saved && <span className="ok">保存しました</span>}
         </div>
       </div>
       <div className="card form">

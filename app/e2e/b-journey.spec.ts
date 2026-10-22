@@ -145,6 +145,7 @@ test.describe.serial('運用の流れ', () => {
     await t.getByPlaceholder(/^メモ/).fill('内密のメモ: 要フォロー');
     await t.getByRole('button', { name: 'メモを追加' }).click();
     await expect(t.getByText('内密のメモ: 要フォロー')).toBeVisible();
+    await expect(t.getByPlaceholder(/^メモ/)).toHaveValue(''); // サーバーへの保存が終わると、入力欄が空になる
 
     await t.goto('/meeting/A');
     await t.getByPlaceholder('学生にも見えるコメント').fill('よく進んでいます');

@@ -10,6 +10,7 @@ test.describe.serial('名簿の修正と、教員の表示名', () => {
     await page.getByRole('link', { name: '設定' }).click();
     await page.getByLabel(/あなたの表示名/).fill('滝川');
     await page.getByRole('button', { name: '表示名を保存' }).click();
+    await expect(page.getByText('保存しました')).toBeVisible(); // サーバーへの保存が終わってから出る
     await expect(page.getByText('滝川(教員)')).toBeVisible();
     await page.reload();
     await expect(page.getByText('滝川(教員)')).toBeVisible();
