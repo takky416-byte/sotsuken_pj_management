@@ -1,6 +1,6 @@
-import { collection, doc, query, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, doc, query, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Task } from '../types';
+import type { Task, TaskLink } from '../types';
 import type { Patch } from '../lib/wbs';
 import type { NewTask } from '../lib/importPlan';
 import { taskDoc } from '../lib/taskDoc';
@@ -34,6 +34,19 @@ export async function createTasks(teamId: string, actor: Actor, plan: NewTask[],
 export async function updateTask(teamId: string, actor: Actor, id: string, changes: Partial<Omit<Task, 'id'>>) {
   const batch = writeBatch(db);
   batch.update(doc(col(teamId), id), { ...changes, updatedBy: actor, updatedAt: Date.now() });
+  await batch.commit();
+}
+
+/**
+ * 担当・リンクの追加/削除。配列全体を書き換えず、「この要素を足す/外す」としてサーバーに送る。
+ * 2人がほぼ同時に別の人を担当に付けても、どちらの変更も残る。
+ */
+export async function updateTaskArray(
+  teamId: string, actor: Actor, id: string, field: 'assignees' | 'links', op: 'add' | 'remove', value: string | TaskLink,
+) {
+  const change = op === 'add' ? arrayUnion(value) : arrayRemove(value);
+  const batch = writeBatch(db);
+  batch.update(doc(col(teamId), id), { [field]: change, updatedBy: actor, updatedAt: Date.now() });
   await batch.commit();
 }
 

@@ -131,3 +131,26 @@ export function planMove(tasks: Task[], id: string, dir: -1 | 1): Patch[] | null
   // 隣り合う2件の order を入れ替える
   return [{ id: a.id, changes: { order: b.order } }, { id: b.id, changes: { order: a.order } }];
 }
+
+/**
+ * 迷子のタスク: 生きているのに、親が削除されている (または存在しない) タスク。
+ * 誰かが親を削除している間に、別の人がその下にタスクを追加すると起こる。
+ * 親から辿れないので、そのままでは画面に出ない。子孫は、迷子のタスクにぶら下がったまま。
+ */
+export function orphansOf(tasks: Task[]): Task[] {
+  const live = new Map(tasks.filter(isLive).map((t) => [t.id, t]));
+  return tasks.filter((t) => isLive(t) && t.parentId !== null && !live.has(t.parentId))
+    .sort((a, b) => a.order - b.order);
+}
+
+/** 迷子のタスクを、最上位に移す。子孫の階層も、同じだけ上げる。 */
+export function planRescue(tasks: Task[], id: string): Patch[] | null {
+  const t = tasks.find((x) => x.id === id);
+  if (!t || t.deleted) return null;
+  const delta = 1 - t.depth; // 0 以下
+  const patches: Patch[] = [{ id, changes: { parentId: null, depth: 1, order: appendOrder(tasks, null) } }];
+  for (const d of descendantsOf(tasks, id).filter(isLive)) {
+    patches.push({ id: d.id, changes: { depth: Math.min(3, Math.max(1, d.depth + delta)) as 1 | 2 | 3 } });
+  }
+  return patches;
+}

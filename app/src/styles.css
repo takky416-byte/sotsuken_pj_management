@@ -128,3 +128,6 @@ header h1, nav a, .who, button { white-space:nowrap; }
 }
 .warn-box { border-left:3px solid var(--warn); background:var(--card); padding:8px 12px; border-radius:4px; }
 .counts { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:2px 16px; }
+
+.conflict { flex-basis:100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:6px 10px; margin:2px 0 4px; border-left:3px solid var(--warn); background:var(--card); border-radius:4px; font-size:13px; }
+.orphan { border-color:var(--warn); }

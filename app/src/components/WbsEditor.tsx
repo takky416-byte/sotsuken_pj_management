@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 import {
-  applyPatches, createTasks, newTaskId, setDeleted, updateTask, useTasks,
+  applyPatches, createTasks, newTaskId, setDeleted, updateTask, updateTaskArray, useTasks,
 } from '../data/tasks';
 import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, descendantsOf, flatten, orderAfter, planIndent, planMove, planOutdent, progressOf,
+  appendOrder, descendantsOf, flatten, orderAfter, orphansOf, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { formatDate } from '../lib/dates';
+import type { TaskLink } from '../types';
 import { Progress } from './Progress';
+import { useEditableText } from './useEditableText';
 import { Toast, type ToastState } from './Toast';
 
 type Props = { teamId: string; actor: string; members: Member[] };
@@ -75,11 +77,28 @@ export function WbsEditor({ teamId, actor, members }: Props) {
 
   const patch = (plan: ReturnType<typeof planIndent>) => plan && run(() => applyPatches(teamId, actor, plan));
   const trash = tasks.filter((t) => t.deleted && !(t.parentId && byId.get(t.parentId)?.deleted));
+  const orphans = orphansOf(tasks);
 
   return (
     <div className="wbs">
       {err && <p className="error">{err}</p>}
-      {rows.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
+      {orphans.length > 0 && (
+        <div className="card orphan" role="alert">
+          <strong>行き場がなくなったタスクがあります</strong>
+          <p className="hint">
+            誰かが親のタスクを削除している間に、別の人がその下にタスクを追加すると、こうなります。
+            最上位に移して続けるか、削除してください(親をゴミ箱から元に戻すと、元の場所に戻ります)。
+          </p>
+          {orphans.map((t) => (
+            <div key={t.id} className="trash-row">
+              <span><strong>{t.title}</strong> <span className="hint">(「{byId.get(t.parentId ?? '')?.title ?? '不明'}」の下にあったタスク)</span></span>
+              <button className="ghost" onClick={() => patch(planRescue(tasks, t.id))}>最上位に移す</button>
+              <button className="ghost danger" onClick={() => remove(t)}>削除</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.map(({ task: t, hasChildren }) => (
         <div key={t.id}>
@@ -93,6 +112,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
 
             <TitleInput
               task={t}
+              by={nameOf(t.updatedBy)}
               autoFocus={focusId === t.id}
               onFocused={() => setFocusId(null)}
               onSave={(title) => run(() => updateTask(teamId, actor, t.id, { title }))}
@@ -128,6 +148,8 @@ export function WbsEditor({ teamId, actor, members }: Props) {
             <Detail
               task={t} members={members} nameOf={nameOf}
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
+              onAssignee={(sid, add) => run(() => updateTaskArray(teamId, actor, t.id, 'assignees', add ? 'add' : 'remove', sid))}
+              onLink={(op, link) => run(() => updateTaskArray(teamId, actor, t.id, 'links', op, link))}
               onIndent={() => patch(planIndent(tasks, t.id))}
               onOutdent={() => patch(planOutdent(tasks, t.id))}
               onMove={(d) => patch(planMove(tasks, t.id, d))}
@@ -201,8 +223,22 @@ function AddBox({ placeholder, onAdd, onPaste, onCancel, autoFocus }: {
   );
 }
 
-function TitleInput({ task, autoFocus, onFocused, onSave, onEnter, onIndent, onOutdent, onMove }: {
+function ConflictNotice({ by, what, theirs, onMine, onTheirs }: {
+  by: string; what: string; theirs: string; onMine: () => void; onTheirs: () => void;
+}) {
+  const short = theirs.length > 40 ? `${theirs.slice(0, 40)}…` : theirs;
+  return (
+    <div className="conflict" role="alert">
+      <span>{by}さんが先に{what}を「{short || '(空)'}」に変更しました。どちらにしますか?</span>
+      <button className="ghost" onClick={onMine}>自分の内容にする</button>
+      <button className="ghost" onClick={onTheirs}>{by}さんの内容にする</button>
+    </div>
+  );
+}
+
+function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent, onOutdent, onMove }: {
   task: Task;
+  by: string;
   autoFocus: boolean;
   onFocused: () => void;
   onSave: (title: string) => void;
@@ -211,49 +247,52 @@ function TitleInput({ task, autoFocus, onFocused, onSave, onEnter, onIndent, onO
   onOutdent: () => void;
   onMove: (dir: -1 | 1) => void;
 }) {
-  const [v, setV] = useState(task.title);
+  const ed = useEditableText(task.title, onSave);
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => setV(task.title), [task.title]);
   useEffect(() => {
     if (autoFocus) { ref.current?.focus(); onFocused(); }
   }, [autoFocus, onFocused]);
 
-  const commit = () => { const t = v.trim(); if (t && t !== task.title) onSave(t); else setV(task.title); };
   const key = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing) return;
-    if (e.key === 'Enter') { commit(); onEnter(); }
-    else if (e.key === 'Tab') { e.preventDefault(); commit(); if (e.shiftKey) onOutdent(); else onIndent(); }
+    if (e.key === 'Enter') { ed.commit(); onEnter(); }
+    else if (e.key === 'Tab') { e.preventDefault(); ed.commit(); if (e.shiftKey) onOutdent(); else onIndent(); }
     else if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); onMove(-1); }
     else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); onMove(1); }
   };
   return (
-    <input
-      ref={ref} className="title-input" value={v} maxLength={200} aria-label="タイトル"
-      onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={key}
-    />
+    <>
+      <input
+        ref={ref} className="title-input" value={ed.value} maxLength={200} aria-label="タイトル"
+        onChange={(e) => ed.setValue(e.target.value)} onFocus={ed.onFocus} onBlur={ed.commit} onKeyDown={key}
+      />
+      {ed.conflict !== null && (
+        <ConflictNotice by={by} what="タスク名" theirs={ed.conflict} onMine={ed.resolveMine} onTheirs={ed.resolveTheirs} />
+      )}
+    </>
   );
 }
 
-function Detail({ task: t, members, nameOf, onChange, onIndent, onOutdent, onMove, onDelete }: {
+function Detail({ task: t, members, nameOf, onChange, onAssignee, onLink, onIndent, onOutdent, onMove, onDelete }: {
   task: Task;
   members: Member[];
   nameOf: (sid: string) => string;
   onChange: (changes: Partial<Omit<Task, 'id'>>) => void;
+  onAssignee: (sid: string, add: boolean) => void;
+  onLink: (op: 'add' | 'remove', link: TaskLink) => void;
   onIndent: () => void;
   onOutdent: () => void;
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
-  const [detail, setDetail] = useState(t.detail);
+  const ed = useEditableText(t.detail, (detail) => onChange({ detail }), { trim: false, allowEmpty: true });
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
-  useEffect(() => setDetail(t.detail), [t.detail]);
 
-  const toggle = (sid: string) =>
-    onChange({ assignees: t.assignees.includes(sid) ? t.assignees.filter((x) => x !== sid) : [...t.assignees, sid] });
+  const toggle = (sid: string) => onAssignee(sid, !t.assignees.includes(sid));
   const addLink = () => {
     if (!isHttpUrl(url)) return;
-    onChange({ links: [...t.links, { url, label: label.trim() }] });
+    onLink('add', { url, label: label.trim() });
     setUrl(''); setLabel('');
   };
 
@@ -261,11 +300,13 @@ function Detail({ task: t, members, nameOf, onChange, onIndent, onOutdent, onMov
     <div className={`detail depth-${t.depth}`}>
       <label>詳細
         <textarea
-          rows={4} maxLength={5000} value={detail} placeholder="やること・できあがりの目安・メモ"
-          onChange={(e) => setDetail(e.target.value)}
-          onBlur={() => detail !== t.detail && onChange({ detail })}
+          rows={4} maxLength={5000} value={ed.value} placeholder="やること・できあがりの目安・メモ"
+          onChange={(e) => ed.setValue(e.target.value)} onFocus={ed.onFocus} onBlur={ed.commit}
         />
       </label>
+      {ed.conflict !== null && (
+        <ConflictNotice by={nameOf(t.updatedBy)} what="詳細" theirs={ed.conflict} onMine={ed.resolveMine} onTheirs={ed.resolveTheirs} />
+      )}
       <div className="detail-grid">
         <label>開始日
           <input type="date" value={t.startDate ?? ''} onChange={(e) => onChange({ startDate: e.target.value || null })} />
@@ -290,7 +331,7 @@ function Detail({ task: t, members, nameOf, onChange, onIndent, onOutdent, onMov
         {t.links.map((l, i) => (
           <div className="link-row" key={i}>
             <a href={l.url} target="_blank" rel="noreferrer noopener">{l.label || l.url}</a>
-            <button className="ghost" onClick={() => onChange({ links: t.links.filter((_, j) => j !== i) })}>外す</button>
+            <button className="ghost" onClick={() => onLink('remove', l)}>外す</button>
           </div>
         ))}
         <div className="row">

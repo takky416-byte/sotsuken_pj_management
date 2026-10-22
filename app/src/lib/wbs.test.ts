@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, flatten, orderAfter, orderBetween, overallProgress, planIndent, planMove, planOutdent, progressOf,
+  appendOrder, flatten, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from './wbs';
 
 let seq = 0;
@@ -77,5 +77,34 @@ describe('indent / outdent / move', () => {
     expect(planMove(tasks, 'b', -1)).toEqual([{ id: 'a', changes: { order: 2 } }, { id: 'b', changes: { order: 1 } }]);
     expect(planMove(tasks, 'a', -1)).toBeNull();
     expect(planMove(tasks, 'c', 1)).toBeNull();
+  });
+});
+
+describe('迷子のタスク', () => {
+  // p (削除済み) の下に、生きている c (子 d あり) と、別の生きている x。root の r は迷子ではない。
+  const tasks = (): Task[] => [
+    T('r', { order: 1 }),
+    T('p', { order: 2, deleted: true }),
+    T('c', { parentId: 'p', depth: 2, order: 1 }),
+    T('d', { parentId: 'c', depth: 3, order: 1 }),
+    T('x', { parentId: 'missing', depth: 2, order: 2 }),
+    T('gone', { parentId: 'p', depth: 2, order: 3, deleted: true }),
+  ];
+  test('親が削除済み・存在しない、生きているタスクだけを返す (子孫は含まない)', () => {
+    expect(orphansOf(tasks()).map((t) => t.id)).toEqual(['c', 'x']);
+    expect(orphansOf(sample())).toEqual([]);
+  });
+  test('迷子は、親から辿れないので、画面の木には出ない', () => {
+    expect(flatten(tasks()).map((r) => r.task.id)).toEqual(['r']);
+  });
+  test('救済: 最上位に移し、子孫の階層も上げる', () => {
+    const p = planRescue(tasks(), 'c')!;
+    expect(p[0]).toMatchObject({ id: 'c', changes: { parentId: null, depth: 1 } });
+    expect(p[1]).toEqual({ id: 'd', changes: { depth: 2 } });
+    // 救済すると、木に出る
+    const moved = tasks().map((t) => { const ch = p.find((x) => x.id === t.id); return ch ? { ...t, ...ch.changes } as Task : t; });
+    expect(flatten(moved).map((r) => r.task.id)).toEqual(['r', 'c', 'd']);
+    expect(orphansOf(moved).map((t) => t.id)).toEqual(['x']);
+    expect(planRescue(tasks(), 'gone')).toBeNull(); // 削除済みは対象外
   });
 });
