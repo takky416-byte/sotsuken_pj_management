@@ -170,6 +170,10 @@ describe('日報', () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
       daily('A1', { date: '2026-01-01', dayKey: 20260101 })));
   });
+  test('dayKey だけ今日にして、過去の日付の日報を後出しすることはできない', async () => {
+    await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
+      daily('A1', { date: '2026-01-01', dayKey: jstDayKey() })));
+  });
   test('他人の分は作成・編集できない', async () => {
     await assertFails(setDoc(doc(as(A1), `teams/A/dailyReports/${jstDate()}_A2`), daily('A2')));
     await assertFails(updateDoc(doc(as(A1), `teams/A/dailyReports/${jstDate()}_A2`), { blocker: 'x' }));

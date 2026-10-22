@@ -1,0 +1,74 @@
+import { useState } from 'react';
+import { useMilestones } from '../data/calendar';
+import { useTasks } from '../data/tasks';
+import { formatDate, jstDate } from '../lib/dates';
+import { buildGantt, pct, weekTicks } from '../lib/gantt';
+import { STATUS_LABEL, type Member } from '../types';
+
+/** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
+export function GanttChart({ teamId, members }: { teamId: string; members: Member[] }) {
+  const { data: tasks, error } = useTasks(teamId);
+  const milestones = useMilestones(teamId);
+  const [deep, setDeep] = useState(false);
+  if (error) return <p className="error">{error}</p>;
+  if (!tasks || !milestones) return <p>読み込み中…</p>;
+
+  const today = jstDate();
+  const g = buildGantt(tasks, milestones, today, deep ? 3 : 2);
+  const name = (sid: string) => members.find((m) => m.sid === sid)?.name ?? sid;
+  const ticks = weekTicks(g);
+  const pos = (d: string) => `${pct(g, d)}%`;
+
+  if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
+  return (
+    <>
+      <p className="hint">棒は、タスクの開始日〜終了日です(薄い棒は、中のタスクの日付から求めた期間)。日付が空のタスクは、棒が出ません。</p>
+      <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
+      <div className="gantt">
+        <div className="gantt-head">
+          <div className="gantt-name" />
+          <div className="gantt-track">
+            {ticks.map((d) => <span key={d} className="gantt-tick" style={{ left: pos(d) }}>{formatDate(d).replace(/\(.*\)/, '')}</span>)}
+          </div>
+        </div>
+        {g.rows.map((r) => (
+          <div className="gantt-row" key={r.task.id}>
+            <div className={`gantt-name d${r.depth}`} title={r.task.title}>
+              {r.task.title}
+              {r.task.assignees.length > 0 && <small> {r.task.assignees.map(name).join('・')}</small>}
+            </div>
+            <div className="gantt-track">
+              {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: pos(d) }} />)}
+              {r.start && r.end && (
+                <span
+                  className={`gantt-bar ${r.status}${r.derived ? ' derived' : ''}${r.overdue ? ' overdue' : ''}`}
+                  style={{ left: pos(r.start), width: `max(6px, ${pct(g, r.end) - pct(g, r.start)}%)` }}
+                  title={`${r.task.title}: ${formatDate(r.start)}〜${formatDate(r.end)} / ${STATUS_LABEL[r.status]}${r.overdue ? ' / 期限超過' : ''}`}
+                />
+              )}
+            </div>
+          </div>
+        ))}
+        <div className="gantt-row">
+          <div className="gantt-name"><small>マイルストーン</small></div>
+          <div className="gantt-track">
+            {milestones.map((m) => (
+              <span key={m.id} className="gantt-ms" style={{ left: pos(m.date) }} title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
+            ))}
+          </div>
+        </div>
+        <div className="gantt-today" style={{ left: `calc(8px + var(--gantt-name) + (100% - 16px - var(--gantt-name)) * ${pct(g, today) / 100})` }} title="今日" />
+      </div>
+      <p className="hint">
+        <span className="legend todo" />未着手 <span className="legend doing" />進行中 <span className="legend done" />完了 <span className="legend hold" />保留
+        <span className="legend overdue" />期限超過 / 赤い縦線は今日
+      </p>
+      {g.undated.length > 0 && (
+        <details className="card">
+          <summary>日付が未設定のタスク({g.undated.length}件)</summary>
+          <ul className="plain">{g.undated.map((t) => <li key={t.id}>{t.title}</li>)}</ul>
+        </details>
+      )}
+    </>
+  );
+}

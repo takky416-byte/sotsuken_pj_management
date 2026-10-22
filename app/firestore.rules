@@ -47,6 +47,9 @@ service cloud.firestore {
         && d.deleted is bool;
     }
 
+    // 'YYYY-MM-DD' を 20261028 の形にする (dayKey と date の食い違いで、過去の日付に後出しされるのを防ぐ)
+    function dateKey(s) { return int(s[0:4]) * 10000 + int(s[5:7]) * 100 + int(s[8:10]); }
+
     function validDaily(d) {
       return d.keys().hasOnly([
           'sid', 'date', 'dayKey', 'entries', 'blocker', 'absent', 'submittedAt', 'updatedAt'])
@@ -86,6 +89,7 @@ service cloud.firestore {
               && request.resource.data.sid == me().sid
               && reportId == request.resource.data.date + '_' + me().sid
               && request.resource.data.dayKey == todayJst()
+              && dateKey(request.resource.data.date) == todayJst()
               && request.resource.data.absent == false);
         allow update: if isTeacher() && validDaily(request.resource.data)
           || (inTeam(teamId) && validDaily(request.resource.data)

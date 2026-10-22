@@ -131,3 +131,29 @@ header h1, nav a, .who, button { white-space:nowrap; }
 
 .conflict { flex-basis:100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:6px 10px; margin:2px 0 4px; border-left:3px solid var(--warn); background:var(--card); border-radius:4px; font-size:13px; }
 .orphan { border-color:var(--warn); }
+
+/* ガント */
+.gantt { --gantt-name:180px; position:relative; overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 8px; min-width:0; }
+.gantt-head, .gantt-row { display:grid; grid-template-columns:var(--gantt-name) minmax(520px,1fr); align-items:center; min-height:26px; }
+.gantt-name { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
+.gantt-name small { color:var(--muted); }
+.gantt-name.d1 { font-weight:600; }
+.gantt-name.d2 { padding-left:12px; }
+.gantt-name.d3 { padding-left:24px; color:var(--muted); }
+.gantt-track { position:relative; height:20px; }
+.gantt-head .gantt-track { height:18px; }
+.gantt-tick { position:absolute; top:0; font-size:11px; color:var(--muted); transform:translateX(-50%); white-space:nowrap; }
+.gantt-grid { position:absolute; top:0; bottom:0; width:1px; background:var(--line); }
+.gantt-bar { position:absolute; top:4px; height:12px; border-radius:3px; background:var(--muted); }
+.gantt-bar.doing { background:var(--accent); }
+.gantt-bar.done { background:var(--ok); }
+.gantt-bar.hold { background:var(--line); border:1px dashed var(--muted); }
+.gantt-bar.derived { opacity:.45; }
+.gantt-bar.overdue { box-shadow:0 0 0 2px var(--danger); }
+.gantt-ms { position:absolute; top:0; transform:translateX(-50%); color:var(--warn); font-size:13px; white-space:nowrap; }
+.gantt-ms small { color:var(--muted); font-size:10px; margin-left:2px; }
+.gantt-today { position:absolute; top:0; bottom:0; width:2px; background:var(--danger); opacity:.7; pointer-events:none; }
+.legend { display:inline-block; width:12px; height:8px; border-radius:2px; margin:0 4px 0 10px; background:var(--muted); vertical-align:middle; }
+.legend.doing { background:var(--accent); } .legend.done { background:var(--ok); } .legend.hold { background:var(--line); border:1px dashed var(--muted); }
+.legend.overdue { background:transparent; box-shadow:0 0 0 2px var(--danger); }
+@media (max-width:600px) { .gantt { --gantt-name:110px; } }

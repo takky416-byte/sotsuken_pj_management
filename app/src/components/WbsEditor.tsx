@@ -330,7 +330,10 @@ function Detail({ task: t, members, nameOf, onChange, onAssignee, onLink, onInde
         <div className="label">リンク (Drive・GitHubなど)</div>
         {t.links.map((l, i) => (
           <div className="link-row" key={i}>
-            <a href={l.url} target="_blank" rel="noreferrer noopener">{l.label || l.url}</a>
+            {/* 保存済みのURLでも、http(s) 以外 (javascript: など) はリンクにしない */}
+            {isHttpUrl(l.url)
+              ? <a href={l.url} target="_blank" rel="noreferrer noopener">{l.label || l.url}</a>
+              : <span title="http(s) 以外のURLなので、リンクにしていません">{l.label || l.url}</span>}
             <button className="ghost" onClick={() => onLink('remove', l)}>外す</button>
           </div>
         ))}

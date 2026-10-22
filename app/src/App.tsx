@@ -1,6 +1,7 @@
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
+import { Help } from './features/Help';
 import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
@@ -37,6 +38,7 @@ function Shell() {
             <NavLink to="/teacher/calendar">カレンダー</NavLink>
             <NavLink to="/teacher/export">書き出し</NavLink>
             <NavLink to="/teacher/settings">設定</NavLink>
+            <NavLink to="/teacher/help">使い方</NavLink>
           </nav>
         ) : (
           <StudentNav teamId={profile.teamId} />
@@ -59,6 +61,7 @@ function Shell() {
             <Route path="/teacher/roster" element={<Roster />} />
             <Route path="/teacher/export" element={<Export />} />
             <Route path="/teacher/settings" element={<Settings />} />
+ <Route path="/teacher/help" element={<Help role="teacher" />} />
             <Route path="/teacher/calendar" element={<CalendarPage />} />
             <Route path="*" element={<Navigate to="/teacher" replace />} />
           </Routes>
