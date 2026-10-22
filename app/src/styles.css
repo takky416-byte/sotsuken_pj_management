@@ -104,3 +104,4 @@ label.check { flex-direction:row; align-items:center; gap:8px; color:var(--fg); 
 .preview-head { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; }
 fieldset.preview { border:0; padding:0; margin:0; min-width:0; }
 fieldset.preview button:disabled, fieldset.preview input:disabled, fieldset.preview select:disabled, fieldset.preview textarea:disabled { opacity:.9; cursor:default; }
+.note-input.need { border-color:var(--danger); }

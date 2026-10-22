@@ -5,7 +5,7 @@ import { useClassDays } from '../../data/calendar';
 import { saveDaily, useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
-import { FIXED_KINDS, dailyId, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
+import { FIXED_KINDS, dailyId, entriesMissingNote, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
 import { formatDate, jstDate } from '../../lib/dates';
 
 const FROM_DAYS = 28;
@@ -35,7 +35,7 @@ export function StudentDaily() {
     <>
       <h2>日報</h2>
       <p className="hint">
-        今日({formatDate(today)})の分を書きます。1分くらいで書けるように、できたことを選ぶだけにしてあります。提出した日のうちは、何度でも直せます。
+        今日({formatDate(today)})の分を書きます。できたことを選んで、<strong>選んだ項目ごとに一言</strong>(何をしたか)を添えてください。提出した日のうちは、何度でも直せます。
       </p>
       {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
@@ -80,7 +80,9 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
     ...[...taskNotes].map(([taskId, note]) => ({ kind: 'task' as const, taskId, note: note.trim() })),
     ...[...kindNotes].map(([kind, note]) => ({ kind, note: note.trim() })),
   ];
-  const canSubmit = entries.length > 0 || blocker.trim() !== '';
+  const missing = entriesMissingNote(entries);
+  const canSubmit = missing.length === 0 && (entries.length > 0 || blocker.trim() !== '');
+  const noteMissing = (note: string | undefined) => (note ?? '').trim() === '';
 
   const submit = async () => {
     setState('saving'); setErr('');
@@ -106,7 +108,7 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
           </label>
           {taskNotes.has(t.id) && (
             <input
-              className="note-input" placeholder="一言(任意)" maxLength={200}
+              className={`note-input ${noteMissing(taskNotes.get(t.id)) ? 'need' : ''}`} placeholder="何をしたか一言(必須)" maxLength={200}
               value={taskNotes.get(t.id)} onChange={(e) => setTaskNotes((m) => new Map(m).set(t.id, e.target.value))}
             />
           )}
@@ -126,7 +128,7 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
           </label>
           {kindNotes.has(kind) && (
             <input
-              className="note-input" placeholder="一言(任意)" maxLength={200}
+              className={`note-input ${noteMissing(kindNotes.get(kind)) ? 'need' : ''}`} placeholder="何をしたか一言(必須)" maxLength={200}
               value={kindNotes.get(kind)} onChange={(e) => setKindNotes((m) => new Map(m).set(kind, e.target.value))}
             />
           )}
@@ -136,6 +138,7 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
         <textarea rows={2} maxLength={1000} value={blocker} onChange={(e) => setBlocker(e.target.value)} />
       </label>
       {err && <p className="error">{err}</p>}
+      {missing.length > 0 && <p className="error">選んだ項目に、一言を書いてください({missing.length}件)。</p>}
       <div className="row">
         <button disabled={!canSubmit || state === 'saving'} onClick={submit}>
           {submitted ? '更新する' : '提出する'}

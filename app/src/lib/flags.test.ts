@@ -12,7 +12,7 @@ const team = (kickoffAt: number | null = Date.parse('2026-10-28T03:00:00Z')): Te
 });
 const sub = (sid: string, date: string, over: Partial<Daily> = {}): Daily => ({
   id: `${date}_${sid}`, sid, date, dayKey: Number(date.replaceAll('-', '')),
-  entries: [{ kind: 'study', note: '' }], blocker: '', absent: false, ...over,
+  entries: [{ kind: 'study', note: '調べた' }], blocker: '', absent: false, ...over,
 });
 
 describe('teamFlags', () => {

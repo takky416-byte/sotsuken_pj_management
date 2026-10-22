@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { ClassDay } from '../types';
 import {
-  classDatesBetween, consecutiveMisses, dailyDoc, dailyId, statusOf, type Daily, type DayStatus,
+  classDatesBetween, consecutiveMisses, dailyDoc, dailyId, entriesMissingNote, statusOf, type Daily, type DayStatus,
 } from './daily';
 
 const d = (over: Partial<Daily> = {}): Daily => ({
@@ -12,10 +12,20 @@ describe('statusOf', () => {
   test('提出・未提出・欠席', () => {
     expect(statusOf(undefined)).toBe('missing');
     expect(statusOf(d())).toBe('missing');
-    expect(statusOf(d({ entries: [{ kind: 'study', note: '' }] }))).toBe('submitted');
+    expect(statusOf(d({ entries: [{ kind: 'study', note: '論文を読んだ' }] }))).toBe('submitted');
+    expect(statusOf(d({ entries: [{ kind: 'study', note: '  ' }] }))).toBe('missing'); // チェックだけは数えない
+    expect(statusOf(d({ entries: [{ kind: 'study', note: '' }, { kind: 'other', note: 'x' }] }))).toBe('submitted');
     expect(statusOf(d({ blocker: '  困っている ' }))).toBe('submitted');
     expect(statusOf(d({ blocker: '   ' }))).toBe('missing');
     expect(statusOf(d({ absent: true }))).toBe('absent');
+  });
+});
+
+describe('entriesMissingNote', () => {
+  test('一言のない項目を返す', () => {
+    const e = [{ kind: 'task' as const, taskId: 't', note: '進めた' }, { kind: 'study' as const, note: ' ' }, { kind: 'other' as const, note: '' }];
+    expect(entriesMissingNote(e).map((x) => x.kind)).toEqual(['study', 'other']);
+    expect(entriesMissingNote([])).toEqual([]);
   });
 });
 

@@ -31,11 +31,20 @@ export const dailyId = (date: string, sid: string) => `${date}_${sid}`;
 
 export type DayStatus = 'submitted' | 'absent' | 'missing';
 
-/** 提出の成立: エントリが1つ以上ある、または困っていることが書かれている。欠席は教員だけが付ける。 */
+/** 選んだ項目の一言は必須。一言のない項目は、提出に数えない。 */
+export const hasNote = (e: DailyEntry) => e.note.trim() !== '';
+
+/** 一言が未入力の項目 (画面で「一言を書いてください」と示す)。 */
+export const entriesMissingNote = (entries: DailyEntry[]): DailyEntry[] => entries.filter((e) => !hasNote(e));
+
+/**
+ * 提出の成立: 一言のある項目が1つ以上ある、または困っていることが書かれている。
+ * チェックだけの項目は数えない。欠席は教員だけが付ける。
+ */
 export function statusOf(d: Daily | undefined): DayStatus {
   if (!d) return 'missing';
   if (d.absent) return 'absent';
-  return d.entries.length > 0 || d.blocker.trim() !== '' ? 'submitted' : 'missing';
+  return d.entries.some(hasNote) || d.blocker.trim() !== '' ? 'submitted' : 'missing';
 }
 
 /** Firestore に書き込む形。firestore.rules の validDaily と対応している。 */
