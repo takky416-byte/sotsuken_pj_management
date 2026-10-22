@@ -26,3 +26,4 @@ GitHub Actions を手動で実行する (リポジトリのシークレット `F
 - `Deploy app`: テスト → ビルド → Hosting と Firestore ルールを公開する。
 - `Reset team data (pilot)`: 試運転のデータを消す。指定したチームのタスク・日報・ミーティング記録・コメントだけを削除する (名簿・設定・マイルストーン・ほかのチームには触れない)。`dry_run` が初期値で、件数の確認だけを行う。
 - `E2E`: エミュレータと実際のブラウザで、ログインから日報・ミーティングまでを通しで確認する (本番のデータには触れない)。
+- `apps-script/`: 日報のリマインド (Apps Script + Gmail)。デプロイは Apps Script 側で行う。手順は `apps-script/README.md`。
