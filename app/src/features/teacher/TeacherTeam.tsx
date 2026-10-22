@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { MeetingRecords } from './MeetingRecords';
 import { TeacherNotes } from './TeacherNotes';
 import { DailyFeed, DailyMatrix } from '../../components/DailyViews';
 import { WbsEditor } from '../../components/WbsEditor';
@@ -22,7 +23,7 @@ export function TeacherTeam() {
 }
 
 function TeamDetail({ team }: { team: Team }) {
-  const [tab, setTab] = useState<'wbs' | 'daily' | 'notes'>('wbs');
+  const [tab, setTab] = useState<'wbs' | 'daily' | 'meetings' | 'notes'>('wbs');
   return (
     <>
       <Link to="/teacher">← チーム一覧</Link>
@@ -43,10 +44,12 @@ function TeamDetail({ team }: { team: Team }) {
       <div className="tabs">
         <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・タスク</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>日報</button>
+        <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録</button>
         <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
       {tab === 'wbs' && <WbsEditor teamId={team.id} actor="teacher" members={team.members} />}
       {tab === 'daily' && <TeamDaily team={team} />}
+      {tab === 'meetings' && <MeetingRecords teamId={team.id} />}
       {tab === 'notes' && <TeacherNotes teamId={team.id} />}
     </>
   );

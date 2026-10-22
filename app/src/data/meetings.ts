@@ -11,6 +11,13 @@ export function useMeetings(teamId: string | null) {
   return useQuery<Meeting>(teamId ? query(col(teamId), orderBy('date', 'desc'), limit(RECENT_MEETINGS)) : null, `meetings:${teamId}`);
 }
 
+/** すべての記録 (教員の「ミーティング記録」タブ用)。件数は回数ぶんだけなので少ない。 */
+export function useAllMeetings(teamId: string | null) {
+  return useQuery<Meeting>(teamId ? query(col(teamId), orderBy('date', 'desc')) : null, `meetings-all:${teamId}`);
+}
+
+export const deleteMeeting = (teamId: string, date: string) => deleteDoc(doc(col(teamId), date));
+
 /** 記録の保存 (一部の項目だけでも書ける)。日付がそのままドキュメントのIDになる。 */
 export const saveMeeting = (
   teamId: string, date: string, actor: string,
