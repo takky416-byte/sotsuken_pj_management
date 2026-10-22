@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
+import { useBase } from '../../components/Base';
 import { DailyMatrix } from '../../components/DailyViews';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
@@ -26,9 +27,10 @@ const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:
 /** /meeting → 教員は今日の順番の先頭のチーム、学生は自分のチームへ */
 export function MeetingIndex() {
   const me = useProfile();
+  const base = useBase();
   const classDays = useClassDays();
   const settings = useSettings();
-  if (me.role === 'student') return <Navigate to={`/meeting/${me.teamId ?? 'A'}`} replace />;
+  if (me.role === 'student') return <Navigate to={`${base}/meeting/${me.teamId ?? 'A'}`} replace />;
   if (!classDays || !settings) return <p>読み込み中…</p>;
   return <Navigate to={`/meeting/${meetingOrder(classDays, jstDate(), settings.rotateOrder)[0]}`} replace />;
 }
@@ -36,9 +38,10 @@ export function MeetingIndex() {
 export function MeetingPage() {
   const { teamId = '' } = useParams();
   const me = useProfile();
+  const base = useBase();
   const team = useTeam(teamId);
   // 学生は自分のチームだけ
-  if (me.role === 'student' && me.teamId !== teamId) return <Navigate to={`/meeting/${me.teamId ?? 'A'}`} replace />;
+  if (me.role === 'student' && me.teamId !== teamId) return <Navigate to={`${base}/meeting/${me.teamId ?? 'A'}`} replace />;
   if (team === undefined) return <p>読み込み中…</p>;
   if (team === null) return <p>チームが見つかりません。</p>;
   return <MeetingScreen key={team.id} team={team} />;

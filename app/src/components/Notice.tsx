@@ -9,6 +9,12 @@ export function Notice({ email, children }: { email: string; children: React.Rea
   });
   if (ok) return <>{children}</>;
   return (
+    <NoticeBody onConfirm={() => { try { localStorage.setItem(KEY(email), '1'); } catch { /* 保存できなくても進める */ } setOk(true); }} />
+  );
+}
+
+export function NoticeBody({ onConfirm }: { onConfirm?: () => void }) {
+  return (
     <main className="center-card">
       <h1>はじめに</h1>
       <div className="card form">
@@ -20,9 +26,7 @@ export function Notice({ email, children }: { email: string; children: React.Rea
           <li>先生だけが見られるメモがあります。学生の画面には出ません。</li>
           <li>日報は、できたことを選ぶだけで書けます。調べたことや相談したことも、書いてかまいません。</li>
         </ul>
-        <button onClick={() => { try { localStorage.setItem(KEY(email), '1'); } catch { /* 保存できなくても進める */ } setOk(true); }}>
-          確認して始める
-        </button>
+        <button onClick={onConfirm}>確認して始める</button>
       </div>
     </main>
   );

@@ -3,12 +3,11 @@ import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
 import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
-import { StudentDaily } from './features/student/StudentDaily';
-import { StudentHome } from './features/student/StudentHome';
-import { StudentWbs } from './features/student/StudentWbs';
+import { StudentApp, StudentNav } from './features/student/StudentApp';
 import { Attendance } from './features/teacher/Attendance';
 import { CalendarPage } from './features/teacher/CalendarPage';
 import { Kickoff } from './features/teacher/Kickoff';
+import { Preview } from './features/teacher/Preview';
 import { Roster } from './features/teacher/Roster';
 import { Settings } from './features/teacher/Settings';
 import { TeacherHome } from './features/teacher/TeacherHome';
@@ -27,25 +26,19 @@ function Shell() {
     <div className="app">
       <header>
         <h1>卒研PJ管理</h1>
-        <nav>
-          {teacher ? (
-            <>
-              <NavLink to="/teacher" end>チーム</NavLink>
-              <NavLink to="/meeting">ミーティング</NavLink>
-              <NavLink to="/teacher/attendance">欠席</NavLink>
-              <NavLink to="/teacher/roster">名簿</NavLink>
-              <NavLink to="/teacher/calendar">カレンダー</NavLink>
-              <NavLink to="/teacher/settings">設定</NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink to="/" end>ホーム</NavLink>
-              <NavLink to="/wbs">WBS</NavLink>
-              <NavLink to="/daily">日報</NavLink>
-              <NavLink to={`/meeting/${profile.teamId ?? 'A'}`}>ミーティング</NavLink>
-            </>
-          )}
-        </nav>
+        {teacher ? (
+          <nav>
+            <NavLink to="/teacher" end>チーム</NavLink>
+            <NavLink to="/meeting">ミーティング</NavLink>
+            <NavLink to="/teacher/preview">学生の画面</NavLink>
+            <NavLink to="/teacher/attendance">欠席</NavLink>
+            <NavLink to="/teacher/roster">名簿</NavLink>
+            <NavLink to="/teacher/calendar">カレンダー</NavLink>
+            <NavLink to="/teacher/settings">設定</NavLink>
+          </nav>
+        ) : (
+          <StudentNav teamId={profile.teamId} />
+        )}
         <span className="spacer" />
         <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : '(教員)'}</span>
         <button className="ghost" onClick={logout}>ログアウト</button>
@@ -58,6 +51,8 @@ function Shell() {
             <Route path="/meeting/:teamId" element={<MeetingPage />} />
             <Route path="/teacher/team/:id" element={<TeacherTeam />} />
             <Route path="/teacher/kickoff/:id" element={<Kickoff />} />
+            <Route path="/teacher/preview" element={<Preview />} />
+            <Route path="/teacher/preview/:sid/*" element={<Preview />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
             <Route path="/teacher/roster" element={<Roster />} />
             <Route path="/teacher/settings" element={<Settings />} />
@@ -66,14 +61,7 @@ function Shell() {
           </Routes>
         ) : (
           <Notice email={profile.email}>
-          <Routes>
-            <Route path="/" element={<StudentHome />} />
-            <Route path="/wbs" element={<StudentWbs />} />
-            <Route path="/daily" element={<StudentDaily />} />
-            <Route path="/meeting" element={<MeetingIndex />} />
-            <Route path="/meeting/:teamId" element={<MeetingPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            <StudentApp />
           </Notice>
         )}
       </main>

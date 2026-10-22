@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useBase } from '../../components/Base';
 import { useProfile } from '../../auth/AuthProvider';
 import { Progress } from '../../components/Progress';
 import { useMilestones } from '../../data/calendar';
@@ -10,6 +11,7 @@ import { isHttpUrl } from '../../data/util';
 
 export function StudentHome() {
   const me = useProfile();
+  const base = useBase();
   const team = useTeam(me.teamId);
   const milestones = useMilestones(me.teamId ?? 'none');
   const { data: tasks } = useTasks(me.teamId);
@@ -31,7 +33,7 @@ export function StudentHome() {
           <div className="label">企画</div>
           <strong className="big">{team.projectName}</strong>
           <div className="row">
-            <Link to="/wbs" className="btn">WBSを開く</Link>
+            <Link to={`${base}/wbs`} className="btn">WBSを開く</Link>
             {team.driveUrl && isHttpUrl(team.driveUrl) && (
               <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダを開く</a>
             )}

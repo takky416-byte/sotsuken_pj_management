@@ -25,6 +25,9 @@ export type AuthState =
 type Ctx = { state: AuthState; login: () => Promise<void>; logout: () => Promise<void> };
 const AuthContext = createContext<Ctx | null>(null);
 
+/** 教員が「学生の画面」をプレビューするとき、表示する学生のプロフィールで上書きする。 */
+export const ProfileOverride = createContext<Profile | null>(null);
+
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 function provider() {
@@ -98,7 +101,9 @@ export function useAuth(): Ctx {
 }
 
 export function useProfile(): Profile {
+  const override = useContext(ProfileOverride);
   const { state } = useAuth();
+  if (override) return override;
   if (state.status !== 'ready') throw new Error('ログインしていません');
   return state.profile;
 }
