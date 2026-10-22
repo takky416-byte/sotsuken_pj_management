@@ -5,6 +5,8 @@ import {
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { clearShared } from '../data/shared';
+import { countReads } from '../lib/readMeter';
 
 export const SCHOOL_DOMAIN = '@trident.ac.jp';
 
@@ -49,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       unsubRoster?.();
       unsubRoster = null;
+      clearShared(); // 別のユーザーに、前のユーザーの購読を引き継がない
       if (!user) {
         setState((s) => (s.status === 'signedOut' && s.error ? s : { status: 'signedOut' }));
         return;
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubRoster = onSnapshot(
         doc(db, 'roster', email),
         (snap) => {
+          countReads('roster/me', 1);
           if (!snap.exists()) {
             setState({ status: 'notAllowed', email, reason: 'roster' });
             return;

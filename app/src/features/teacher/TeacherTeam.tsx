@@ -9,10 +9,9 @@ import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
-import { jstDate } from '../../lib/dates';
+import { addDays, dailyWindowFrom, jstDate } from '../../lib/dates';
 import type { Team } from '../../types';
 
-const daysAgo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) - n * 86400000).toISOString().slice(0, 10);
 
 export function TeacherTeam() {
   const { id = '' } = useParams();
@@ -57,11 +56,11 @@ function TeamDaily({ team }: { team: Team }) {
   const today = jstDate();
   const classDays = useClassDays();
   const settings = useSettings();
-  const { data: dailies, error } = useTeamDailies(team.id, daysAgo(today, 30));
+  const { data: dailies, error } = useTeamDailies(team.id, dailyWindowFrom(today));
   const { data: tasks } = useTasks(team.id);
   if (error) return <p className="error">{error}</p>;
   if (!classDays || !dailies || !tasks || !settings) return <p>読み込み中…</p>;
-  const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), daysAgo(today, 30), daysAgo(today, -1)).slice(-8);
+  const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), dailyWindowFrom(today), addDays(today, 1)).slice(-8);
   return (
     <>
       <h3>提出状況(○ 提出 / × 未提出 / 欠 欠席)</h3>

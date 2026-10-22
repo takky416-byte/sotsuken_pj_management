@@ -1,38 +1,42 @@
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { DEFAULT_DAILY_START, dailyDoc, dailyId, type Daily, type DailyEntry } from '../lib/daily';
+import { countReads } from '../lib/readMeter';
+import { useShared } from './shared';
 import { useQuery } from './util';
 
 const col = (teamId: string) => collection(db, 'teams', teamId, 'dailyReports');
 
 /** チーム全員の日報 (from 以降)。教員、または設定で閲覧が許可されているとき。 */
 export function useTeamDailies(teamId: string | null, from: string) {
-  return useQuery<Daily>(teamId ? query(col(teamId), where('date', '>=', from)) : null, [teamId, from]);
+  return useQuery<Daily>(teamId ? query(col(teamId), where('date', '>=', from)) : null, `dailies:${teamId}:${from}`);
 }
 
 /** 自分の日報だけ (from 以降)。 */
 export function useMyDailies(teamId: string | null, sid: string | null, from: string) {
   return useQuery<Daily>(
     teamId && sid ? query(col(teamId), where('sid', '==', sid), where('date', '>=', from)) : null,
-    [teamId, sid, from],
+    `dailies:${teamId}:${sid}:${from}`,
   );
 }
 
 export type Settings = { peerDailyView: boolean; rotateOrder: boolean; dailyStartDate: string };
 
 export function useSettings(): Settings | null {
-  const [s, setS] = useState<Settings | null>(null);
-  useEffect(() => onSnapshot(
+  const fallback: Settings = { peerDailyView: false, rotateOrder: true, dailyStartDate: DEFAULT_DAILY_START };
+  const r = useShared<Settings>('settings', (emit) => onSnapshot(
     doc(db, 'config', 'settings'),
-    (d) => setS({
-      peerDailyView: d.exists() ? d.data().peerDailyView !== false : true,
-      rotateOrder: d.exists() ? d.data().rotateOrder !== false : true,
-      dailyStartDate: (d.exists() && typeof d.data().dailyStartDate === 'string') ? d.data().dailyStartDate : DEFAULT_DAILY_START,
-    }),
-    () => setS({ peerDailyView: false, rotateOrder: true, dailyStartDate: DEFAULT_DAILY_START }),
-  ), []);
-  return s;
+    (d) => {
+      countReads('config/settings', 1);
+      emit({
+        peerDailyView: d.exists() ? d.data().peerDailyView !== false : true,
+        rotateOrder: d.exists() ? d.data().rotateOrder !== false : true,
+        dailyStartDate: (d.exists() && typeof d.data().dailyStartDate === 'string') ? d.data().dailyStartDate : DEFAULT_DAILY_START,
+      });
+    },
+    () => emit(fallback),
+  ));
+  return r.data;
 }
 
 export const saveDaily = (

@@ -10,7 +10,7 @@ import { TEAM_IDS, type Member, type Team } from '../../types';
 type RosterDoc = { id: string; name: string; role: 'student' | 'teacher'; teamId: string | null; sid: string | null };
 
 export function Roster() {
-  const { data: rosterDocs, error } = useQuery<RosterDoc>(query(collection(db, 'roster')), []);
+  const { data: rosterDocs, error } = useQuery<RosterDoc>(query(collection(db, 'roster')), 'roster');
   const { data: teams } = useTeams();
   const [text, setText] = useState('');
   const [msg, setMsg] = useState('');

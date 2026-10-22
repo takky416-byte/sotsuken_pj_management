@@ -9,7 +9,7 @@ import { useQuery } from './util';
 const col = (teamId: string) => collection(db, 'teams', teamId, 'tasks');
 
 export function useTasks(teamId: string | null) {
-  return useQuery<Task>(teamId ? query(col(teamId)) : null, [teamId]);
+  return useQuery<Task>(teamId ? query(col(teamId)) : null, `tasks:${teamId}`);
 }
 
 /** 書き込みの updatedBy。教員は 'teacher'、学生は sid (ルールで検証される)。 */

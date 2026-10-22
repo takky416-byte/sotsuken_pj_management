@@ -6,16 +6,20 @@ export function TeacherNotes({ teamId }: { teamId: string }) {
   const { data: notes, error } = useTeacherNotes(teamId);
   const [v, setV] = useState('');
   const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   if (error) return <p className="error">{error}</p>;
   if (!notes) return <p>読み込み中…</p>;
-  const run = async (fn: () => Promise<unknown>) => { setErr(''); try { await fn(); } catch (e) { setErr(`できませんでした: ${(e as Error).message}`); } };
+  const run = async (fn: () => Promise<unknown>) => {
+    setErr(''); setBusy(true);
+    try { await fn(); } catch (e) { setErr(`できませんでした: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
   return (
     <>
       <p className="hint">ここに書いたことは、教員だけが見られます。学生の画面には出ません。</p>
       <div className="card form">
         <textarea rows={3} maxLength={5000} value={v} onChange={(e) => setV(e.target.value)} placeholder="メモ(面談の内容、気になったこと、など)" />
         <div className="row">
-          <button disabled={!v.trim()} onClick={() => run(async () => { await addTeacherNote(teamId, v.trim()); setV(''); })}>メモを追加</button>
+          <button disabled={!v.trim() || busy} onClick={() => run(async () => { await addTeacherNote(teamId, v.trim()); setV(''); })}>メモを追加</button>
         </div>
         {err && <p className="error">{err}</p>}
       </div>

@@ -5,17 +5,16 @@ import { useSettings, useTeamDailies } from '../../data/daily';
 import { useMeetings } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
 import { useTeams } from '../../data/teams';
-import { formatDate, jstDate } from '../../lib/dates';
+import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import { teamFlags } from '../../lib/flags';
 import { overallProgress } from '../../lib/wbs';
 import type { ClassDay, Milestone, Team } from '../../types';
 
-const daysAgo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) - n * 86400000).toISOString().slice(0, 10);
 
 function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string }) {
   const today = jstDate();
   const { data: tasks } = useTasks(team.id);
-  const { data: dailies } = useTeamDailies(team.id, daysAgo(today, 30));
+  const { data: dailies } = useTeamDailies(team.id, dailyWindowFrom(today));
   const { data: meetings } = useMeetings(team.id);
   const lastMeeting = (meetings ?? []).map((m) => m.date).sort().at(-1);
   const next = milestones.find((m) => (m.endDate ?? m.date) >= today && (m.teamId === null || m.teamId === team.id));

@@ -6,16 +6,14 @@ import { saveDaily, useMyDailies, useSettings, useTeamDailies } from '../../data
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { FIXED_KINDS, dailyId, entriesMissingNote, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
-import { formatDate, jstDate } from '../../lib/dates';
+import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 
-const FROM_DAYS = 28;
-const daysAgo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) - n * 86400000).toISOString().slice(0, 10);
 
 export function StudentDaily() {
   const me = useProfile();
   const team = useTeam(me.teamId);
   const today = jstDate();
-  const from = daysAgo(today, FROM_DAYS);
+  const from = dailyWindowFrom(today);
   const settings = useSettings();
   const classDays = useClassDays();
   const { data: tasks } = useTasks(me.teamId);

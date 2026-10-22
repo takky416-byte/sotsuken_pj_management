@@ -4,11 +4,11 @@ import { setAbsent, useTeamDailies } from '../../data/daily';
 import { useTeams } from '../../data/teams';
 import { useSettings } from '../../data/daily';
 import { dailyId, statusOf } from '../../lib/daily';
-import { formatDate, jstDate } from '../../lib/dates';
+import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import type { Team } from '../../types';
 
 function TeamAttendance({ team, date }: { team: Team; date: string }) {
-  const { data: dailies, error } = useTeamDailies(team.id, date);
+  const { data: dailies, error } = useTeamDailies(team.id, dailyWindowFrom(jstDate()));
   const [err, setErr] = useState('');
   if (error) return <p className="error">{error}</p>;
   if (!dailies) return <p>読み込み中…</p>;
@@ -50,7 +50,7 @@ export function Attendance() {
   const [picked, setPicked] = useState<string | null>(null);
   if (!classDays || !teams || !settings) return <p>読み込み中…</p>;
 
-  const past = classDays.map((d) => d.date).filter((d) => d <= today && d >= settings.dailyStartDate).sort().reverse();
+  const past = classDays.map((d) => d.date).filter((d) => d <= today && d >= settings.dailyStartDate && d >= dailyWindowFrom(today)).sort().reverse();
   const date = picked ?? past[0];
   const active = [...teams].filter((t) => t.status === 'active').sort((a, b) => a.id.localeCompare(b.id));
   return (

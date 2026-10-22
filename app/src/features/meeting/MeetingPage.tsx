@@ -12,7 +12,7 @@ import {
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
-import { formatDate, jstDate } from '../../lib/dates';
+import { addDays, dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import {
   meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
 } from '../../lib/meeting';
@@ -22,7 +22,6 @@ import {
 import { overallProgress } from '../../lib/wbs';
 import type { Team } from '../../types';
 
-const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
 /** /meeting → 教員は今日の順番の先頭のチーム、学生は自分のチームへ */
 export function MeetingIndex() {
@@ -64,7 +63,7 @@ function MeetingScreen({ team }: { team: Team }) {
 
   // 日報: 教員と、設定で閲覧が許可されているときはチーム全員分。それ以外は自分の分だけ。
   const peer = teacher || (settings?.peerDailyView ?? false);
-  const from = addDays(today, -14);
+  const from = dailyWindowFrom(today);
   const all = useTeamDailies(peer ? team.id : null, from);
   const mine = useMyDailies(peer ? null : team.id, me.sid, from);
   const dailies = peer ? all.data : mine.data;

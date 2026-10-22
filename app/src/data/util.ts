@@ -1,22 +1,21 @@
-import { useEffect, useState } from 'react';
 import { type Query, onSnapshot } from 'firebase/firestore';
+import { countReads, queryLabel } from '../lib/readMeter';
+import { useShared } from './shared';
 
-/** クエリを購読して、id 付きのデータの配列を返す。読み込み中は null。 */
-export function useQuery<T>(q: Query | null, deps: unknown[]): { data: T[] | null; error: string | null } {
-  const [data, setData] = useState<T[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    setData(null);
-    setError(null);
-    if (!q) return;
+/**
+ * クエリを購読して、id 付きのデータの配列を返す。読み込み中は null。
+ * 同じ key の購読は、画面をまたいで共有される (shared.ts)。key には、クエリを決めるすべての値を含めること。
+ */
+export function useQuery<T>(q: Query | null, key: string | null): { data: T[] | null; error: string | null } {
+  const r = useShared<T[]>(q ? key : null, (emit, fail) => {
+    const label = queryLabel(q);
     return onSnapshot(
-      q,
-      (s) => setData(s.docs.map((d) => ({ id: d.id, ...d.data() }) as T)),
-      (e) => setError(e.message),
+      q as Query,
+      (s) => { countReads(label, s.docChanges().length); emit(s.docs.map((d) => ({ id: d.id, ...d.data() }) as T)); },
+      (e) => fail(e.message),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-  return { data, error };
+  });
+  return { data: r.data, error: r.error };
 }
 
 export function isHttpUrl(s: string): boolean {
