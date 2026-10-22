@@ -1,0 +1,364 @@
+{
+ "classDays": [
+  {
+   "date": "2026-10-06",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "チーム決め３アイデアだす"
+  },
+  {
+   "date": "2026-10-07",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-08",
+   "periods": "1-2",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-13",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-14",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-15",
+   "periods": "1-2",
+   "meeting": false,
+   "note": "アイデア見せ合い(ST/NV？)"
+  },
+  {
+   "date": "2026-10-20",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-21",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-22",
+   "periods": "1-2",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-27",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "企画発表"
+  },
+  {
+   "date": "2026-10-28",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-10-29",
+   "periods": "1-2",
+   "meeting": true,
+   "note": "企画決定。リスト確定"
+  },
+  {
+   "date": "2026-11-04",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-05",
+   "periods": "1-2",
+   "meeting": true,
+   "note": "機材発注シメ"
+  },
+  {
+   "date": "2026-11-10",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-11",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-12",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2026-11-17",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-18",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-19",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2026-11-24",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-11-25",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "外部設計レビュー"
+  },
+  {
+   "date": "2026-11-26",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2026-12-01",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "機材発注2回目（予定）"
+  },
+  {
+   "date": "2026-12-02",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-03",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2026-12-08",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-09",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-15",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-16",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-17",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2026-12-22",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-23",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2026-12-24",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2027-01-07",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2027-01-12",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2027-01-13",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2027-01-14",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2027-01-19",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2027-01-20",
+   "periods": "3-4",
+   "meeting": false,
+   "note": ""
+  },
+  {
+   "date": "2027-01-21",
+   "periods": "1-2",
+   "meeting": true,
+   "note": ""
+  },
+  {
+   "date": "2027-01-26",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "最終レビュー"
+  },
+  {
+   "date": "2027-01-27",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "Youtube動画締め切り。"
+  },
+  {
+   "date": "2027-01-28",
+   "periods": "1-2",
+   "meeting": false,
+   "note": "内覧会"
+  },
+  {
+   "date": "2027-02-02",
+   "periods": "3-4",
+   "meeting": false,
+   "note": "提出物納期"
+  }
+ ],
+ "milestones": [
+  {
+   "id": "common-2026-10-27",
+   "title": "企画発表 (FIXER社の講評)",
+   "date": "2026-10-27",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2026-10-28",
+   "title": "企画決定",
+   "date": "2026-10-28",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2026-11-05",
+   "title": "機材発注シメ",
+   "date": "2026-11-05",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2026-11-25",
+   "title": "外部設計レビュー",
+   "date": "2026-11-25",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2026-12-01",
+   "title": "機材発注2回目(予定)",
+   "date": "2026-12-01",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-01-26",
+   "title": "最終レビュー",
+   "date": "2027-01-26",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-01-27",
+   "title": "YouTube動画の締め切り",
+   "date": "2027-01-27",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-01-28",
+   "title": "内覧会",
+   "date": "2027-01-28",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-02-02",
+   "title": "提出物納期",
+   "date": "2027-02-02",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-02-05",
+   "title": "卒展準備",
+   "date": "2027-02-05",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  },
+  {
+   "id": "common-2027-02-06",
+   "title": "卒業研究制作展",
+   "date": "2027-02-06",
+   "endDate": null,
+   "teamId": null,
+   "note": ""
+  }
+ ]
+}

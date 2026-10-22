@@ -225,3 +225,46 @@ describe('ミーティング記録・コメント・設定', () => {
     await assertSucceeds(getDocs(collection(as(TEACHER), 'milestones')));
   });
 });
+
+// ---- アプリが実際に書き込むデータの形が、ルールに拒否されないこと ----
+import { taskDoc } from '../src/lib/taskDoc';
+
+describe('アプリの書き込みの形', () => {
+  const nt = (id: string, over = {}) => ({ id, parentId: null, depth: 1 as const, title: 'タスク', detail: '', order: 1024, ...over });
+
+  test('学生: 新規作成・状態変更・並べ替え・担当/日付/リンク・削除と復元', async () => {
+    const db = as(A1);
+    const ref = doc(db, 'teams/A/tasks/new1');
+    await assertSucceeds(setDoc(ref, taskDoc(nt('new1'), 'A1', 'user')));
+    await assertSucceeds(updateDoc(ref, { status: 'doing', updatedBy: 'A1', updatedAt: 2 }));
+    await assertSucceeds(updateDoc(ref, { parentId: 't1', depth: 2, order: 5, updatedBy: 'A1', updatedAt: 3 }));
+    await assertSucceeds(updateDoc(ref, {
+      assignees: ['A1', 'A2'], startDate: '2026-10-28', endDate: '2026-11-05', detail: 'メモ',
+      links: [{ url: 'https://example.com', label: '' }], updatedBy: 'A1', updatedAt: 4,
+    }));
+    await assertSucceeds(updateDoc(ref, { deleted: true, deletedAt: 5, updatedBy: 'A1', updatedAt: 5 }));
+    await assertSucceeds(updateDoc(ref, { deleted: false, deletedAt: null, updatedBy: 'A1', updatedAt: 6 }));
+  });
+
+  test('教員: キックオフ (雛形・叩き台・チーム更新) と、名簿・チーム・カレンダーの書き込み', async () => {
+    const db = as(TEACHER);
+    await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/k1'), taskDoc(nt('k1'), 'teacher', 'user')));
+    await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/k2'), taskDoc(nt('k2', { parentId: 'k1', depth: 2 }), 'teacher', 'draft')));
+    await assertSucceeds(updateDoc(doc(db, 'teams/A'), {
+      status: 'active', projectName: '企画', proposals: [{ no: 1, title: '企画', adopted: true }], driveUrl: '', kickoffAt: 1,
+    }));
+    await assertSucceeds(setDoc(doc(db, 'teams/A'), { members: [{ sid: 'A1', name: '岩田' }] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(db, 'roster/new@trident.ac.jp'), { name: '森', role: 'student', teamId: 'A', sid: 'A3' }));
+    await assertSucceeds(setDoc(doc(db, 'milestones/m1'), { title: 'x', date: '2026-11-01', endDate: null, teamId: null, note: '' }));
+    await assertSucceeds(setDoc(doc(db, 'config/classDays'), { days: [{ date: '2026-10-29', periods: '1-2', meeting: true, note: '' }] }));
+  });
+
+  test('学生は、教員が作った叩き台も編集できる', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/tasks/k2'), taskDoc(nt('k2'), 'teacher', 'draft')));
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A/tasks/k2'), { title: '直した', updatedBy: 'A1', updatedAt: 9 }));
+  });
+
+  test('学生は、更新者を教員と偽って書き込めない', async () => {
+    await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/z'), taskDoc(nt('z'), 'teacher', 'user')));
+  });
+});
