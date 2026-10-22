@@ -3,7 +3,7 @@ import {
   GoogleAuthProvider, getRedirectResult, onAuthStateChanged, signInWithPopup,
   signInWithRedirect, signOut,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 export const SCHOOL_DOMAIN = '@trident.ac.jp';
@@ -44,7 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getRedirectResult(auth).catch((e: { code?: string }) =>
       setState({ status: 'signedOut', error: `ログインに失敗しました (${e.code ?? 'unknown'})` }));
 
-    return onAuthStateChanged(auth, async (user) => {
+    // 名簿のプロフィールは購読する (名前の変更が反映され、名簿から外された人はその場で入れなくなる)
+    let unsubRoster: (() => void) | null = null;
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      unsubRoster?.();
+      unsubRoster = null;
       if (!user) {
         setState((s) => (s.status === 'signedOut' && s.error ? s : { status: 'signedOut' }));
         return;
@@ -54,19 +58,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ status: 'notAllowed', email, reason: 'domain' });
         return;
       }
-      try {
-        const snap = await getDoc(doc(db, 'roster', email));
-        if (!snap.exists()) {
-          setState({ status: 'notAllowed', email, reason: 'roster' });
-          return;
-        }
-        const d = snap.data() as Omit<Profile, 'email'>;
-        setState({ status: 'ready', profile: { email, name: d.name, role: d.role, teamId: d.teamId, sid: d.sid } });
-      } catch {
+      unsubRoster = onSnapshot(
+        doc(db, 'roster', email),
+        (snap) => {
+          if (!snap.exists()) {
+            setState({ status: 'notAllowed', email, reason: 'roster' });
+            return;
+          }
+          const d = snap.data() as Omit<Profile, 'email'>;
+          setState({ status: 'ready', profile: { email, name: d.name, role: d.role, teamId: d.teamId, sid: d.sid } });
+        },
         // 名簿にない場合は、ルールで読み取りが拒否されることもある
-        setState({ status: 'notAllowed', email, reason: 'roster' });
-      }
+        () => setState({ status: 'notAllowed', email, reason: 'roster' }),
+      );
     });
+    return () => {
+      unsubAuth();
+      unsubRoster?.();
+    };
   }, []);
 
   const login = async () => {

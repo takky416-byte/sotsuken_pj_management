@@ -13,8 +13,12 @@ export function useTeam(teamId: string | null): Team | null | undefined {
   useEffect(() => {
     setTeam(undefined);
     if (!teamId) return;
-    return onSnapshot(doc(db, 'teams', teamId), (s) =>
-      setTeam(s.exists() ? ({ id: s.id, ...s.data() } as Team) : null));
+    return onSnapshot(
+      doc(db, 'teams', teamId),
+      (s) => setTeam(s.exists() ? ({ id: s.id, ...s.data() } as Team) : null),
+      // 権限がなくなったとき (チームを移された、名簿から外された) は、チームがないものとして扱う
+      () => setTeam(null),
+    );
   }, [teamId]);
   return team;
 }

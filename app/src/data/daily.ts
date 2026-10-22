@@ -23,12 +23,15 @@ export type Settings = { peerDailyView: boolean; rotateOrder: boolean; dailyStar
 
 export function useSettings(): Settings | null {
   const [s, setS] = useState<Settings | null>(null);
-  useEffect(() => onSnapshot(doc(db, 'config', 'settings'), (d) =>
-    setS({
+  useEffect(() => onSnapshot(
+    doc(db, 'config', 'settings'),
+    (d) => setS({
       peerDailyView: d.exists() ? d.data().peerDailyView !== false : true,
       rotateOrder: d.exists() ? d.data().rotateOrder !== false : true,
       dailyStartDate: (d.exists() && typeof d.data().dailyStartDate === 'string') ? d.data().dailyStartDate : DEFAULT_DAILY_START,
-    })), []);
+    }),
+    () => setS({ peerDailyView: false, rotateOrder: true, dailyStartDate: DEFAULT_DAILY_START }),
+  ), []);
   return s;
 }
 

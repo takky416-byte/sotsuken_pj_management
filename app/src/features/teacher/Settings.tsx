@@ -1,9 +1,14 @@
 import { useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useProfile } from '../../auth/AuthProvider';
+import { db } from '../../firebase';
 import { setSetting } from '../../data/calendar';
 import { useSettings } from '../../data/daily';
 import { updateTeam, useTeams } from '../../data/teams';
 
 export function Settings() {
+  const me = useProfile();
+  const [myName, setMyName] = useState(me.name);
   const settings = useSettings();
   const { data: teams } = useTeams();
   const [err, setErr] = useState('');
@@ -16,6 +21,15 @@ export function Settings() {
     <>
       <h2>設定</h2>
       {err && <p className="error">{err}</p>}
+      <div className="card form">
+        <label>あなたの表示名(画面の右上や、先生のコメントに表示されます)
+          <input value={myName} maxLength={20} onChange={(e) => setMyName(e.target.value)} />
+        </label>
+        <div className="row">
+          <button disabled={!myName.trim() || myName.trim() === me.name}
+            onClick={() => run(() => updateDoc(doc(db, 'roster', me.email), { name: myName.trim() }))}>表示名を保存</button>
+        </div>
+      </div>
       <div className="card form">
         <label className="check">
           <input type="checkbox" checked={settings.peerDailyView} onChange={(e) => run(() => setSetting('peerDailyView', e.target.checked))} />

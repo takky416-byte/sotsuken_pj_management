@@ -318,3 +318,22 @@ describe('ミーティング・コメント・教員メモ: アプリの書き�
     await assertFails(getDocs(collection(as(A1), 'teams/B/meetings')));
   });
 });
+
+describe('名簿の修正: アプリの書き込みの形', () => {
+  test('教員: 名前の変更、チームの変更 (名簿とメンバー表のバッチ)、削除、自分の表示名の変更', async () => {
+    const db = as(TEACHER);
+    await assertSucceeds(updateDoc(doc(db, `roster/${A2}`), { name: '近内改' }));
+    await assertSucceeds(updateDoc(doc(db, `roster/${A2}`), { teamId: 'B', sid: 'B2' }));
+    await assertSucceeds(setDoc(doc(db, 'teams/B'), { members: [{ sid: 'B1', name: '長田' }, { sid: 'B2', name: '近内改' }] }, { merge: true }));
+    await assertSucceeds(deleteDoc(doc(db, `roster/${A2}`)));
+    await assertSucceeds(updateDoc(doc(db, `roster/${TEACHER}`), { name: '先生(改)' }));
+  });
+  test('学生: 自分の名簿を書き換えられない。名簿から外されると、読めなくなる', async () => {
+    await assertFails(updateDoc(doc(as(A1), `roster/${A1}`), { name: '偽名' }));
+    await assertFails(updateDoc(doc(as(A1), `roster/${A1}`), { teamId: 'B', sid: 'B9' }));
+    await assertSucceeds(getDoc(doc(as(A1), 'teams/A')));
+    await env.withSecurityRulesDisabled((ctx) => deleteDoc(doc(ctx.firestore(), `roster/${A1}`)));
+    await assertFails(getDoc(doc(as(A1), 'teams/A')));
+    await assertSucceeds(getDoc(doc(as(A1), `roster/${A1}`))); // 自分の名簿は「ない」と読める (アプリは「名簿に登録されていません」と表示する)
+  });
+});
