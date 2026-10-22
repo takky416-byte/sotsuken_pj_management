@@ -228,6 +228,7 @@ describe('ミーティング記録・コメント・設定', () => {
 
 // ---- アプリが実際に書き込むデータの形が、ルールに拒否されないこと ----
 import { taskDoc } from '../src/lib/taskDoc';
+import { dailyDoc, dailyId } from '../src/lib/daily';
 
 describe('アプリの書き込みの形', () => {
   const nt = (id: string, over = {}) => ({ id, parentId: null, depth: 1 as const, title: 'タスク', detail: '', order: 1024, ...over });
@@ -266,5 +267,33 @@ describe('アプリの書き込みの形', () => {
 
   test('学生は、更新者を教員と偽って書き込めない', async () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/z'), taskDoc(nt('z'), 'teacher', 'user')));
+  });
+});
+
+describe('日報: アプリの書き込みの形', () => {
+  const d = jstDate();
+  test('学生: 提出 → 当日中の更新。教員: 欠席にする・取り消す', async () => {
+    const mk = (sid: string, over: object = {}) =>
+      dailyDoc({ sid, date: d, entries: [{ kind: 'task', taskId: 't1', note: '進めた' }, { kind: 'study', note: '' }], blocker: '', absent: false, ...over }, undefined);
+    const ref = doc(as(A1), `teams/A/dailyReports/${dailyId(d, 'A1')}`);
+    await assertSucceeds(setDoc(ref, mk('A1')));
+    await assertSucceeds(setDoc(ref, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '相談したい', absent: false }, { submittedAt: 1 })));
+    // 教員: 欠席にする → 学生は直せない → 教員が取り消す
+    const t = doc(as(TEACHER), `teams/A/dailyReports/${dailyId(d, 'A1')}`);
+    await assertSucceeds(setDoc(t, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: true }, { submittedAt: 1 })));
+    await assertFails(setDoc(ref, mk('A1')));
+    await assertSucceeds(setDoc(t, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false }, { submittedAt: 1 })));
+    await assertSucceeds(setDoc(ref, mk('A1')));
+  });
+  test('学生: 自分の日報を読むクエリと、設定ONのときのチーム全体のクエリ', async () => {
+    const db = as(A1);
+    await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('sid', '==', 'A1'), where('date', '>=', '2026-10-01'))));
+    await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'config/settings'), { peerDailyView: false }));
+    await assertFails(getDocs(query(collection(db, 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
+    await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('sid', '==', 'A1'), where('date', '>=', '2026-10-01'))));
+  });
+  test('教員: 日付での絞り込みクエリ', async () => {
+    await assertSucceeds(getDocs(query(collection(as(TEACHER), 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
   });
 });

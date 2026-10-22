@@ -1,25 +1,46 @@
 import { Link } from 'react-router-dom';
 import { Progress } from '../../components/Progress';
-import { useMilestones } from '../../data/calendar';
+import { useClassDays, useMilestones } from '../../data/calendar';
+import { useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeams } from '../../data/teams';
 import { formatDate, jstDate } from '../../lib/dates';
+import { teamFlags } from '../../lib/flags';
 import { overallProgress } from '../../lib/wbs';
-import type { Milestone, Team } from '../../types';
+import type { ClassDay, Milestone, Team } from '../../types';
 
-function TeamRow({ team, milestones }: { team: Team; milestones: Milestone[] }) {
-  const { data: tasks } = useTasks(team.id);
+const daysAgo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) - n * 86400000).toISOString().slice(0, 10);
+
+function TeamRow({ team, milestones, classDays }: { team: Team; milestones: Milestone[]; classDays: ClassDay[] }) {
   const today = jstDate();
+  const { data: tasks } = useTasks(team.id);
+  const { data: dailies } = useTeamDailies(team.id, daysAgo(today, 30));
   const next = milestones.find((m) => (m.endDate ?? m.date) >= today && (m.teamId === null || m.teamId === team.id));
+  const flags = tasks && dailies ? teamFlags(team, tasks, dailies, classDays, today) : null;
   const delayed = (tasks ?? []).filter((t) => !t.deleted && t.status !== 'done' && t.status !== 'hold'
     && t.endDate && t.endDate < today).length;
+  const active = team.status === 'active';
   return (
     <tr>
       <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link></td>
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
-      <td>{team.status === 'active' ? team.projectName : <span className="hint">企画検討中</span>}</td>
+      <td>{active ? team.projectName : <span className="hint">企画検討中</span>}</td>
       <td>{tasks ? <Progress {...overallProgress(tasks)} /> : '…'}</td>
       <td className={delayed ? 'warn' : ''}>{delayed || '—'}</td>
+      <td>
+        {!active || !flags ? '—' : flags.latestDay
+          ? <>{flags.submitted}/{flags.total}<span className="hint"> ({formatDate(flags.latestDay)})</span></>
+          : '—'}
+      </td>
+      <td>
+        {flags && (flags.missing.length > 0 || flags.unassignedOverdue > 0) ? (
+          <span className="warn">
+            {flags.missing.length > 0 && `日報が続けて未提出: ${flags.missing.join('・')}`}
+            {flags.missing.length > 0 && flags.unassignedOverdue > 0 && ' ／ '}
+            {flags.unassignedOverdue > 0 && `担当なしの期限超過 ${flags.unassignedOverdue}件`}
+          </span>
+        ) : '—'}
+      </td>
       <td>{next ? `${formatDate(next.date)} ${next.title}` : '—'}</td>
     </tr>
   );
@@ -28,19 +49,28 @@ function TeamRow({ team, milestones }: { team: Team; milestones: Milestone[] }) 
 export function TeacherHome() {
   const { data: teams, error } = useTeams();
   const milestones = useMilestones('all');
+  const classDays = useClassDays();
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
-  if (!teams || !milestones) return <p>読み込み中…</p>;
+  if (!teams || !milestones || !classDays) return <p>読み込み中…</p>;
   const sorted = [...teams].sort((a, b) => a.id.localeCompare(b.id));
   return (
     <>
       <h2>チーム一覧</h2>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th><th>次の予定</th></tr></thead>
-          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} />)}</tbody>
+          <thead>
+            <tr>
+              <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th>
+              <th>日報(直近の授業日)</th><th>要確認</th><th>次の予定</th>
+            </tr>
+          </thead>
+          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} />)}</tbody>
         </table>
       </div>
-      <p className="hint">日報の提出状況・要確認フラグは、日報の機能を追加したあとに表示されます。</p>
+      <p className="hint">
+        「要確認」は目安です。授業日に2回続けて日報が未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
+        評価や単位認定には使いません。
+      </p>
     </>
   );
 }

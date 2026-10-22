@@ -71,3 +71,17 @@ select.status.st-doing { border-color:var(--accent); } select.status.st-done { b
 .toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:10px 16px; border-radius:8px; display:flex; gap:12px; align-items:center; box-shadow:0 4px 16px rgba(0,0,0,.25); z-index:10; max-width:92vw; }
 .toast button.ghost { color:var(--bg); border-color:var(--bg); }
 @media (max-width:640px) { .wbs-row .meta { display:none; } .detail { margin-left:0; } }
+.tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:14px 0 8px; }
+.tabs button { background:transparent; color:var(--muted); border:none; border-bottom:2px solid transparent; border-radius:0; }
+.tabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
+.matrix th, .matrix td { text-align:center; }
+.matrix tbody th { text-align:left; font-weight:600; }
+.mk-submitted { color:var(--ok); font-weight:600; } .mk-missing { color:var(--danger); } .mk-absent { color:var(--muted); }
+.pick { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.note-input { flex:1; min-width:160px; }
+.feed .card { margin:8px 0; } .note { color:var(--muted); }
+.blocker { margin-top:6px; padding:6px 8px; border-left:3px solid var(--warn); background:var(--bg); }
+.att-row { display:flex; gap:10px; align-items:center; padding:4px 0; border-bottom:1px solid var(--line); }
+.att-name { min-width:5em; font-weight:600; }
+label.inline { flex-direction:row; align-items:center; gap:8px; margin:8px 0; }
+label.check { flex-direction:row; align-items:center; gap:8px; color:var(--fg); }
