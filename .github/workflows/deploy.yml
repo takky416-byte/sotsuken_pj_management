@@ -34,6 +34,7 @@ jobs:
           test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
           printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+          echo "使用するサービスアカウント: $(node -p "JSON.parse(require('fs').readFileSync('$RUNNER_TEMP/sa.json','utf8')).client_email")"
       - name: Deploy hosting and rules
         working-directory: app
         run: npx firebase deploy --only hosting,firestore:rules --project sotsuken-pj
