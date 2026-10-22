@@ -24,6 +24,12 @@ export function Settings() {
         <p className="hint">オフにすると、学生は自分の日報だけが見えます。教員はどちらでも全員分を見られます。</p>
       </div>
       <div className="card form">
+        <label>日報の運用開始日
+          <input type="date" value={settings.dailyStartDate} onChange={(e) => e.target.value && run(() => setSetting('dailyStartDate', e.target.value))} />
+        </label>
+        <p className="hint">これより前の授業日は、日報が未提出でも数えません(要確認・提出状況・欠席の入力の対象外)。</p>
+      </div>
+      <div className="card form">
         <label className="check">
           <input type="checkbox" checked={settings.rotateOrder} onChange={(e) => run(() => setSetting('rotateOrder', e.target.checked))} />
           ミーティングのチームの順番を、毎週ずらす

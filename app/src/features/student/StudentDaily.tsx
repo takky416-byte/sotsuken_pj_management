@@ -29,6 +29,7 @@ export function StudentDaily() {
   if (team === null || team.status === 'planning') return <p className="card">企画検討中です。キックオフ後に日報を書けるようになります。</p>;
 
   const isClassDay = classDays.some((d) => d.date === today);
+  const started = today >= settings.dailyStartDate;
   const mineToday = dailies.find((d) => d.id === dailyId(today, me.sid!));
   return (
     <>
@@ -36,7 +37,8 @@ export function StudentDaily() {
       <p className="hint">
         今日({formatDate(today)})の分を書きます。1分くらいで書けるように、できたことを選ぶだけにしてあります。提出した日のうちは、何度でも直せます。
       </p>
-      {!isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
+      {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
+      {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
       {mineToday?.absent
         ? <p className="card">今日は「欠席」として記録されています。</p>
         : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} />}

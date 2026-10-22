@@ -10,7 +10,7 @@ import {
 } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
-import { classDatesBetween } from '../../lib/daily';
+import { classDatesBetween, fromDailyStart } from '../../lib/daily';
 import { formatDate, jstDate } from '../../lib/dates';
 import {
   meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
@@ -81,7 +81,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const canEdit = teacher || team.teamMeetingInput;
   const prev = previousMeeting(meetings, today);
   const since = prev ? addDays(prev.date, 1) : addDays(today, -7);
-  const dates = classDatesBetween(classDays, since < from ? from : since, addDays(today, 1));
+  const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), since < from ? from : since, addDays(today, 1));
   const range = dailies.filter((d) => d.date >= since && d.date <= today);
   const members = peer ? team.members : team.members.filter((m) => m.sid === me.sid);
   const order = meetingOrder(classDays, today, settings.rotateOrder);

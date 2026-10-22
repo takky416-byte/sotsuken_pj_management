@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
-import { useTeamDailies } from '../../data/daily';
+import { useSettings, useTeamDailies } from '../../data/daily';
 import { useMeetings } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
 import { useTeams } from '../../data/teams';
@@ -12,14 +12,14 @@ import type { ClassDay, Milestone, Team } from '../../types';
 
 const daysAgo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) - n * 86400000).toISOString().slice(0, 10);
 
-function TeamRow({ team, milestones, classDays }: { team: Team; milestones: Milestone[]; classDays: ClassDay[] }) {
+function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string }) {
   const today = jstDate();
   const { data: tasks } = useTasks(team.id);
   const { data: dailies } = useTeamDailies(team.id, daysAgo(today, 30));
   const { data: meetings } = useMeetings(team.id);
   const lastMeeting = (meetings ?? []).map((m) => m.date).sort().at(-1);
   const next = milestones.find((m) => (m.endDate ?? m.date) >= today && (m.teamId === null || m.teamId === team.id));
-  const flags = tasks && dailies ? teamFlags(team, tasks, dailies, classDays, today) : null;
+  const flags = tasks && dailies ? teamFlags(team, tasks, dailies, classDays, today, dailyStart) : null;
   const delayed = (tasks ?? []).filter((t) => !t.deleted && t.status !== 'done' && t.status !== 'hold'
     && t.endDate && t.endDate < today).length;
   const active = team.status === 'active';
@@ -54,8 +54,9 @@ export function TeacherHome() {
   const { data: teams, error } = useTeams();
   const milestones = useMilestones('all');
   const classDays = useClassDays();
+  const settings = useSettings();
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
-  if (!teams || !milestones || !classDays) return <p>読み込み中…</p>;
+  if (!teams || !milestones || !classDays || !settings) return <p>読み込み中…</p>;
   const sorted = [...teams].sort((a, b) => a.id.localeCompare(b.id));
   return (
     <>
@@ -68,7 +69,7 @@ export function TeacherHome() {
               <th>日報(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
             </tr>
           </thead>
-          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} />)}</tbody>
+          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} />)}</tbody>
         </table>
       </div>
       <p className="hint">

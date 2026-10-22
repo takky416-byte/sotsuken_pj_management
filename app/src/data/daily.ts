@@ -1,7 +1,7 @@
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { dailyDoc, dailyId, type Daily, type DailyEntry } from '../lib/daily';
+import { DEFAULT_DAILY_START, dailyDoc, dailyId, type Daily, type DailyEntry } from '../lib/daily';
 import { useQuery } from './util';
 
 const col = (teamId: string) => collection(db, 'teams', teamId, 'dailyReports');
@@ -19,7 +19,7 @@ export function useMyDailies(teamId: string | null, sid: string | null, from: st
   );
 }
 
-export type Settings = { peerDailyView: boolean; rotateOrder: boolean };
+export type Settings = { peerDailyView: boolean; rotateOrder: boolean; dailyStartDate: string };
 
 export function useSettings(): Settings | null {
   const [s, setS] = useState<Settings | null>(null);
@@ -27,6 +27,7 @@ export function useSettings(): Settings | null {
     setS({
       peerDailyView: d.exists() ? d.data().peerDailyView !== false : true,
       rotateOrder: d.exists() ? d.data().rotateOrder !== false : true,
+      dailyStartDate: (d.exists() && typeof d.data().dailyStartDate === 'string') ? d.data().dailyStartDate : DEFAULT_DAILY_START,
     })), []);
   return s;
 }

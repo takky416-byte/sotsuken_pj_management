@@ -1,5 +1,5 @@
 import type { ClassDay, Task, Team } from '../types';
-import { classDatesBetween, consecutiveMisses, statusOf, type Daily, type DayStatus } from './daily';
+import { classDatesBetween, consecutiveMisses, fromDailyStart, statusOf, type Daily, type DayStatus } from './daily';
 import { jstDate } from './dates';
 
 export type TeamFlags = {
@@ -17,9 +17,13 @@ export const MISS_THRESHOLD = 2;
 
 /**
  * 教員のダッシュボード用。判定は目安で、評価や単位認定には使わない。
- * 未提出は、キックオフの日以降の「今日より前」の授業日だけで数える (今日の分は、今日が終わるまで数えない)。
+ * 未提出は、キックオフの日と日報の運用開始日の遅いほう以降の「今日より前」の授業日だけで数える
+ * (今日の分は、今日が終わるまで数えない)。
  */
-export function teamFlags(team: Team, tasks: Task[], dailies: Daily[], classDays: ClassDay[], today: string): TeamFlags {
+export function teamFlags(
+  team: Team, tasks: Task[], dailies: Daily[], allClassDays: ClassDay[], today: string, dailyStart: string,
+): TeamFlags {
+  const classDays = fromDailyStart(allClassDays, dailyStart); // 運用開始日より前の授業日は対象にしない
   const by = new Map(dailies.map((d) => [`${d.date}_${d.sid}`, d]));
   const latestDay = classDays.map((d) => d.date).filter((d) => d <= today).sort().at(-1) ?? null;
   const submitted = latestDay

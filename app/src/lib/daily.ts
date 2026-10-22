@@ -22,6 +22,11 @@ export const FIXED_KINDS: { kind: Exclude<DailyKind, 'task'>; label: string }[] 
   { kind: 'other', label: 'その他' },
 ];
 
+/** 日報の運用を始める日 (設定で変えられる)。これより前の授業日は、未提出の判定などの対象にしない。 */
+export const DEFAULT_DAILY_START = '2026-10-28';
+
+export const fromDailyStart = (days: ClassDay[], start: string): ClassDay[] => days.filter((d) => d.date >= start);
+
 export const dailyId = (date: string, sid: string) => `${date}_${sid}`;
 
 export type DayStatus = 'submitted' | 'absent' | 'missing';

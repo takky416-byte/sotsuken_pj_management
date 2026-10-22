@@ -4,11 +4,11 @@ import { TeacherNotes } from './TeacherNotes';
 import { DailyFeed, DailyMatrix } from '../../components/DailyViews';
 import { WbsEditor } from '../../components/WbsEditor';
 import { useClassDays } from '../../data/calendar';
-import { useTeamDailies } from '../../data/daily';
+import { useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
-import { classDatesBetween } from '../../lib/daily';
+import { classDatesBetween, fromDailyStart } from '../../lib/daily';
 import { jstDate } from '../../lib/dates';
 import type { Team } from '../../types';
 
@@ -56,11 +56,12 @@ function TeamDetail({ team }: { team: Team }) {
 function TeamDaily({ team }: { team: Team }) {
   const today = jstDate();
   const classDays = useClassDays();
+  const settings = useSettings();
   const { data: dailies, error } = useTeamDailies(team.id, daysAgo(today, 30));
   const { data: tasks } = useTasks(team.id);
   if (error) return <p className="error">{error}</p>;
-  if (!classDays || !dailies || !tasks) return <p>読み込み中…</p>;
-  const dates = classDatesBetween(classDays, daysAgo(today, 30), daysAgo(today, -1)).slice(-8);
+  if (!classDays || !dailies || !tasks || !settings) return <p>読み込み中…</p>;
+  const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), daysAgo(today, 30), daysAgo(today, -1)).slice(-8);
   return (
     <>
       <h3>提出状況(○ 提出 / × 未提出 / 欠 欠席)</h3>
