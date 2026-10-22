@@ -11,7 +11,7 @@ export function StudentGantt() {
   return (
     <>
       <h2>ガント(予定の全体像)</h2>
-      <GanttChart teamId={me.teamId} members={team.members} />
+      <GanttChart teamId={me.teamId} actor={me.sid} members={team.members} />
     </>
   );
 }

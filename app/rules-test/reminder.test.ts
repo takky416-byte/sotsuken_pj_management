@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { parseBackup } from '../src/lib/restore';
 
 // Apps Script のコード (core.js + Code.js) を、Apps Script の API を模した環境で実行し、
 // Firestore エミュレータの REST API に対して、実際に読み書きの流れを通す。
@@ -17,6 +18,22 @@ const yesterday = new Date(Date.now() + JST - 86400000).toISOString().slice(0, 1
 
 type Mail = { to: string; subject: string; body: string };
 
+// Drive の最小限の模擬 (フォルダ → ファイル名 → 中身)
+const driveFolders = new Map<string, Map<string, { content: string; trashed: boolean }>>();
+const driveFile = (m: Map<string, { content: string; trashed: boolean }>, name: string) => ({
+  getName: () => name, setContent: (c: string) => { m.get(name)!.content = c; }, setTrashed: (t: boolean) => { m.get(name)!.trashed = t; },
+});
+const iter = <T,>(xs: T[]) => { let i = 0; return { hasNext: () => i < xs.length, next: () => xs[i++] }; };
+const folderApi = (m: Map<string, { content: string; trashed: boolean }>) => ({
+  getFilesByName: (n: string) => iter(m.has(n) && !m.get(n)!.trashed ? [driveFile(m, n)] : []),
+  createFile: (n: string, c: string) => { m.set(n, { content: c, trashed: false }); },
+  getFiles: () => iter([...m.keys()].filter((n) => !m.get(n)!.trashed).map((n) => driveFile(m, n))),
+});
+const drive = {
+  getFoldersByName: (n: string) => iter(driveFolders.has(n) ? [folderApi(driveFolders.get(n)!)] : []),
+  createFolder: (n: string) => { const m = new Map(); driveFolders.set(n, m); return folderApi(m); },
+};
+
 function loadScript(props: Record<string, string>) {
   const sent: Mail[] = [];
   const logs: string[] = [];
@@ -28,6 +45,7 @@ function loadScript(props: Record<string, string>) {
     ScriptApp: { getOAuthToken: () => 'owner' }, // エミュレータでは、'owner' でルールを通さずに読める
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k: string) => store[k] ?? null, setProperty: (k: string, v: string) => { store[k] = v; } }) },
     MailApp: { sendEmail: (m: Mail) => sent.push(m) },
+    DriveApp: drive,
     UrlFetchApp: {
       // Apps Script の fetch は同期なので、curl を同期で呼んで模す
       fetch: (url: string, o: { method?: string; contentType?: string; payload?: string; headers?: Record<string, string> } = {}) => {
@@ -178,5 +196,46 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
     s.call('remindAfternoon');
     expect(s.sent).toHaveLength(1);
     expect(s.sent[0].body).toContain('送る相手はいません');
+  });
+
+  describe('毎日のバックアップ (Drive)', () => {
+    const FOLDER = '卒研PJ バックアップ';
+    beforeEach(() => driveFolders.clear());
+
+    test('全データを、アプリの書き出しと同じ形式の JSON で保存する (復元に使える)', async () => {
+      await db.doc('teams/A/tasks/t1').set({ title: '要件定義', deleted: false, assignees: ['A1'], order: 1.5 });
+      await db.doc('teacherNotes/n1').set({ teamId: 'A', body: '教員メモ' });
+      const s = loadScript({ ...baseProps });
+      const r = s.call('backupDaily');
+      const file = driveFolders.get(FOLDER)!.get(`sotsuken-backup-${today}.json`)!;
+      expect(file).toBeTruthy();
+      const b = parseBackup(file.content); // 復元画面と同じ検査を通る
+      expect(b.meta.includesTeacherNotes).toBe(true);
+      expect(b.collections.roster.map((d) => d.id)).toContain('a1@trident.ac.jp');
+      expect(b.collections['teams/A/tasks']).toEqual([{ id: 't1', title: '要件定義', deleted: false, assignees: ['A1'], order: 1.5 }]);
+      expect(b.collections.teacherNotes[0]).toMatchObject({ id: 'n1', body: '教員メモ' });
+      expect(b.collections['teams/A/dailyReports'].length).toBeGreaterThanOrEqual(3);
+      expect(r.docs).toBeGreaterThan(10);
+      expect(s.store.LAST_BACKUP).toBe(today);
+    });
+
+    test('同じ日に 2 回実行しても、ファイルは 1 つ。古いものは、指定した日数ぶんだけ残す', async () => {
+      const m = new Map<string, { content: string; trashed: boolean }>();
+      for (const d of ['2026-01-01', '2026-01-02', '2026-01-03']) m.set(`sotsuken-backup-${d}.json`, { content: '{}', trashed: false });
+      m.set('メモ.txt', { content: 'x', trashed: false }); // 無関係のファイルには触れない
+      driveFolders.set(FOLDER, m);
+      const s = loadScript({ ...baseProps, BACKUP_KEEP: '2' });
+      s.call('backupDaily');
+      s.call('backupDaily');
+      const live = [...m.entries()].filter(([, v]) => !v.trashed).map(([k]) => k).sort();
+      expect(live).toEqual(['sotsuken-backup-' + today + '.json', 'sotsuken-backup-2026-01-03.json', 'メモ.txt'].sort());
+    });
+
+    test('失敗したら、先生にメールで知らせる', async () => {
+      const s = loadScript({ ...baseProps, PROJECT_ID: 'no-such-project', FIRESTORE_BASE: 'http://127.0.0.1:1' });
+      expect(() => s.call('backupDaily')).toThrow();
+      expect(s.sent[0].subject).toContain('バックアップに失敗');
+      expect(s.sent[0].to).toBe('teacher@trident.ac.jp');
+    });
   });
 });

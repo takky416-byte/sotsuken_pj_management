@@ -6,6 +6,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 - [ ] 試運転(Dチーム)を終える → Claude に「試運転終了」と伝える → Actions の **reset-pilot**(teams=D, reset_team=true)を実行
 - [ ] FIXER 発表後、企画発表資料(PPTX/PDF)を夕方までに Claude へ渡す(氏名入りの資料はリポジトリにコミットしない)
 - [ ] Claude が16企画の大項目・タスク案を作成 → 内容を確認(10/27夜〜10/28朝)
+- [ ] Apps Script の `setupBackup` を実行 (毎日のバックアップ。apps-script/README.md の手順)
 - [ ] 名簿が28名ぶん登録済みか確認(教員画面 → 名簿)。同姓は1文字追加
 - [ ] カレンダー: 授業日とミーティング日(木曜)が正しいか確認。マイルストーン(企画決定 10/28、最終発表など)を登録
 - [ ] 16:50 学生へ案内(`docs/announcement.md`)を配布
@@ -45,4 +46,5 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 
 ## 運用中の確認(最初の1週間)
 - [ ] 毎日、使用状況の読み取り数(目安: 5万の半分以下)
-- [ ] 週1: データの書き出し(JSON)でバックアップ
+- [ ] 毎日のバックアップ: Apps Script で `setupBackup` を実行済みか。ドライブの「卒研PJ バックアップ」に、その日のファイルがあるか
+- [ ] 月1: 復元の予行(別のファイルでよいので、「内容を確認する」まで試す)

@@ -50,7 +50,7 @@ function TeamDetail({ team }: { team: Team }) {
         <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
       {tab === 'wbs' && <WbsEditor teamId={team.id} actor="teacher" members={team.members} />}
-      {tab === 'gantt' && <GanttChart teamId={team.id} members={team.members} />}
+      {tab === 'gantt' && <GanttChart teamId={team.id} actor="teacher" members={team.members} />}
       {tab === 'daily' && <TeamDaily team={team} />}
       {tab === 'meetings' && <MeetingRecords teamId={team.id} />}
       {tab === 'notes' && <TeacherNotes teamId={team.id} />}

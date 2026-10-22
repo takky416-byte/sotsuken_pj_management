@@ -182,6 +182,7 @@ test.describe.serial('運用の流れ', () => {
     await input.fill('ワイヤーフレームを完成させる');
     await input.press('Enter');
     await expect(t.getByText('ワイヤーフレームを完成させる')).toBeVisible();
+    await t.waitForTimeout(1500); // サーバーへの保存が終わる前に再読み込みすると、画面だけの変更が消える
 
     await t.reload(); // 保存されている
     await expect(t.getByLabel('決まったこと')).toHaveValue('画面を先に作る');

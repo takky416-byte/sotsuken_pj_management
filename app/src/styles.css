@@ -157,3 +157,4 @@ header h1, nav a, .who, button { white-space:nowrap; }
 .legend.doing { background:var(--accent); } .legend.done { background:var(--ok); } .legend.hold { background:var(--line); border:1px dashed var(--muted); }
 .legend.overdue { background:transparent; box-shadow:0 0 0 2px var(--danger); }
 @media (max-width:600px) { .gantt { --gantt-name:110px; } }
+.gantt-edit-name.d2 { padding-left:16px; } .gantt-edit-name.d3 { padding-left:32px; color:var(--muted); }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { buildGantt, daysBetween, pct, weekTicks } from './gantt';
+import { buildGantt, daysBetween, nextDates, pct, weekTicks } from './gantt';
 
 const t = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [],
@@ -48,5 +48,15 @@ describe('buildGantt', () => {
   });
   test('期間が長くても目盛りは16個まで', () => {
     expect(weekTicks({ start: '2026-10-28', end: '2036-10-28' }).length).toBeLessThanOrEqual(17);
+  });
+  test('日付の入力: 片方だけなら同じ日にそろえ、逆転しない', () => {
+    const none = { startDate: null, endDate: null };
+    expect(nextDates(none, 'startDate', '2026-11-02')).toEqual({ startDate: '2026-11-02', endDate: '2026-11-02' });
+    expect(nextDates(none, 'endDate', '2026-11-09')).toEqual({ startDate: '2026-11-09', endDate: '2026-11-09' });
+    const cur = { startDate: '2026-11-02', endDate: '2026-11-09' };
+    expect(nextDates(cur, 'endDate', '2026-11-20')).toEqual({ startDate: '2026-11-02', endDate: '2026-11-20' });
+    expect(nextDates(cur, 'startDate', '2026-11-15')).toEqual({ startDate: '2026-11-15', endDate: '2026-11-15' });
+    expect(nextDates(cur, 'endDate', '2026-10-30')).toEqual({ startDate: '2026-10-30', endDate: '2026-10-30' });
+    expect(nextDates(cur, 'startDate', '')).toEqual({ startDate: null, endDate: '2026-11-09' });
   });
 });

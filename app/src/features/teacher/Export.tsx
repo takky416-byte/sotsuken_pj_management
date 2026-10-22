@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Restore } from './Restore';
 import { download, loadBackup } from '../../data/export';
 import { jstDate } from '../../lib/dates';
 import {
@@ -73,7 +74,7 @@ export function Export() {
               教員専用のデータ(教員メモなど)も含める
             </label>
             <div className="row"><button onClick={json}>バックアップ(JSON)をダウンロード</button></div>
-            <p className="hint">全データが1つのファイルに入ります。復元が必要になったときに使います(復元の手順は、必要になったときに用意します)。</p>
+            <p className="hint">全データが1つのファイルに入ります。復元は、このページ下の「バックアップから復元する」で行います。</p>
           </div>
 
           <h3>CSV(Excelなどで開く用)</h3>
@@ -87,6 +88,7 @@ export function Export() {
           </div>
         </>
       )}
+      <Restore />
     </>
   );
 }

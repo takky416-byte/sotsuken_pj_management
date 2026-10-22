@@ -43,7 +43,7 @@ service cloud.firestore {
         && isDateOrNull(d.startDate) && isDateOrNull(d.endDate)
         && d.links is list && d.links.size() <= 10
         && d.source in ['user', 'draft']
-        && d.updatedBy == actor()
+        && (isTeacher() || d.updatedBy == actor()) // 教員は、バックアップの復元で、元の更新者のまま書ける
         && d.deleted is bool;
     }
 
@@ -74,7 +74,7 @@ service cloud.firestore {
       match /tasks/{taskId} {
         allow read: if canSeeTeam(teamId);
         allow create: if canSeeTeam(teamId) && validTask(request.resource.data)
-          && request.resource.data.createdBy == actor();
+          && (isTeacher() || request.resource.data.createdBy == actor());
         allow update: if canSeeTeam(teamId) && validTask(request.resource.data)
           && request.resource.data.createdBy == resource.data.createdBy;
         allow delete: if false; // 削除は deleted フラグ (ソフトデリート)

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useMilestones } from '../data/calendar';
-import { useTasks } from '../data/tasks';
+import { updateTask, useTasks } from '../data/tasks';
 import { formatDate, jstDate } from '../lib/dates';
-import { buildGantt, pct, weekTicks } from '../lib/gantt';
+import { buildGantt, nextDates, pct, weekTicks } from '../lib/gantt';
 import { STATUS_LABEL, type Member } from '../types';
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
-export function GanttChart({ teamId, members }: { teamId: string; members: Member[] }) {
+export function GanttChart({ teamId, actor, members }: { teamId: string; actor: string; members: Member[] }) {
   const { data: tasks, error } = useTasks(teamId);
   const milestones = useMilestones(teamId);
   const [deep, setDeep] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [err, setErr] = useState('');
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
@@ -23,7 +25,11 @@ export function GanttChart({ teamId, members }: { teamId: string; members: Membe
   return (
     <>
       <p className="hint">棒は、タスクの開始日〜終了日です(薄い棒は、中のタスクの日付から求めた期間)。日付が空のタスクは、棒が出ません。</p>
-      <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
+      <div className="row">
+        <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
+        <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>
+      </div>
+      {err && <p className="error">{err}</p>}
       <div className="gantt">
         <div className="gantt-head">
           <div className="gantt-name" />
@@ -63,6 +69,32 @@ export function GanttChart({ teamId, members }: { teamId: string; members: Membe
         <span className="legend todo" />未着手 <span className="legend doing" />進行中 <span className="legend done" />完了 <span className="legend hold" />保留
         <span className="legend overdue" />期限超過 / 赤い縦線は今日
       </p>
+      {edit && (
+        <div className="card">
+          <div className="label">日付の入力(開始日だけ入れると、1日のタスクになります。終了日は、あとから入れられます)</div>
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>タスク</th><th>開始日</th><th>終了日</th></tr></thead>
+              <tbody>
+                {[...g.rows.map((r) => r.task), ...g.undated.filter((u) => !g.rows.some((r) => r.task.id === u.id))].map((t) => {
+                  const row = g.rows.find((r) => r.task.id === t.id);
+                  const set = (field: 'startDate' | 'endDate', value: string) => {
+                    setErr('');
+                    updateTask(teamId, actor, t.id, nextDates(t, field, value)).catch((e) => setErr(`保存できませんでした: ${(e as Error).message}`));
+                  };
+                  return (
+                    <tr key={t.id}>
+                      <td className={`gantt-edit-name d${t.depth}`}>{t.title}</td>
+                      <td><input type="date" aria-label={`開始日 ${t.title}`} value={t.startDate ?? ''} placeholder={row?.derived ? row.start ?? '' : ''} onChange={(e) => set('startDate', e.target.value)} /></td>
+                      <td><input type="date" aria-label={`終了日 ${t.title}`} value={t.endDate ?? ''} onChange={(e) => set('endDate', e.target.value)} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {g.undated.length > 0 && (
         <details className="card">
           <summary>日付が未設定のタスク({g.undated.length}件)</summary>

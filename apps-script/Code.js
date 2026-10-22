@@ -7,6 +7,8 @@
  *   PROJECT_ID    Firebase のプロジェクト ID (既定 'sotsuken-pj')
  *   DATE_OVERRIDE 予行演習用の日付 (YYYY-MM-DD)。空なら今日。設定されていると、必ず試験モード (先生宛だけ)。
  *   LAST_SENT     二重送信の防止 (自動で設定される)
+ *   BACKUP_KEEP   バックアップを残す日数 (既定 60)
+ *   LAST_BACKUP   最後にバックアップした日 (自動)
  */
 
 var SLOT_LABEL = { morning: '午前 (木曜 1-2限)', afternoon: '午後 (火・水 3-4限)' };
@@ -35,6 +37,71 @@ function setup() {
 }
 function goLive() { PropertiesService.getScriptProperties().setProperty('MODE', 'live'); Logger.log('本番モードにしました。学生にメールが届きます。'); }
 function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 'test'); Logger.log('試験モードにしました。先生にだけ送ります。'); }
+
+// ---- 毎日のバックアップ (あなたの Google ドライブ「卒研PJ バックアップ」フォルダに、JSON を保存する) ----
+var BACKUP_FOLDER = '卒研PJ バックアップ';
+var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw'];
+var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'evaluationsPublished'];
+
+/** 初回の設定: 毎日 3 時ごろに backupDaily を動かすトリガーを作る。何度実行しても重複しない。 */
+function setupBackup() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'backupDaily') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('backupDaily').timeBased().inTimezone('Asia/Tokyo').atHour(3).nearMinute(0).everyDays(1).create();
+  Logger.log('バックアップのトリガーを作りました (毎日 3 時ごろ)。いま 1 回、実行します。');
+  backupDaily();
+}
+
+/** 全データを読み込んで、ドライブに JSON で保存する。アプリの「書き出し」のバックアップと同じ形式。 */
+function backupDaily() {
+  var props = PropertiesService.getScriptProperties();
+  var me = Session.getEffectiveUser().getEmail();
+  try {
+    var today = Reminder.jstDate(Date.now());
+    var collections = {};
+    TOP_COLLECTIONS.forEach(function (p) { collections[p] = listDocs_(p); });
+    collections.teams.forEach(function (t) {
+      TEAM_SUBCOLLECTIONS.forEach(function (sub) { collections['teams/' + t.id + '/' + sub] = listDocs_('teams/' + t.id + '/' + sub); });
+    });
+    var backup = {
+      meta: { app: 'sotsuken-pj', version: 1, exportedAt: new Date().toISOString(), includesTeacherNotes: true },
+      collections: collections,
+    };
+    var folder = backupFolder_();
+    var name = 'sotsuken-backup-' + today + '.json';
+    var content = JSON.stringify(backup);
+    var same = folder.getFilesByName(name);
+    if (same.hasNext()) same.next().setContent(content);
+    else folder.createFile(name, content, 'application/json');
+    var removed = pruneBackups_(folder, Number(props.getProperty('BACKUP_KEEP')) || 60);
+    props.setProperty('LAST_BACKUP', today);
+    var n = Object.keys(collections).reduce(function (a, k) { return a + collections[k].length; }, 0);
+    Logger.log('バックアップしました: ' + name + ' (' + n + '件)。古いバックアップを ' + removed + ' 件、ごみ箱に移しました。');
+    return { name: name, docs: n };
+  } catch (e) {
+    Logger.log('バックアップに失敗: ' + e);
+    try {
+      MailApp.sendEmail({ to: me, subject: '[卒研PJ管理] 毎日のバックアップに失敗しました', body: String(e) + '\n\nApps Script の「実行数」でログを確認してください。', name: '卒研PJ管理(自動送信)' });
+    } catch (e2) { /* メールも送れないときは、実行ログだけ */ }
+    throw e;
+  }
+}
+
+function backupFolder_() {
+  var it = DriveApp.getFoldersByName(BACKUP_FOLDER);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(BACKUP_FOLDER);
+}
+
+/** 名前 (sotsuken-backup-日付.json) が新しいものから keep 件を残し、古いものをごみ箱へ。返り値は、ごみ箱に移した数。 */
+function pruneBackups_(folder, keep) {
+  var files = [];
+  var it = folder.getFiles();
+  while (it.hasNext()) { var f = it.next(); if (/^sotsuken-backup-\d{4}-\d{2}-\d{2}\.json$/.test(f.getName())) files.push(f); }
+  files.sort(function (a, b) { return a.getName() < b.getName() ? 1 : -1; });
+  files.slice(keep).forEach(function (f) { f.setTrashed(true); });
+  return Math.max(0, files.length - keep);
+}
 
 // ---- 本体 ----
 function runReminder_(slot, opts) {

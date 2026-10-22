@@ -135,6 +135,10 @@ describe('タスク', () => {
   test('チームの誰でも他メンバーのタスクを編集できる', async () => {
     await assertSucceeds(updateDoc(doc(as(A2), 'teams/A/tasks/t1'), { title: '変更', updatedBy: 'A2' }));
   });
+  test('教員は、復元のために、ほかの人が作った・更新した形のタスクを書ける。学生はできない', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/tasks/restored'), task('A1', { updatedBy: 'A2' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/forged'), task('A2')));
+  });
   test('更新者を偽れない', async () => {
     await assertFails(updateDoc(doc(as(A2), 'teams/A/tasks/t1'), { updatedBy: 'A1' }));
   });

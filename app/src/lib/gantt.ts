@@ -70,6 +70,22 @@ export function buildGantt(tasks: Task[], milestones: Milestone[], today: string
   return { rows, undated, start, end, days: Math.max(1, daysBetween(start, end)) };
 }
 
+/**
+ * 日付を入れたときの、開始日・終了日の組。片方だけ入れたら、もう片方も同じ日にする。
+ * 終了が開始より前になるときは、変えた側に合わせて、もう片方を直す。
+ */
+export function nextDates(
+  cur: { startDate: string | null; endDate: string | null },
+  field: 'startDate' | 'endDate',
+  value: string,
+): { startDate: string | null; endDate: string | null } {
+  if (!value) return { ...cur, [field]: null };
+  if (field === 'startDate') {
+    return { startDate: value, endDate: cur.endDate && cur.endDate >= value ? cur.endDate : value };
+  }
+  return { startDate: cur.startDate && cur.startDate <= value ? cur.startDate : value, endDate: value };
+}
+
 /** 目盛り (月曜)。期間が長いときは、目盛りが16個以内になるよう間隔を広げる。 */
 export function weekTicks(g: Pick<Gantt, 'start' | 'end'>): string[] {
   const out: string[] = [];
