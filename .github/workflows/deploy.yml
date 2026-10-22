@@ -1,0 +1,39 @@
+name: Deploy app
+
+# 手動実行のみ。リポジトリのシークレット FIREBASE_SERVICE_ACCOUNT が必要。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Test and build
+        working-directory: app
+        run: |
+          npm run typecheck
+          npm test
+          npm run test:rules
+          npm run build
+      - name: Write credentials
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: Deploy hosting and rules
+        working-directory: app
+        run: npx firebase deploy --only hosting,firestore:rules --project sotsuken-pj

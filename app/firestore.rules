@@ -1,0 +1,135 @@
+rules_version = '2';
+
+// 権限の考え方は docs/design.md の「3. 権限」を参照。
+// アクセスできるのは @trident.ac.jp (メール確認済み) かつ roster にあるアカウントだけ。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function myEmail() { return request.auth.token.email.lower(); }
+
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@trident[.]ac[.]jp');
+    }
+    function inRoster() { return signedIn() && exists(/databases/$(database)/documents/roster/$(myEmail())); }
+    function me() { return get(/databases/$(database)/documents/roster/$(myEmail())).data; }
+    function isTeacher() { return inRoster() && me().role == 'teacher'; }
+    function isStudent() { return inRoster() && me().role == 'student'; }
+    function inTeam(t) { return isStudent() && me().teamId == t; }
+    function canSeeTeam(t) { return isTeacher() || inTeam(t); }
+    function actor() { return isTeacher() ? 'teacher' : me().sid; }
+
+    // 日本時間 (UTC+9) の今日を 20261028 の形で返す
+    function todayJst() {
+      let t = request.time + duration.value(9, 'h');
+      return t.year() * 10000 + t.month() * 100 + t.day();
+    }
+
+    function isDateOrNull(v) { return v == null || (v is string && v.size() == 10); }
+
+    function validTask(d) {
+      return d.keys().hasOnly([
+          'title', 'detail', 'parentId', 'depth', 'order', 'status', 'assignees',
+          'startDate', 'endDate', 'links', 'source', 'createdBy', 'updatedBy',
+          'createdAt', 'updatedAt', 'deleted', 'deletedAt'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 200
+        && d.detail is string && d.detail.size() <= 5000
+        && (d.parentId == null || d.parentId is string)
+        && d.depth in [1, 2, 3]
+        && d.order is number
+        && d.status in ['todo', 'doing', 'done', 'hold']
+        && d.assignees is list && d.assignees.size() <= 10
+        && isDateOrNull(d.startDate) && isDateOrNull(d.endDate)
+        && d.links is list && d.links.size() <= 10
+        && d.source in ['user', 'draft']
+        && d.updatedBy == actor()
+        && d.deleted is bool;
+    }
+
+    function validDaily(d) {
+      return d.keys().hasOnly([
+          'sid', 'date', 'dayKey', 'entries', 'blocker', 'absent', 'submittedAt', 'updatedAt'])
+        && d.sid is string && d.date is string && d.date.size() == 10
+        && d.dayKey is int
+        && d.entries is list && d.entries.size() <= 30
+        && d.blocker is string && d.blocker.size() <= 2000
+        && d.absent is bool;
+    }
+
+    // ---- 名簿 ----
+    match /roster/{email} {
+      allow get: if signedIn() && email == myEmail();
+      allow read, write: if isTeacher();
+    }
+
+    // ---- チーム ----
+    match /teams/{teamId} {
+      allow read: if canSeeTeam(teamId);
+      allow write: if isTeacher();
+
+      match /tasks/{taskId} {
+        allow read: if canSeeTeam(teamId);
+        allow create: if canSeeTeam(teamId) && validTask(request.resource.data)
+          && request.resource.data.createdBy == actor();
+        allow update: if canSeeTeam(teamId) && validTask(request.resource.data)
+          && request.resource.data.createdBy == resource.data.createdBy;
+        allow delete: if false; // 削除は deleted フラグ (ソフトデリート)
+      }
+
+      match /dailyReports/{reportId} {
+        allow read: if isTeacher()
+          || (inTeam(teamId) && (resource.data.sid == me().sid
+              || get(/databases/$(database)/documents/config/settings).data.peerDailyView == true));
+        allow create: if isTeacher() && validDaily(request.resource.data)
+          || (inTeam(teamId) && validDaily(request.resource.data)
+              && request.resource.data.sid == me().sid
+              && reportId == request.resource.data.date + '_' + me().sid
+              && request.resource.data.dayKey == todayJst()
+              && request.resource.data.absent == false);
+        allow update: if isTeacher() && validDaily(request.resource.data)
+          || (inTeam(teamId) && validDaily(request.resource.data)
+              && resource.data.sid == me().sid
+              && request.resource.data.sid == me().sid
+              && resource.data.dayKey == todayJst()
+              && request.resource.data.dayKey == resource.data.dayKey
+              && resource.data.absent == false
+              && request.resource.data.absent == false);
+        allow delete: if false;
+      }
+
+      match /meetings/{date} {
+        allow read: if canSeeTeam(teamId);
+        allow write: if isTeacher()
+          || (inTeam(teamId) && get(/databases/$(database)/documents/teams/$(teamId)).data.teamMeetingInput == true);
+      }
+
+      match /comments/{commentId} {
+        allow read: if canSeeTeam(teamId);
+        allow write: if isTeacher();
+      }
+
+      match /evaluationsPublished/{docId} {
+        allow read: if canSeeTeam(teamId);
+        allow write: if isTeacher();
+      }
+    }
+
+    // ---- 共通設定・マイルストーン ----
+    match /config/{docId} {
+      allow read: if inRoster();
+      allow write: if isTeacher();
+    }
+
+    match /milestones/{id} {
+      allow read: if isTeacher()
+        || (inRoster() && (resource.data.teamId == null || inTeam(resource.data.teamId)));
+      allow write: if isTeacher();
+    }
+
+    // ---- 教員専用 (学生からは読めない) ----
+    match /teacherNotes/{id} { allow read, write: if isTeacher(); }
+    match /followups/{id} { allow read, write: if isTeacher(); }
+    match /evaluationsRaw/{id} { allow read, write: if isTeacher(); }
+  }
+}

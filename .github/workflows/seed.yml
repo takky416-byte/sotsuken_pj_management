@@ -1,0 +1,42 @@
+name: Seed initial data
+
+# 初回だけ実行する。教員の名簿とチーム A〜H を作る (既存のチームは上書きしない)。
+on:
+  workflow_dispatch:
+    inputs:
+      teacher_email:
+        description: 教員のメールアドレス (@trident.ac.jp)
+        required: true
+      teacher_name:
+        description: 教員の表示名 (苗字)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Write credentials
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: Seed
+        working-directory: app
+        env:
+          TEACHER_EMAIL: ${{ inputs.teacher_email }}
+          TEACHER_NAME: ${{ inputs.teacher_name }}
+        run: node scripts/seed.mjs

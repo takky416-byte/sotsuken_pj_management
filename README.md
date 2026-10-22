@@ -1,33 +1,25 @@
 # 卒研PJ管理システム
 
-教員が複数の学生の卒業研究の進捗を一覧で把握し、学生がタスク・日程・週次ログを管理するWebアプリです。
+専門学校の卒業研究 (チーム制作) の進捗を、WBS・日報・週1回のミーティング画面で把握するための Web アプリ。
 
-## 機能
-
-| | 学生 | 教員 |
-|---|---|---|
-| カンバン (未着手/進行中/完了、ドラッグ移動、優先度・期限) | 編集 | 閲覧 |
-| スケジュール (マイルストーンのガント表示 + タスク期限) | 編集 | 閲覧・マイルストーン追加 |
-| 研究ログ (週次の進捗/課題/来週の予定) | 投稿・編集 | 閲覧・コメント |
-| ダッシュボード (進捗数・期限超過・次のマイルストーン・未コメントログ) | — | ○ |
-
-## セットアップ
-
-Node.js 22.13 以上が必要です (組み込みの `node:sqlite` を使用)。
-
-```sh
-npm run install:all
-npm run build
-npm start          # http://localhost:3000
-```
-
-- **最初に登録したユーザーが教員**になります。教員のダッシュボードに表示される**招待コード**を学生に伝え、学生は新規登録時にそれを入力します。
-- データは `server/data.db` (SQLite) に保存されます。`DB_PATH` / `PORT` / `JWT_SECRET` 環境変数で変更できます。
+- 決定事項: `docs/decisions.md`
+- 設計書: `docs/design.md`
 
 ## 開発
 
 ```sh
-npm run dev:server   # API (:3000)
-npm run dev:client   # Vite (:5173, /api は :3000 へプロキシ)
-npm test             # APIテスト
+cd app
+npm ci
+npm run dev           # 開発サーバー (本番の Firebase に接続する)
+npm run typecheck
+npm test              # 純粋関数のテスト
+npm run test:rules    # Security Rules のテスト (Firestore エミュレータ。Java が必要)
+npm run build
 ```
+
+## デプロイ
+
+GitHub Actions を手動で実行する (リポジトリのシークレット `FIREBASE_SERVICE_ACCOUNT` が必要)。
+
+- `Seed initial data`: 初回のみ。教員の名簿とチーム A〜H を作る。
+- `Deploy app`: テスト → ビルド → Hosting と Firestore ルールを公開する。
