@@ -1,20 +1,31 @@
 import type { Task } from '../types';
 import type { Daily } from './daily';
 import { statusOf } from './daily';
+import { TEMPLATE_NODES } from './template';
+
+const TEMPLATE_TITLES = new Set(TEMPLATE_NODES.map((n) => n.title));
+
+/**
+ * キックオフで作られた雛形の大項目のうち、まだ誰も手を付けていないもの (子がなく、担当・状態・日付が初期のまま)。
+ * 一覧 (担当がいない・触れられていない) には出さない。
+ */
+export const isPlaceholder = (tasks: Task[], t: Task) =>
+  t.depth === 1 && t.createdBy === 'teacher' && TEMPLATE_TITLES.has(t.title) && t.status === 'todo'
+  && t.assignees.length === 0 && t.startDate === null && t.endDate === null && isLeaf(tasks, t);
 
 /** 葉のタスク (生きている子を持たないタスク) */
 export const isLeaf = (tasks: Task[], t: Task) => !tasks.some((c) => !c.deleted && c.parentId === t.id);
 
 /** 期限を過ぎていて、完了も保留もしていないタスク。 */
 export function delayedTasks(tasks: Task[], today: string): Task[] {
-  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && t.status !== 'done' && t.status !== 'hold'
+  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && !isPlaceholder(tasks, t) && t.status !== 'done' && t.status !== 'hold'
     && t.endDate !== null && t.endDate < today)
     .sort((a, b) => (a.endDate ?? '').localeCompare(b.endDate ?? ''));
 }
 
 /** 担当者がいないタスク (完了・保留を除く)。 */
 export function unassignedTasks(tasks: Task[]): Task[] {
-  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && t.status !== 'done' && t.status !== 'hold' && t.assignees.length === 0);
+  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && !isPlaceholder(tasks, t) && t.status !== 'done' && t.status !== 'hold' && t.assignees.length === 0);
 }
 
 /**
@@ -23,7 +34,7 @@ export function unassignedTasks(tasks: Task[]): Task[] {
  */
 export function untouchedTasks(tasks: Task[], dailies: Daily[], today: string): Task[] {
   const touched = new Set(dailies.flatMap((d) => d.entries.map((e) => e.taskId).filter((x): x is string => !!x)));
-  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && t.status !== 'done' && t.status !== 'hold'
+  return tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && !isPlaceholder(tasks, t) && t.status !== 'done' && t.status !== 'hold'
     && (t.status === 'doing' || (t.startDate !== null && t.startDate <= today && (t.endDate === null || t.endDate >= today)))
     && !touched.has(t.id));
 }

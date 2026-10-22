@@ -190,11 +190,14 @@ function AddBox({ placeholder, onAdd, onPaste, onCancel, autoFocus }: {
     if (text.includes('\n')) { e.preventDefault(); onPaste(text); setV(''); }
   };
   return (
-    <input
-      className="add-input" value={v} placeholder={placeholder} autoFocus={autoFocus}
-      maxLength={200} onChange={(e) => setV(e.target.value)} onKeyDown={key} onPaste={paste}
-      onBlur={() => { if (!v) onCancel?.(); }}
-    />
+    <div className="addbox">
+      <input
+        className="add-input" value={v} placeholder={placeholder} autoFocus={autoFocus}
+        maxLength={200} onChange={(e) => setV(e.target.value)} onKeyDown={key} onPaste={paste}
+      />
+      {/* 入力欄は、他の行を操作しても勝手に閉じない (閉じると画面がずれて、押したボタンが空振りする) */}
+      {onCancel && <button className="ghost icon" aria-label="入力欄を閉じる" onClick={onCancel}>×</button>}
+    </div>
   );
 }
 

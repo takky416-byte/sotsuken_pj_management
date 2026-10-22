@@ -1,0 +1,40 @@
+name: E2E
+
+# 手動実行。Firebase エミュレータ (auth + firestore) と実際のブラウザで、ログインから日報・ミーティングまでを通しで確認する。
+# 本番のデータには触れない。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Install browser
+        working-directory: app
+        run: npx playwright install --with-deps chromium
+      - name: E2E
+        working-directory: app
+        run: npm run test:e2e
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: app/test-results
+          retention-days: 7

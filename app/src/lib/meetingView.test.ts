@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import type { Daily } from './daily';
-import { concerns, delayedTasks, touchedByMember, unassignedTasks, untouchedTasks } from './meetingView';
+import { concerns, delayedTasks, isPlaceholder, touchedByMember, unassignedTasks, untouchedTasks } from './meetingView';
 
 const T = (id: string, over: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: ['A1'],
@@ -10,6 +10,25 @@ const T = (id: string, over: Partial<Task> = {}): Task => ({
 });
 const D = (sid: string, date: string, over: Partial<Daily> = {}): Daily => ({
   id: `${date}_${sid}`, sid, date, dayKey: 0, entries: [], blocker: '', absent: false, ...over,
+});
+
+describe('雛形の大項目 (空の見出し) は、一覧に出さない', () => {
+  const head = (id: string, over: Partial<Task> = {}) => T(id, { title: '外部設計', createdBy: 'teacher', assignees: [], ...over });
+  test('手を付けていない見出しは対象外。担当や状態が付いた・子ができた・学生が作った同名は対象', () => {
+    expect(isPlaceholder([head('h')], head('h'))).toBe(true);
+    expect(isPlaceholder([head('h', { status: 'doing' })], head('h', { status: 'doing' }))).toBe(false);
+    expect(isPlaceholder([head('h', { assignees: ['A1'] })], head('h', { assignees: ['A1'] }))).toBe(false);
+    expect(isPlaceholder([head('h', { createdBy: 'A1' })], head('h', { createdBy: 'A1' }))).toBe(false);
+    expect(isPlaceholder([head('h'), T('c', { parentId: 'h', depth: 2 })], head('h'))).toBe(false);
+    expect(isPlaceholder([T('x', { title: '自分たちで足した項目', createdBy: 'teacher' })], T('x', { title: '自分たちで足した項目', createdBy: 'teacher' }))).toBe(false);
+  });
+  test('担当なし・触れられていない・期限超過の一覧に、空の見出しは出ない', () => {
+    const tasks = [head('h'), T('real', { assignees: [], status: 'doing' })];
+    expect(unassignedTasks(tasks).map((x) => x.id)).toEqual(['real']);
+    expect(untouchedTasks(tasks, [], '2026-11-05').map((x) => x.id)).toEqual(['real']);
+    // 終了日を入れた見出しは、手を付けたものとして、期限超過の対象になる
+    expect(delayedTasks([head('h', { endDate: '2026-11-01' })], '2026-11-05').map((x) => x.id)).toEqual(['h']);
+  });
 });
 
 describe('meetingView', () => {

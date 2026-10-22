@@ -1,0 +1,6 @@
+test-results/
+playwright-report/
+e2e-shots/
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

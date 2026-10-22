@@ -105,3 +105,24 @@ label.check { flex-direction:row; align-items:center; gap:8px; color:var(--fg); 
 fieldset.preview { border:0; padding:0; margin:0; min-width:0; }
 fieldset.preview button:disabled, fieldset.preview input:disabled, fieldset.preview select:disabled, fieldset.preview textarea:disabled { opacity:.9; cursor:default; }
 .note-input.need { border-color:var(--danger); }
+.addbox { display:flex; gap:4px; align-items:center; }
+.add-input { flex:1; }
+
+/* --- スマホ幅の調整 --- */
+header { flex-wrap:wrap; row-gap:4px; }
+header h1, nav a, .who, button { white-space:nowrap; }
+@media (max-width:640px) {
+  header { padding:8px 12px; gap:8px; }
+  header h1 { font-size:16px; margin-right:auto; }
+  header .spacer { display:none; }
+  header nav { order:5; width:100%; margin-left:0; overflow-x:auto; }
+  header .who { font-size:12px; }
+  main { padding:12px 12px 60px; }
+  .wbs-row { row-gap:2px; }
+  .wbs-row .title-input { flex:1 1 calc(100% - 44px); }
+  .wbs-row > :not(.title-input):not(:first-child) { margin-left:0; }
+  .wbs-row .icon, select.status { min-height:36px; }
+  .wbs-row.depth-2 > :nth-child(n+3):not(:last-child), .wbs-row.depth-3 > :nth-child(n+3):not(:last-child) { }
+  .table th, .table td { padding:6px; }
+  .meeting-head h2 { font-size:18px; }
+}
