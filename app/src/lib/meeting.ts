@@ -1,7 +1,14 @@
 import type { ClassDay } from '../types';
 import { TEAM_IDS } from '../types';
 
-export type MeetingAction = { text: string; done: boolean };
+/** owner: 約束した人 (学生ID)。null は、チーム全体 */
+export type MeetingAction = { text: string; done: boolean; owner?: string | null };
+
+/** 前回の未完了のアクションのうち、今回の一覧にまだないもの (引き継ぐ候補)。 */
+export function carryOver(prev: MeetingAction[], current: MeetingAction[]): MeetingAction[] {
+  const have = new Set(current.map((a) => `${a.owner ?? ''}|${a.text}`));
+  return prev.filter((a) => !a.done && !have.has(`${a.owner ?? ''}|${a.text}`)).map((a) => ({ text: a.text, done: false, owner: a.owner ?? null }));
+}
 
 export type Meeting = {
   id: string; // 日付 (YYYY-MM-DD)

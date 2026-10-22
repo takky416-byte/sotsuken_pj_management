@@ -8,7 +8,7 @@ export type Backup = {
   collections: Record<string, Doc[]>;
 };
 
-const TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'evaluationsPublished'] as const;
+const TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'evaluationsPublished'] as const;
 export const TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw'] as const;
 export const TEACHER_ONLY = ['teacherNotes', 'followups', 'evaluationsRaw'];
 
@@ -144,6 +144,7 @@ export function counts(b: Backup): { label: string; n: number }[] {
     { label: '日報', n: sum('dailyReports') },
     { label: 'ミーティング記録', n: sum('meetings') },
     { label: 'コメント', n: sum('comments') },
+    { label: 'ありがとう', n: sum('thanks') },
     { label: '予定', n: col(b, 'milestones').length },
     { label: '教員メモ', n: col(b, 'teacherNotes').length },
   ];

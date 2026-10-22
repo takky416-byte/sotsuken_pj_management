@@ -4,7 +4,7 @@
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments'];
+const SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks'];
 const VALID_TEAM = /^[A-H]$/;
 
 export function parseTeams(text) {

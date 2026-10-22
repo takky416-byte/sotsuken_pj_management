@@ -14,7 +14,7 @@ import { useTeam } from '../../data/teams';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
 import { addDays, dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import {
-  meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
+  carryOver, meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
 } from '../../lib/meeting';
 import {
   concerns, delayedTasks, touchedByMember, unassignedTasks, untouchedTasks,
@@ -133,6 +133,7 @@ function MeetingScreen({ team }: { team: Team }) {
                           actions: prev.actions.map((x, j) => (j === i ? { ...x, done: !x.done } : x)),
                         }))}
                       />
+                      {a.owner && <span className="badge">{nameOf(a.owner)}</span>}
                       <span className={a.done ? 'done-text' : ''}>{a.text}</span>
                     </label>
                   </li>
@@ -186,7 +187,7 @@ function MeetingScreen({ team }: { team: Team }) {
         <h3>⑤ 今日決めること {todayDoc && <span className="hint">(記録済み)</span>}</h3>
         {team.status !== 'active' ? <p className="hint">キックオフ後に記録できます。</p> : (
           <RecordForm
-            key={todayDoc?.id ?? 'none'} doc={todayDoc} canEdit={canEdit}
+            key={todayDoc?.id ?? 'none'} doc={todayDoc} canEdit={canEdit} members={team.members} prevActions={prev?.actions ?? []}
             onSave={(data) => run(() => saveMeeting(team.id, today, teacher ? 'teacher' : me.sid ?? '', data))}
           />
         )}
@@ -217,18 +218,23 @@ function TaskList({ label, tasks, warn }: { label: string; tasks: { id: string; 
   );
 }
 
-function RecordForm({ doc: m, canEdit, onSave }: {
+function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
   doc: Meeting | undefined;
   canEdit: boolean;
+  members: Team['members'];
+  prevActions: MeetingAction[];
   onSave: (data: Partial<{ decided: string; actions: MeetingAction[]; note: string }>) => void;
 }) {
   const [decided, setDecided] = useState(m?.decided ?? '');
   const [actions, setActions] = useState<MeetingAction[]>(m?.actions ?? []);
   const [text, setText] = useState('');
+  const [owner, setOwner] = useState('');
+  const nameOf = (sid: string) => members.find((x) => x.sid === sid)?.name ?? sid;
+  const carry = carryOver(prevActions, actions);
   useEffect(() => { setDecided(m?.decided ?? ''); setActions(m?.actions ?? []); }, [m?.decided, m?.actions]);
 
   const save = (next: MeetingAction[]) => { setActions(next); onSave({ actions: next }); };
-  const add = () => { if (text.trim()) { save([...actions, { text: text.trim(), done: false }]); setText(''); } };
+  const add = () => { if (text.trim()) { save([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
 
   return (
     <div className="form">
@@ -243,6 +249,7 @@ function RecordForm({ doc: m, canEdit, onSave }: {
             <label className="check">
               <input type="checkbox" checked={a.done} disabled={!canEdit}
                 onChange={() => save(actions.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))} />
+              {a.owner && <span className="badge">{nameOf(a.owner)}</span>}
               <span className={a.done ? 'done-text' : ''}>{a.text}</span>
             </label>
             {canEdit && <button className="ghost icon" aria-label="削除" onClick={() => save(actions.filter((_, j) => j !== i))}>×</button>}
@@ -250,11 +257,20 @@ function RecordForm({ doc: m, canEdit, onSave }: {
         ))}
       </ul>
       {canEdit && (
-        <input
-          placeholder="やることを入力して Enter" value={text} maxLength={200}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) add(); }}
-        />
+        <div className="row">
+          <select aria-label="担当する人" value={owner} onChange={(e) => setOwner(e.target.value)}>
+            <option value="">チーム全体</option>
+            {members.map((x) => <option key={x.sid} value={x.sid}>{x.name}</option>)}
+          </select>
+          <input
+            placeholder="やることを入力して Enter" value={text} maxLength={200}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) add(); }}
+          />
+        </div>
+      )}
+      {canEdit && carry.length > 0 && (
+        <button className="ghost" onClick={() => save([...actions, ...carry])}>前回の未完了 {carry.length}件を引き継ぐ</button>
       )}
       {!canEdit && <p className="hint">記録は先生が入力します。</p>}
     </div>

@@ -2,6 +2,8 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-do
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
 import { Help } from './features/Help';
+import { Celebration } from './components/Celebration';
+import { ThemePicker } from './components/ThemePicker';
 import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
@@ -45,8 +47,10 @@ function Shell() {
         )}
         <span className="spacer" />
         <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : '(教員)'}</span>
+        <ThemePicker />
         <button className="ghost" onClick={logout}>ログアウト</button>
       </header>
+      <Celebration />
       <main>
         {teacher ? (
           <Routes>

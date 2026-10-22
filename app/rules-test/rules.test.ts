@@ -205,6 +205,39 @@ describe('日報', () => {
   });
 });
 
+describe('ありがとう', () => {
+  const thank = (from: string, to: string, over: Record<string, unknown> = {}) =>
+    ({ from, to, note: '助かった', date: jstDate(), createdAt: 1, ...over });
+  test('チームの仲間に、自分の名前で送れる。内容は変えられない', async () => {
+    const ref = doc(as(A1), 'teams/A/thanks/x1');
+    await assertSucceeds(setDoc(ref, thank('A1', 'A2')));
+    await assertFails(updateDoc(ref, { note: '変更' }));
+  });
+  test('送り主を偽れない・自分には送れない・長すぎる・過去の日付・余計な項目は不可', async () => {
+    await assertFails(setDoc(doc(as(A1), 'teams/A/thanks/x2'), thank('A2', 'A1')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/thanks/x3'), thank('A1', 'A1')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/thanks/x4'), thank('A1', 'A2', { note: 'あ'.repeat(101) })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/thanks/x5'), thank('A1', 'A2', { date: '2026-01-01' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/thanks/x6'), thank('A1', 'A2', { points: 100 })));
+  });
+  test('他のチームには送れない・読めない', async () => {
+    await assertFails(setDoc(doc(as(B1), 'teams/A/thanks/x7'), thank('B1', 'A1')));
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/thanks/x8'), thank('A1', 'A2')));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/thanks/x8')));
+    await assertSucceeds(getDoc(doc(as(A2), 'teams/A/thanks/x8')));
+  });
+  test('取り消せるのは、送った本人と教員だけ', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/thanks/x9'), thank('A1', 'A2')));
+    await assertFails(deleteDoc(doc(as(A2), 'teams/A/thanks/x9')));
+    await assertSucceeds(deleteDoc(doc(as(A1), 'teams/A/thanks/x9')));
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/thanks/x10'), thank('A1', 'A2')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/thanks/x10')));
+  });
+  test('教員も送れる (from は teacher)', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/thanks/x11'), thank('teacher', 'A1')));
+  });
+});
+
 describe('ミーティング記録・コメント・設定', () => {
   test('学生は、チームの設定が許可しているときだけ記録を書ける', async () => {
     const ref = doc(as(A1), 'teams/A/meetings/2026-10-29');

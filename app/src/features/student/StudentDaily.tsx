@@ -5,6 +5,8 @@ import { useClassDays } from '../../data/calendar';
 import { saveDaily, useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
+import { celebrate } from '../../lib/celebrate';
+import { streakIfSubmitted } from '../../lib/engagement';
 import { FIXED_KINDS, dailyId, entriesMissingNote, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 
@@ -39,7 +41,11 @@ export function StudentDaily() {
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
       {mineToday?.absent
         ? <p className="card">今日は「欠席」として記録されています。</p>
-        : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} />}
+        : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} onSubmitted={(first) => {
+            if (!first) return;
+            const n = streakIfSubmitted(dailies, me.sid!, classDays, settings.dailyStartDate, from, today);
+            celebrate(n >= 2 ? `提出しました! ${n}日連続` : '提出しました! おつかれさま');
+          }} />}
 
       <h3>{peer ? 'チームの日報' : '自分の日報'}</h3>
       <DailyFeed
@@ -52,12 +58,17 @@ export function StudentDaily() {
   );
 }
 
-function DailyForm({ teamId, sid, today, prev, tasks }: {
+function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
   teamId: string; sid: string; today: string; prev: Daily | undefined; tasks: ReturnType<typeof useTasks>['data'] & object;
+  onSubmitted: (first: boolean) => void;
 }) {
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
+  // まだ書いていないときは、今日自分が更新したタスクを、先に選んでおく (選ぶ手間を減らす。一言は、自分で書く)
+  const [preselected] = useState(() => prev ? [] : live.filter((t) => t.updatedBy === sid && jstDate(new Date(t.updatedAt)) === today).map((t) => t.id));
   const [taskNotes, setTaskNotes] = useState<Map<string, string>>(
-    new Map((prev?.entries ?? []).filter((e) => e.kind === 'task' && e.taskId).map((e) => [e.taskId!, e.note])));
+    new Map(prev
+      ? (prev.entries ?? []).filter((e) => e.kind === 'task' && e.taskId).map((e) => [e.taskId!, e.note])
+      : preselected.map((id) => [id, ''])));
   const [kindNotes, setKindNotes] = useState<Map<DailyKind, string>>(
     new Map((prev?.entries ?? []).filter((e) => e.kind !== 'task').map((e) => [e.kind, e.note])));
   const [blocker, setBlocker] = useState(prev?.blocker ?? '');
@@ -85,8 +96,10 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
   const submit = async () => {
     setState('saving'); setErr('');
     try {
+      const first = statusOf(prev) !== 'submitted';
       await saveDaily(teamId, sid, today, entries, blocker.trim(), prev);
       setState('saved');
+      onSubmitted(first);
     } catch (e) {
       setState('idle');
       setErr(`提出できませんでした: ${(e as Error).message}`);
@@ -97,6 +110,7 @@ function DailyForm({ teamId, sid, today, prev, tasks }: {
   return (
     <div className="card form">
       <div className="label">今日やったこと(あてはまるものを選んでください)</div>
+      {preselected.length > 0 && <p className="hint">今日、あなたが更新したタスクを、選んでおきました(外してもかまいません)。</p>}
       {candidates.length === 0 && <p className="hint">選べるタスクがまだありません。下の「調査・勉強」などを選ぶか、WBSにタスクを追加してください。</p>}
       {candidates.map((t) => (
         <div className="pick" key={t.id}>

@@ -4,7 +4,7 @@ import { formatDate, isDateString, jstDate } from '../../lib/dates';
 import type { Meeting, MeetingAction } from '../../lib/meeting';
 
 /** 教員用: そのチームのミーティング記録の一覧。過去の記録の編集・削除と、日付を指定しての追加。 */
-export function MeetingRecords({ teamId }: { teamId: string }) {
+export function MeetingRecords({ teamId, members }: { teamId: string; members: { sid: string; name: string }[] }) {
   const { data: meetings, error } = useAllMeetings(teamId);
   const [date, setDate] = useState(jstDate());
   const [err, setErr] = useState('');
@@ -25,19 +25,20 @@ export function MeetingRecords({ teamId }: { teamId: string }) {
         </button>
       </div>
       {meetings.length === 0 && <p className="hint">記録はまだありません。</p>}
-      {meetings.map((m) => <Record key={`${m.id}-${m.updatedAt}`} teamId={teamId} m={m} run={run} />)}
+      {meetings.map((m) => <Record key={`${m.id}-${m.updatedAt}`} teamId={teamId} m={m} run={run} members={members} />)}
     </>
   );
 }
 
-function Record({ teamId, m, run }: { teamId: string; m: Meeting; run: (fn: () => Promise<unknown>) => Promise<void> }) {
+function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: (fn: () => Promise<unknown>) => Promise<void>; members: { sid: string; name: string }[] }) {
   const [decided, setDecided] = useState(m.decided);
   const [actions, setActions] = useState<MeetingAction[]>(m.actions);
   const [text, setText] = useState('');
+  const [owner, setOwner] = useState('');
   const [sure, setSure] = useState(false);
   const changed = decided !== m.decided || JSON.stringify(actions) !== JSON.stringify(m.actions);
 
-  const addAction = () => { if (text.trim()) { setActions([...actions, { text: text.trim(), done: false }]); setText(''); } };
+  const addAction = () => { if (text.trim()) { setActions([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
 
   return (
     <div className="card form">
@@ -51,14 +52,21 @@ function Record({ teamId, m, run }: { teamId: string; m: Meeting; run: (fn: () =
           <li key={i} className="row">
             <label className="check">
               <input type="checkbox" checked={a.done} onChange={() => setActions(actions.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))} />
+              {a.owner && <span className="badge">{members.find((x) => x.sid === a.owner)?.name ?? a.owner}</span>}
               <span className={a.done ? 'done-text' : ''}>{a.text}</span>
             </label>
             <button className="ghost icon" aria-label="やることを削除" onClick={() => setActions(actions.filter((_, j) => j !== i))}>×</button>
           </li>
         ))}
       </ul>
-      <input aria-label={`やることを追加 ${m.id}`} placeholder="やることを入力して Enter" value={text} maxLength={200}
-        onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) addAction(); }} />
+      <div className="row">
+        <select aria-label={`担当する人 ${m.id}`} value={owner} onChange={(e) => setOwner(e.target.value)}>
+          <option value="">チーム全体</option>
+          {members.map((x) => <option key={x.sid} value={x.sid}>{x.name}</option>)}
+        </select>
+        <input aria-label={`やることを追加 ${m.id}`} placeholder="やることを入力して Enter" value={text} maxLength={200}
+          onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) addAction(); }} />
+      </div>
       <div className="row">
         <button disabled={!changed} onClick={() => run(() => saveMeeting(teamId, m.id, 'teacher', { decided, actions }))}>保存</button>
         {!sure

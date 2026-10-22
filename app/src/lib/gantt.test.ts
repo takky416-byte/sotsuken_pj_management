@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { buildGantt, daysBetween, nextDates, pct, weekTicks } from './gantt';
+import { buildGantt, daysBetween, nextDates, pct, placeMilestones, weekTicks } from './gantt';
 
 const t = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [],
@@ -58,5 +58,24 @@ describe('buildGantt', () => {
     expect(nextDates(cur, 'startDate', '2026-11-15')).toEqual({ startDate: '2026-11-15', endDate: '2026-11-15' });
     expect(nextDates(cur, 'endDate', '2026-10-30')).toEqual({ startDate: '2026-10-30', endDate: '2026-10-30' });
     expect(nextDates(cur, 'startDate', '')).toEqual({ startDate: null, endDate: '2026-11-09' });
+  });
+  test('マイルストーン: 近い日付は、別の段に振り分けて、文字が重ならない', () => {
+    const g = { start: '2026-10-26', days: 100 };
+    const ms = [
+      { id: 'a', title: '企画発表', date: '2026-10-28' },
+      { id: 'b', title: '企画決定', date: '2026-10-28' },
+      { id: 'c', title: '機材発注シメ', date: '2026-11-01' },
+      { id: 'd', title: '最終発表', date: '2027-02-01' },
+    ];
+    const { places, lanes } = placeMilestones(ms, g);
+    const lane = (id: string) => places.find((p) => p.id === id)!.lane;
+    expect(new Set([lane('a'), lane('b'), lane('c')]).size).toBe(3);
+    expect(lanes).toBeGreaterThanOrEqual(3);
+    expect(places.find((p) => p.id === 'd')!.align).toBe('right'); // 右端は、左に伸ばす
+  });
+  test('マイルストーン: 離れていれば、1段に収まる', () => {
+    const g = { start: '2026-10-26', days: 100 };
+    const { lanes } = placeMilestones([{ id: 'a', title: 'A', date: '2026-10-28' }, { id: 'b', title: 'B', date: '2026-12-28' }], g);
+    expect(lanes).toBe(1);
   });
 });

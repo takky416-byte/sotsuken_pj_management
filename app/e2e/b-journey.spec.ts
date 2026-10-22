@@ -93,23 +93,27 @@ test.describe.serial('運用の流れ', () => {
     await page.getByRole('link', { name: '日報', exact: true }).click();
     await expect(page.getByRole('heading', { name: '日報', exact: true })).toBeVisible();
 
+    // 今日自分が更新したタスク (この流れで作ったもの) は、先に選ばれている。一言がないので、まだ提出できない
     const submit = page.getByRole('button', { name: '提出する' });
-    await expect(submit).toBeDisabled(); // 何も選んでいない
-    await page.getByLabel('ログイン画面を作る').check(); // 進行中・担当のタスクが候補に出る
-    await expect(submit).toBeDisabled(); // 一言がない
+    await expect(page.getByText('今日、あなたが更新したタスクを、選んでおきました')).toBeVisible();
+    await expect(page.getByLabel('ログイン画面を作る')).toBeChecked();
+    await expect(submit).toBeDisabled();
     await expect(page.getByText('選んだ項目に、一言を書いてください')).toBeVisible();
-    await page.getByPlaceholder('何をしたか一言(必須)').fill('画面の下書きを作った');
+    await page.getByLabel('ログイン画面を作る').uncheck(); // 外せる
+    await page.getByLabel('ログイン画面を作る').check();
+    const notes = page.getByPlaceholder('何をしたか一言(必須)');
+    for (let i = 0; i < await notes.count(); i++) await notes.nth(i).fill(i === 0 ? '画面の下書きを作った' : '手を入れた');
     await expect(submit).toBeEnabled();
     await submit.click();
-    await expect(page.getByText('提出しました')).toBeVisible();
+    await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
 
     // 再読み込み → 「更新する」になり、内容も残る。直して更新できる
     await page.reload();
     const update = page.getByRole('button', { name: '更新する' });
     await expect(update).toBeVisible();
-    await page.getByPlaceholder('何をしたか一言(必須)').fill('画面の下書きを作り、レビューした');
+    await page.getByPlaceholder('何をしたか一言(必須)').first().fill('画面の下書きを作り、レビューした');
     await update.click();
-    await expect(page.getByText('提出しました')).toBeVisible();
+    await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
     await expect(page.locator('.feed').getByText('画面の下書きを作り、レビューした')).toBeVisible();
   });
 

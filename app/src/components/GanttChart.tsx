@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { updateTask, useTasks } from '../data/tasks';
 import { formatDate, jstDate } from '../lib/dates';
-import { buildGantt, nextDates, pct, weekTicks } from '../lib/gantt';
+import { buildGantt, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { STATUS_LABEL, type Member } from '../types';
+
+const LANE_PX = 16;
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
 export function GanttChart({ teamId, actor, members }: { teamId: string; actor: string; members: Member[] }) {
@@ -20,6 +22,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
   const name = (sid: string) => members.find((m) => m.sid === sid)?.name ?? sid;
   const ticks = weekTicks(g);
   const pos = (d: string) => `${pct(g, d)}%`;
+  const ms = placeMilestones(milestones, g);
 
   if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
   return (
@@ -57,10 +60,15 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
         ))}
         <div className="gantt-row">
           <div className="gantt-name"><small>マイルストーン</small></div>
-          <div className="gantt-track">
-            {milestones.map((m) => (
-              <span key={m.id} className="gantt-ms" style={{ left: pos(m.date) }} title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
-            ))}
+          <div className="gantt-track" style={{ height: ms.lanes * LANE_PX + 2 }}>
+            {milestones.map((m) => {
+              const pl = ms.places.find((p) => p.id === m.id)!;
+              return (
+                <span key={m.id} className={`gantt-ms ${pl.align === 'right' ? 'r' : ''}`}
+                  style={{ top: pl.lane * LANE_PX, ...(pl.align === 'left' ? { left: pos(m.date) } : { right: `${100 - pct(g, m.date)}%` }) }}
+                  title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
+              );
+            })}
           </div>
         </div>
         <div className="gantt-today" style={{ left: `calc(8px + var(--gantt-name) + (100% - 16px - var(--gantt-name)) * ${pct(g, today) / 100})` }} title="今日" />

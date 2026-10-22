@@ -7,8 +7,9 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, descendantsOf, flatten, orderAfter, orphansOf, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, descendantsOf, flatten, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
+import { celebrate } from '../lib/celebrate';
 import { formatDate } from '../lib/dates';
 import type { TaskLink } from '../types';
 import { Progress } from './Progress';
@@ -33,9 +34,10 @@ export function WbsEditor({ teamId, actor, members }: Props) {
     return (sid: string) => (sid === 'teacher' ? '教員' : m.get(sid) ?? sid);
   }, [members]);
 
-  const run = async (fn: () => Promise<unknown>) => {
+  /** 保存できたら true */
+  const run = async (fn: () => Promise<unknown>): Promise<boolean> => {
     setErr('');
-    try { await fn(); } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); }
+    try { await fn(); return true; } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); return false; }
   };
 
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
@@ -128,7 +130,15 @@ export function WbsEditor({ teamId, actor, members }: Props) {
               className={`status st-${t.status}`}
               value={t.status}
               aria-label="状態"
-              onChange={(e) => run(() => updateTask(teamId, actor, t.id, { status: e.target.value as TaskStatus }))}
+              onChange={(e) => {
+                const status = e.target.value as TaskStatus;
+                run(() => updateTask(teamId, actor, t.id, { status })).then((ok) => {
+                  if (ok && status === 'done' && t.status !== 'done') {
+                    const p = overallProgress(tasks);
+                    celebrate(`完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+                  }
+                });
+              }}
             >
               {(Object.keys(STATUS_LABEL) as TaskStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>

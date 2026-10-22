@@ -22,7 +22,16 @@ export const deleteMeeting = (teamId: string, date: string) => deleteDoc(doc(col
 export const saveMeeting = (
   teamId: string, date: string, actor: string,
   data: Partial<{ decided: string; actions: MeetingAction[]; note: string }>,
-) => setDoc(doc(col(teamId), date), { date, createdBy: actor, ...data, updatedAt: Date.now() }, { merge: true });
+) => setDoc(
+  doc(col(teamId), date),
+  {
+    date, createdBy: actor, ...data,
+    // owner は、未定のとき null にする (Firestore は undefined を書けない)
+    ...(data.actions ? { actions: data.actions.map((a) => ({ text: a.text, done: a.done, owner: a.owner ?? null })) } : {}),
+    updatedAt: Date.now(),
+  },
+  { merge: true },
+);
 
 /** ミーティングを開いたときの記録 (= 「確認した」の記録)。すでにあれば何もしない側で呼ぶ。 */
 export const openMeeting = (teamId: string, date: string, actor: string) =>

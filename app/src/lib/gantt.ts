@@ -96,3 +96,29 @@ export function weekTicks(g: Pick<Gantt, 'start' | 'end'>): string[] {
   for (; d <= g.end; d = addDays(d, step)) out.push(d);
   return out;
 }
+
+export type MilestonePlace = { id: string; lane: number; align: 'left' | 'right' };
+
+/**
+ * マイルストーンの文字が重ならないように、段 (lane) に振り分ける。
+ * 画面の幅は分からないので、トラックの幅を trackPx と仮定して、文字の幅を見積もる。
+ * 右端に近いものは、右に伸ばすと切れるので、左に伸ばす (align: 'right')。
+ */
+export function placeMilestones(
+  ms: { id: string; title: string; date: string }[], g: Pick<Gantt, 'start' | 'days'>, trackPx = 800, charPx = 11,
+): { places: MilestonePlace[]; lanes: number } {
+  const sorted = [...ms].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const laneEnd: number[] = [];
+  const places: MilestonePlace[] = [];
+  for (const m of sorted) {
+    const x = (pct(g, m.date) / 100) * trackPx;
+    const w = 16 + m.title.length * charPx;
+    const align = x + w > trackPx ? 'right' : 'left';
+    const [from, to] = align === 'left' ? [x - 6, x - 6 + w] : [x + 6 - w, x + 6];
+    let lane = laneEnd.findIndex((end) => end + 6 <= from);
+    if (lane < 0) lane = laneEnd.length;
+    laneEnd[lane] = to;
+    places.push({ id: m.id, lane, align });
+  }
+  return { places, lanes: Math.max(1, laneEnd.length) };
+}

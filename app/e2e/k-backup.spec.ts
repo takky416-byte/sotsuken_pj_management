@@ -36,7 +36,11 @@ test.describe.serial('ガントの日付入力とバックアップの復元', (
 
     // 壊す: タスクのタイトルを変え、あとから文書を足す
     await db().doc('teams/A/tasks/gantt-3').update({ title: '壊れたタイトル', deleted: true });
-    await db().doc('teams/A/tasks/after-backup').set({ title: 'バックアップのあとに増えた', deleted: false, depth: 1, order: 1 });
+    await db().doc('teams/A/tasks/after-backup').set({
+      title: 'バックアップのあとに増えた', detail: '', parentId: null, depth: 1, order: 99995, status: 'todo', assignees: [], links: [],
+      startDate: null, endDate: null, source: 'user', createdBy: 'teacher', updatedBy: 'teacher', createdAt: 1, updatedAt: 1,
+      deleted: true, deletedAt: 1,
+    });
 
     await page.goto('/teacher/export');
     await page.getByLabel('バックアップファイル').setInputFiles(file);

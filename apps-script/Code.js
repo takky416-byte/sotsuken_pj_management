@@ -42,7 +42,7 @@ function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 
 // 保存先は、ドライブの「バックアップ」フォルダ (ID は、フォルダの URL の末尾)。スクリプト プロパティ BACKUP_FOLDER_ID で変えられる。
 var BACKUP_FOLDER_ID = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP';
 var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw'];
-var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'evaluationsPublished'];
+var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'evaluationsPublished'];
 
 /** 初回の設定: 毎日 3 時ごろに backupDaily を動かすトリガーを作る。何度実行しても重複しない。 */
 function setupBackup() {
