@@ -143,4 +143,33 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(t.locator('tr.detail')).toContainText('ホーム');
     await sp.close(); await t.close();
   });
+
+  test('利用ガイド: 初回に自動で出て、あとからヘッダーの「ガイド」で画面に合わせて開ける', async ({ browser }) => {
+    const page = await (await browser.newContext()).newPage();
+    await login(page, 'a2@trident.ac.jp', { keepGuide: true });
+    const dialog = page.getByRole('dialog', { name: '利用ガイド' });
+    await expect(dialog).toBeVisible(); // 初回(案内の確認のあと)に自動で出る
+    await expect(dialog).toContainText('このアプリでできること');
+    await dialog.getByRole('button', { name: '次へ →' }).click();
+    await expect(dialog).toContainText('ホーム: 今日やること');
+    await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
+    await expect(dialog).toHaveCount(0);
+
+    // 次回からは、自動では出ない
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+
+    // 日報の画面で開くと、日報の説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
+    await page.getByRole('link', { name: '日報', exact: true }).click();
+    await page.getByRole('button', { name: /ガイド/ }).first().click();
+    await expect(dialog).toContainText('日報: 何を・どこまでやったかを書く');
+    await dialog.getByRole('tab', { name: 'こんなとき' }).click();
+    await dialog.getByRole('button', { name: 'WBSにない作業をしたとき' }).click();
+    await expect(dialog).toContainText('WBSにタスクとして追加されます');
+    await dialog.getByRole('button', { name: '日報を開く' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '日報', exact: true })).toBeVisible();
+    await page.close();
+  });
 });

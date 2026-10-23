@@ -9,6 +9,7 @@ import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
 import { AccessTracker } from './components/AccessTracker';
+import { GuideAutoOpen, GuideButton, GuideProvider } from './components/Guide';
 import { AccessLogPage } from './features/teacher/AccessLog';
 import { Attendance } from './features/teacher/Attendance';
 import { CalendarPage } from './features/teacher/CalendarPage';
@@ -34,7 +35,7 @@ function Shell() {
 
   const { profile } = state;
   const teacher = profile.role === 'teacher';
-  return (
+  const shell = (
     <div className="app">
       <header>
         <h1>卒研PJ管理</h1>
@@ -56,6 +57,7 @@ function Shell() {
         )}
         <span className="spacer" />
         <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : '(教員)'}</span>
+        <GuideButton />
         <ThemePicker />
         <button className="ghost" onClick={logout}>ログアウト</button>
       </header>
@@ -82,12 +84,15 @@ function Shell() {
         ) : (
           <Notice email={profile.email}>
             {profile.sid && <AccessTracker sid={profile.sid} teamId={profile.teamId} />}
+            <GuideAutoOpen email={profile.email} />
             <StudentApp />
           </Notice>
         )}
       </main>
     </div>
   );
+  // 利用ガイドは、学生だけ (教員のプレビューには出さない)
+  return teacher ? shell : <GuideProvider email={profile.email}>{shell}</GuideProvider>;
 }
 
 export default function App() {

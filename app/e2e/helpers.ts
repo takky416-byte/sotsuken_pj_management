@@ -5,7 +5,7 @@ import { expect, type Page } from '@playwright/test';
  * 実際のアプリのログイン処理 (signInWithPopup) をそのまま通る。
  * 学生の初回の案内が出たら、確認して進む。
  */
-export async function login(page: Page, email: string) {
+export async function login(page: Page, email: string, opts: { keepGuide?: boolean } = {}) {
   await page.goto('/');
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Googleでログイン' }).click();
@@ -27,7 +27,13 @@ export async function login(page: Page, email: string) {
   const start = page.getByRole('button', { name: '確認して始める' });
   const header = page.getByRole('button', { name: 'ログアウト' });
   await expect(start.or(header).or(page.getByRole('heading', { name: 'ログインできません' })).first()).toBeVisible();
-  if (await start.isVisible()) await start.click();
+  if (await start.isVisible()) {
+    await start.click();
+    // 初回の利用ガイドが出たら閉じる (keepGuide のときは、そのまま)
+    if (opts.keepGuide) return;
+    const close = page.getByRole('button', { name: 'ガイドを閉じる' });
+    await close.waitFor({ timeout: 3000 }).then(() => close.click()).catch(() => undefined);
+  }
 }
 
 /** WBS の行 (タイトルが title の行) */

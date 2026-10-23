@@ -537,3 +537,24 @@ table.access tr.detail td { background:var(--bg); }
 .dot { width:12px; height:16px; border-radius:3px; background:var(--line); display:inline-block; }
 .dot.on { background:var(--ok, #22b573); }
 .dot.cls { box-shadow:0 2px 0 0 var(--accent2); }
+
+/* 利用ガイド */
+.guide-overlay { position:fixed; inset:0; background:rgba(30,20,60,.55); z-index:100; display:grid; place-items:center; padding:12px; }
+.guide { background:var(--card); color:var(--fg); border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,.35); width:min(640px,100%); max-height:92vh; display:flex; flex-direction:column; outline:none; }
+.guide-head { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); }
+.guide-tabs { display:flex; gap:6px; }
+.guide-tabs button { background:none; border:none; padding:6px 12px; border-radius:999px; font-weight:700; color:var(--muted); }
+.guide-tabs button.on { background:var(--accent-soft); color:var(--accent); }
+.guide-body { padding:14px 18px 16px; overflow-y:auto; }
+.guide-body h3 { margin:6px 0; }
+.guide-lead { margin:0 0 8px; }
+.guide-points { padding-left:20px; } .guide-points li { margin:6px 0; }
+.guide-dots { display:flex; gap:6px; }
+.gdot { width:12px; height:12px; border-radius:50%; border:none; background:var(--line); padding:0; }
+.gdot.on { background:var(--accent); transform:scale(1.25); }
+.guide-foot { display:flex; justify-content:space-between; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.scene { border:2px solid var(--line); border-radius:12px; margin:6px 0; }
+.scene.open { border-color:var(--accent); }
+.scene-title { width:100%; text-align:left; background:none; border:none; padding:10px 12px; font-weight:700; color:var(--fg); }
+.scene-body { padding:0 14px 12px; } .scene-body ol { margin:4px 0 8px; padding-left:20px; }
+.guide-btn { white-space:nowrap; }
