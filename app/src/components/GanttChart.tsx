@@ -29,6 +29,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
   const points = lightning(g, today, deep ? 3 : 2, (id) => parents.has(id));
   const todayX = pct(g, today);
   const H = g.rows.length * ROW_PX;
+  const msH = Math.max(ROW_PX, ms.lanes * LANE_PX + 2); // マイルストーンの行 (ガントの一番上、目盛りの下)
   const behind = points.filter((p) => p.days < -1).length;
 
   if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
@@ -49,6 +50,19 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
             {ticks.map((d) => <span key={d} className="gantt-tick" style={{ left: pos(d) }}>{formatDate(d).replace(/\(.*\)/, '')}</span>)}
           </div>
         </div>
+        <div className="gantt-row ms-row" style={{ height: msH }}>
+          <div className="gantt-name"><small>マイルストーン</small></div>
+          <div className="gantt-track" style={{ height: ms.lanes * LANE_PX + 2 }}>
+            {milestones.map((m) => {
+              const pl = ms.places.find((p) => p.id === m.id)!;
+              return (
+                <span key={m.id} className={`gantt-ms ${pl.align === 'right' ? 'r' : ''}`}
+                  style={{ top: pl.lane * LANE_PX, ...(pl.align === 'left' ? { left: pos(m.date) } : { right: `${100 - pct(g, m.date)}%` }) }}
+                  title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
+              );
+            })}
+          </div>
+        </div>
         {g.rows.map((r) => (
           <div className="gantt-row" key={r.task.id}>
             <div className={`gantt-name d${r.depth}`} title={r.task.title}>
@@ -67,22 +81,9 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
             </div>
           </div>
         ))}
-        <div className="gantt-row ms-row">
-          <div className="gantt-name"><small>マイルストーン</small></div>
-          <div className="gantt-track" style={{ height: ms.lanes * LANE_PX + 2 }}>
-            {milestones.map((m) => {
-              const pl = ms.places.find((p) => p.id === m.id)!;
-              return (
-                <span key={m.id} className={`gantt-ms ${pl.align === 'right' ? 'r' : ''}`}
-                  style={{ top: pl.lane * LANE_PX, ...(pl.align === 'left' ? { left: pos(m.date) } : { right: `${100 - pct(g, m.date)}%` }) }}
-                  title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
-              );
-            })}
-          </div>
-        </div>
         <div className="gantt-today" style={{ left: `calc(var(--gantt-name) + (100% - var(--gantt-name)) * ${todayX / 100})` }} title="今日" />
         {bolt && (
-          <svg className="gantt-lightning" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height: H }} aria-label="稲妻線" role="img">
+          <svg className="gantt-lightning" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height: H, top: ROW_PX + msH }} aria-label="稲妻線" role="img">
             <polyline
               points={[`${todayX},0`, ...points.map((p) => `${p.x},${p.row * ROW_PX + ROW_PX / 2}`), `${todayX},${H}`].join(' ')}
               fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
