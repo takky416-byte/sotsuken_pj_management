@@ -157,6 +157,25 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
     }
   }
 
+  // 親タスク (子のあるタスク) は、担当を付けず、状態は子から自動で決まる (画面は子から求めるが、保存する値もそろえておく)
+  const kidsOf = new Map();
+  for (const t of [...tasks, ...live.map((l) => ({ id: l.id, data: l }))]) {
+    const pid = t.data.parentId;
+    if (pid) kidsOf.set(pid, [...(kidsOf.get(pid) ?? []), { id: t.id, status: t.data.status }]);
+  }
+  const rollup = (id) => {
+    const kids = kidsOf.get(id);
+    if (!kids) return null;
+    const own = kids.map((k) => (kidsOf.has(k.id) ? rollup(k.id) : k.status));
+    const active = own.filter((s) => s !== 'hold');
+    return active.length === 0 ? 'hold' : active.every((s) => s === 'done') ? 'done' : active.every((s) => s === 'todo') ? 'todo' : 'doing';
+  };
+  for (const t of tasks) {
+    if (!kidsOf.has(t.id)) continue;
+    t.data.assignees = [];
+    t.data.status = rollup(t.id);
+  }
+
   // ---- 日報 ----
   const dailies = [];
   const plans = members.map((_, i) => submitPlan(persona(i), days.length));

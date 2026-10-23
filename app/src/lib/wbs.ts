@@ -1,4 +1,4 @@
-import type { Task } from '../types';
+import type { Task, TaskStatus } from '../types';
 
 export type Patch = { id: string; changes: Partial<Pick<Task, 'parentId' | 'depth' | 'order'>> };
 
@@ -153,4 +153,42 @@ export function planRescue(tasks: Task[], id: string): Patch[] | null {
     patches.push({ id: d.id, changes: { depth: Math.min(3, Math.max(1, d.depth + delta)) as 1 | 2 | 3 } });
   }
   return patches;
+}
+
+/**
+ * 子タスクの状態から、親タスクの状態を決める (保留の子は、判定から除く)。
+ * すべて保留なら保留、残りがすべて完了なら完了、すべて未着手なら未着手、それ以外は進行中。
+ */
+export function rollupStatus(children: TaskStatus[]): TaskStatus {
+  const active = children.filter((s) => s !== 'hold');
+  if (active.length === 0) return 'hold';
+  if (active.every((s) => s === 'done')) return 'done';
+  if (active.every((s) => s === 'todo')) return 'todo';
+  return 'doing';
+}
+
+/**
+ * 画面や集計で使う、タスクの状態。子タスクがある (親の) タスクは、自分の状態ではなく、子から自動で決まる。
+ * 子がない (葉の) タスクは、自分の状態のまま。
+ */
+export function effectiveStatuses(tasks: Task[]): Map<string, TaskStatus> {
+  const out = new Map<string, TaskStatus>();
+  const visit = (t: Task): TaskStatus => {
+    const known = out.get(t.id);
+    if (known) return known;
+    const kids = tasks.filter((c) => isLive(c) && c.parentId === t.id);
+    const s = kids.length === 0 ? t.status : rollupStatus(kids.map(visit));
+    out.set(t.id, s);
+    return s;
+  };
+  for (const t of tasks) if (isLive(t)) visit(t);
+  return out;
+}
+
+/** 状態が変わって、親 (祖先) が「完了」になったタスク。お祝いに使う。 */
+export function newlyCompletedParents(tasks: Task[], id: string, status: TaskStatus): Task[] {
+  const before = effectiveStatuses(tasks);
+  const after = effectiveStatuses(tasks.map((t) => (t.id === id ? { ...t, status } : t)));
+  return tasks.filter((t) => isLive(t) && t.id !== id && before.get(t.id) !== 'done' && after.get(t.id) === 'done'
+    && tasks.some((c) => isLive(c) && c.parentId === t.id));
 }

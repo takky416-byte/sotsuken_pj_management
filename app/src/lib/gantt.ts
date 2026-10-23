@@ -1,6 +1,6 @@
 import type { Milestone, Task, TaskStatus } from '../types';
 import { addDays } from './dates';
-import { childrenOf } from './wbs';
+import { childrenOf, effectiveStatuses } from './wbs';
 
 export type GanttRow = {
   task: Task;
@@ -33,6 +33,7 @@ export function pct(g: Pick<Gantt, 'start' | 'days'>, date: string): number {
 /** 大項目と中項目 (depth 1・2) を行にする。日付は葉の範囲から補う。 */
 export function buildGantt(tasks: Task[], milestones: Milestone[], today: string, maxDepth: 1 | 2 | 3 = 2): Gantt {
   const live = tasks.filter((t) => !t.deleted);
+  const eff = effectiveStatuses(live); // 親タスクは、子の状態から自動で決まる
   const span = (t: Task): { start: string | null; end: string | null; derived: boolean } => {
     const kids = childrenOf(live, t.id);
     const own = { start: t.startDate ?? t.endDate, end: t.endDate ?? t.startDate };
@@ -52,7 +53,8 @@ export function buildGantt(tasks: Task[], milestones: Milestone[], today: string
     for (const t of childrenOf(live, parentId)) {
       const s = span(t);
       if (t.depth <= maxDepth) {
-        rows.push({ task: t, depth: t.depth, ...s, status: t.status, overdue: !!s.end && s.end < today && t.status !== 'done' && t.status !== 'hold' });
+        const st = eff.get(t.id) ?? t.status;
+        rows.push({ task: t, depth: t.depth, ...s, status: st, overdue: !!s.end && s.end < today && st !== 'done' && st !== 'hold' });
       }
       if (!s.start && childrenOf(live, t.id).length === 0 && t.status !== 'done') undated.push(t);
       walk(t.id);

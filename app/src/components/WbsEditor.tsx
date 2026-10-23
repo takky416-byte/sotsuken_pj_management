@@ -7,7 +7,7 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, descendantsOf, flatten, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { formatDate } from '../lib/dates';
@@ -42,6 +42,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
 
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!tasks) return <p>読み込み中…</p>;
+  const eff = effectiveStatuses(tasks);
 
   const rows = flatten(tasks, collapsed);
   const byId = new Map(tasks.map((t) => [t.id, t]));
@@ -102,9 +103,11 @@ export function WbsEditor({ teamId, actor, members }: Props) {
       )}
       {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
-      {rows.map(({ task: t, hasChildren }) => (
+      {rows.map(({ task: t, hasChildren }) => {
+        const status = eff.get(t.id) ?? t.status;
+        return (
         <div key={t.id}>
-          <div className={`wbs-row depth-${t.depth} st-${t.status}`}>
+          <div className={`wbs-row depth-${t.depth} st-${status}`}>
             <button
               className="ghost icon"
               aria-label={collapsed.has(t.id) ? '開く' : '閉じる'}
@@ -126,24 +129,32 @@ export function WbsEditor({ teamId, actor, members }: Props) {
             {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
             {hasChildren && <Progress {...progressOf(tasks, t.id)} />}
 
-            <select
-              className={`status st-${t.status}`}
-              value={t.status}
-              aria-label="状態"
-              onChange={(e) => {
-                const status = e.target.value as TaskStatus;
-                run(() => updateTask(teamId, actor, t.id, { status })).then((ok) => {
-                  if (ok && status === 'done' && t.status !== 'done') {
-                    const p = overallProgress(tasks);
-                    celebrate(`完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
-                  }
-                });
-              }}
-            >
-              {(Object.keys(STATUS_LABEL) as TaskStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-            </select>
+            {hasChildren ? (
+              // 親タスクの状態は、子タスクから自動で決まる (自分では変えられない)
+              <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}・自動</span>
+            ) : (
+              <select
+                className={`status st-${t.status}`}
+                value={t.status}
+                aria-label="状態"
+                onChange={(e) => {
+                  const next = e.target.value as TaskStatus;
+                  const parents = newlyCompletedParents(tasks, t.id, next);
+                  run(() => updateTask(teamId, actor, t.id, { status: next })).then((ok) => {
+                    if (ok && next === 'done' && t.status !== 'done') {
+                      const p = overallProgress(tasks);
+                      celebrate(parents.length > 0
+                        ? `「${parents[0].title}」がぜんぶ完了!`
+                        : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+                    }
+                  });
+                }}
+              >
+                {(Object.keys(STATUS_LABEL) as TaskStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+            )}
             <span className="meta">
-              {t.assignees.length > 0 && t.assignees.map(nameOf).join('・')}
+              {!hasChildren && t.assignees.length > 0 && t.assignees.map(nameOf).join('・')}
               {t.endDate && ` 〜${formatDate(t.endDate)}`}
             </span>
             {t.depth < 3 && (
@@ -156,7 +167,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
 
           {openId === t.id && (
             <Detail
-              task={t} members={members} nameOf={nameOf}
+              task={t} members={members} nameOf={nameOf} isParent={hasChildren}
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
               onAssignee={(sid, add) => run(() => updateTaskArray(teamId, actor, t.id, 'assignees', add ? 'add' : 'remove', sid))}
               onLink={(op, link) => run(() => updateTaskArray(teamId, actor, t.id, 'links', op, link))}
@@ -179,7 +190,8 @@ export function WbsEditor({ teamId, actor, members }: Props) {
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
 
       <div className="wbs-add depth-1">
         <AddBox
@@ -283,10 +295,11 @@ function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent,
   );
 }
 
-function Detail({ task: t, members, nameOf, onChange, onAssignee, onLink, onIndent, onOutdent, onMove, onDelete }: {
+function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onLink, onIndent, onOutdent, onMove, onDelete }: {
   task: Task;
   members: Member[];
   nameOf: (sid: string) => string;
+  isParent: boolean;
   onChange: (changes: Partial<Omit<Task, 'id'>>) => void;
   onAssignee: (sid: string, add: boolean) => void;
   onLink: (op: 'add' | 'remove', link: TaskLink) => void;
@@ -325,6 +338,9 @@ function Detail({ task: t, members, nameOf, onChange, onAssignee, onLink, onInde
           <input type="date" value={t.endDate ?? ''} onChange={(e) => onChange({ endDate: e.target.value || null })} />
         </label>
       </div>
+      {isParent ? (
+        <p className="hint">親タスクには、担当を付けません。担当は子タスクに付けます。状態も、子タスクから自動で決まります。</p>
+      ) : (
       <div>
         <div className="label">担当 (複数可・空欄でもよい)</div>
         <div className="chips">
@@ -336,6 +352,7 @@ function Detail({ task: t, members, nameOf, onChange, onAssignee, onLink, onInde
           ))}
         </div>
       </div>
+      )}
       <div>
         <div className="label">リンク (Drive・GitHubなど)</div>
         {t.links.map((l, i) => (

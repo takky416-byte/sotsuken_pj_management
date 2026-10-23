@@ -63,9 +63,18 @@ test.describe.serial('運用の流れ', () => {
     await page.getByPlaceholder(/の下に追加/).press('Enter');
     await expect(row(page, 'ワイヤーフレームを作る')).toBeVisible();
 
-    // 状態・担当・終了日・詳細
-    const t = row(page, 'ログイン画面を作る');
-    await t.getByLabel('状態').selectOption('doing');
+    // 状態・担当・終了日・詳細は、子のない (葉の) タスクで操作する。
+    // 親タスク (ここでは「ログイン画面を作る」) は、担当を付けず、状態は子から自動で決まる
+    const parent = row(page, 'ログイン画面を作る');
+    await expect(parent.getByLabel('状態', { exact: true })).toHaveCount(0);
+    await expect(parent.getByLabel('状態(自動)')).toContainText('未着手');
+    const t = row(page, '画面遷移図を描く');
+    await t.getByLabel('状態', { exact: true }).selectOption('doing');
+    await expect(parent.getByLabel('状態(自動)')).toContainText('進行中'); // 子が進行中になると、親も進行中
+    await parent.getByRole('button', { name: '詳細' }).click();
+    await expect(page.getByText('親タスクには、担当を付けません')).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: '岩田' })).toHaveCount(0);
+    await parent.getByRole('button', { name: '詳細' }).click();
     await t.getByRole('button', { name: '詳細' }).click();
     await expect(page.getByLabel('終了日')).toBeVisible(); // 詳細が開く
     await page.getByRole('checkbox', { name: '岩田' }).click(); // Firestore に保存されてから反映される
@@ -77,14 +86,15 @@ test.describe.serial('運用の流れ', () => {
 
     // 削除 → 元に戻す
     await page.getByRole('button', { name: '削除', exact: true }).click();
-    await expect(row(page, 'ログイン画面を作る')).toHaveCount(0);
+    await expect(row(page, '画面遷移図を描く')).toHaveCount(0);
+    await expect(parent.getByLabel('状態', { exact: true })).toHaveValue('todo'); // 子がなくなると、子のないタスクとして、自分の状態 (選べる) に戻る
     await page.getByRole('button', { name: '元に戻す' }).click();
-    await expect(row(page, 'ログイン画面を作る')).toBeVisible();
+    await expect(row(page, '画面遷移図を描く')).toBeVisible();
 
     // 再読み込みしても残っている (保存されている)
     await page.reload();
-    await expect(row(page, 'ログイン画面を作る').getByLabel('状態')).toHaveValue('doing');
-    await row(page, 'ログイン画面を作る').getByRole('button', { name: '詳細' }).click();
+    await expect(row(page, '画面遷移図を描く').getByLabel('状態', { exact: true })).toHaveValue('doing');
+    await row(page, '画面遷移図を描く').getByRole('button', { name: '詳細' }).click();
     await expect(page.getByRole('checkbox', { name: '岩田' })).toBeChecked();
   });
 
@@ -96,11 +106,11 @@ test.describe.serial('運用の流れ', () => {
     // 今日自分が更新したタスク (この流れで作ったもの) は、先に選ばれている。一言がないので、まだ提出できない
     const submit = page.getByRole('button', { name: '提出する' });
     await expect(page.getByText('今日、あなたが更新したタスクを、選んでおきました')).toBeVisible();
-    await expect(page.getByLabel('ログイン画面を作る')).toBeChecked();
+    await expect(page.getByLabel('画面遷移図を描く')).toBeChecked();
     await expect(submit).toBeDisabled();
     await expect(page.getByText('選んだ項目に、一言を書いてください')).toBeVisible();
-    await page.getByLabel('ログイン画面を作る').uncheck(); // 外せる
-    await page.getByLabel('ログイン画面を作る').check();
+    await page.getByLabel('画面遷移図を描く').uncheck(); // 外せる
+    await page.getByLabel('画面遷移図を描く').check();
     const notes = page.getByPlaceholder('何をしたか一言(必須)');
     for (let i = 0; i < await notes.count(); i++) await notes.nth(i).fill(i === 0 ? '画面の下書きを作った' : '手を入れた');
     await expect(submit).toBeEnabled();

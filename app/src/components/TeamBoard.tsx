@@ -33,7 +33,6 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
   const [to, setTo] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
 
   if (!settings || !classDays || !tasks || !meetings || !thanks || !dailies) return <p>読み込み中…</p>;
 
@@ -53,10 +52,11 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
 
   const send = async () => {
     if (!to) return;
-    setBusy(true); setErr('');
-    try { await sendThanks(team.id, viewer, to, note); setTo(null); setNote(''); }
+    // 押したらすぐに閉じる (続けて別の人に送れるように)。送れなかったときは、表の下にメッセージを出す
+    const target = to; const text = note;
+    setTo(null); setNote(''); setErr('');
+    try { await sendThanks(team.id, viewer, target, text); }
     catch (e) { setErr(`送れませんでした: ${(e as Error).message}`); }
-    finally { setBusy(false); }
   };
 
   return (
@@ -96,14 +96,14 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
         </table>
       </div>
 
+      {err && <p className="error">{err}</p>}
       {to && (
         <div className="card form">
           <div className="label">{nameOf(to)}さんに、ありがとう{!teacher && <span className="hint">(今日はあと{left}回)</span>}</div>
           <input aria-label="ありがとうの一言" placeholder="一言(任意。例: レビューしてくれて助かった)" maxLength={100} value={note}
             onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) send(); }} />
-          {err && <p className="error">{err}</p>}
           <div className="row">
-            <button disabled={busy} onClick={send}>送る</button>
+            <button onClick={send}>送る</button>
             <button className="ghost" onClick={() => setTo(null)}>やめる</button>
           </div>
         </div>

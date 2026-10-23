@@ -3,6 +3,7 @@
 import type { ClassDay, Member, Task } from '../types';
 import { classDatesBetween, fromDailyStart, statusOf, type Daily, type DayStatus } from './daily';
 import type { Meeting } from './meeting';
+import { isLeaf } from './meetingView';
 
 export type Thank = { id: string; from: string; to: string; note: string; date: string; createdAt: number };
 
@@ -72,7 +73,7 @@ export function engagement(input: EngagementInput): MemberStat[] {
       for (const d of dailies) if (d.sid === m.sid && d.date >= from) for (const e of d.entries) if (e.taskId && e.note.trim()) ids.add(e.taskId);
       touched = ids.size;
     }
-    const mine = live.filter((t) => (t.assignees ?? []).includes(m.sid) && t.status !== 'hold');
+    const mine = live.filter((t) => isLeaf(live, t) && (t.assignees ?? []).includes(m.sid) && t.status !== 'hold'); // 担当は、子のない (葉の) タスクだけ
     const promises = meetings.flatMap((x) => x.actions).filter((a) => a.owner === m.sid);
     return {
       sid: m.sid, name: m.name, daily, touched,

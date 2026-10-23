@@ -8,6 +8,7 @@ import { useTeam } from '../../data/teams';
 import { celebrate } from '../../lib/celebrate';
 import { streakIfSubmitted } from '../../lib/engagement';
 import { FIXED_KINDS, dailyId, entriesMissingNote, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
+import { isLeaf } from '../../lib/meetingView';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 
 
@@ -64,7 +65,7 @@ function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
 }) {
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
   // まだ書いていないときは、今日自分が更新したタスクを、先に選んでおく (選ぶ手間を減らす。一言は、自分で書く)
-  const [preselected] = useState(() => prev ? [] : live.filter((t) => t.updatedBy === sid && jstDate(new Date(t.updatedAt)) === today).map((t) => t.id));
+  const [preselected] = useState(() => prev ? [] : live.filter((t) => isLeaf(live, t) && t.updatedBy === sid && jstDate(new Date(t.updatedAt)) === today).map((t) => t.id));
   const [taskNotes, setTaskNotes] = useState<Map<string, string>>(
     new Map(prev
       ? (prev.entries ?? []).filter((e) => e.kind === 'task' && e.taskId).map((e) => [e.taskId!, e.note])
@@ -78,9 +79,11 @@ function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
   useEffect(() => setState('idle'), [taskNotes, kindNotes, blocker]);
 
   // 候補: 自分が担当、または進行中のタスク。すでに選んだものも残す。
-  const candidates = live.filter((t) =>
+  // 親タスク (子のあるタスク) は、担当も状態もないので、候補にしない (子タスクを選ぶ)
+  const leaves = live.filter((t) => isLeaf(live, t) || taskNotes.has(t.id));
+  const candidates = leaves.filter((t) =>
     taskNotes.has(t.id) || (t.status !== 'hold' && t.status !== 'done' && (t.assignees.includes(sid) || t.status === 'doing')));
-  const others = live.filter((t) => !candidates.some((c) => c.id === t.id));
+  const others = leaves.filter((t) => !candidates.some((c) => c.id === t.id));
 
   const toggleTask = (id: string) => setTaskNotes((m) => { const n = new Map(m); if (n.has(id)) n.delete(id); else n.set(id, ''); return n; });
   const toggleKind = (k: DailyKind) => setKindNotes((m) => { const n = new Map(m); if (n.has(k)) n.delete(k); else n.set(k, ''); return n; });

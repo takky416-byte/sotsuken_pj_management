@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, flatten, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus,
 } from './wbs';
 
 let seq = 0;
@@ -106,5 +106,41 @@ describe('迷子のタスク', () => {
     expect(flatten(moved).map((r) => r.task.id)).toEqual(['r', 'c', 'd']);
     expect(orphansOf(moved).map((t) => t.id)).toEqual(['x']);
     expect(planRescue(tasks(), 'gone')).toBeNull(); // 削除済みは対象外
+  });
+});
+
+describe('親タスクの状態は、子から自動で決まる', () => {
+  test('rollupStatus: 保留は除いて判定する', () => {
+    expect(rollupStatus(['done', 'done'])).toBe('done');
+    expect(rollupStatus(['todo', 'todo'])).toBe('todo');
+    expect(rollupStatus(['todo', 'done'])).toBe('doing');
+    expect(rollupStatus(['doing', 'todo'])).toBe('doing');
+    expect(rollupStatus(['done', 'hold'])).toBe('done'); // 保留は数えない
+    expect(rollupStatus(['todo', 'hold'])).toBe('todo');
+    expect(rollupStatus(['hold', 'hold'])).toBe('hold');
+  });
+
+  const tasks = [
+    T('P'),
+    T('a', { parentId: 'P', depth: 2, status: 'done' }),
+    T('b', { parentId: 'P', depth: 2, status: 'todo' }),
+    T('c', { parentId: 'b', depth: 3, status: 'doing' }),
+    T('gone', { parentId: 'P', depth: 2, status: 'todo', deleted: true }),
+    T('solo', { status: 'doing' }),
+  ];
+  test('孫まで、下から順に求める。削除済みの子は数えない。子のないタスクは、自分の状態', () => {
+    const m = effectiveStatuses(tasks);
+    expect(m.get('b')).toBe('doing'); // 子 c が進行中
+    expect(m.get('P')).toBe('doing'); // a 完了 + b 進行中
+    expect(m.get('solo')).toBe('doing');
+  });
+  test('親の保存された状態は、無視する', () => {
+    const m = effectiveStatuses(tasks.map((t) => (t.id === 'P' ? { ...t, status: 'done' as const } : t)));
+    expect(m.get('P')).toBe('doing');
+  });
+  test('最後の子を完了にすると、親が完了になる (お祝いの判定)', () => {
+    const done = [T('P'), T('a', { parentId: 'P', depth: 2, status: 'done' }), T('b', { parentId: 'P', depth: 2, status: 'doing' })];
+    expect(newlyCompletedParents(done, 'b', 'done').map((t) => t.id)).toEqual(['P']);
+    expect(newlyCompletedParents(done, 'b', 'todo')).toEqual([]);
   });
 });
