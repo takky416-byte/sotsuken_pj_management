@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import type { Daily } from './daily';
-import { concerns, delayedTasks, isPlaceholder, touchedByMember, unassignedTasks, untouchedTasks } from './meetingView';
+import { stuckItems, delayedTasks, isPlaceholder, touchedByMember, unassignedTasks, untouchedTasks } from './meetingView';
 
 const T = (id: string, over: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: ['A1'],
@@ -55,13 +55,16 @@ describe('meetingView', () => {
     const dailies = [D('A1', '2026-11-04', { entries: [{ kind: 'task', taskId: 'doingTouched', note: '' }] })];
     expect(untouchedTasks(tasks, dailies, today).map((t) => t.id)).toEqual(['doing', 'inRange']);
   });
-  test('困っていること: 新しい順。欠席・空は除く', () => {
-    const out = concerns([
-      D('A1', '2026-11-04', { blocker: ' 迷っている ' }), D('A2', '2026-11-05', { blocker: '詰まった' }),
-      D('A3', '2026-11-05', { blocker: '  ' }), D('A1', '2026-11-03', { blocker: 'x', absent: true }),
+  test('詰まっていること: 「詰まった」を選んだ項目。新しい順。欠席は除く', () => {
+    const e = (result: 'stuck' | 'progress', note: string, taskId = 't') => ({ kind: 'task' as const, taskId, note, result });
+    const out = stuckItems([
+      D('A1', '2026-11-04', { entries: [e('stuck', ' 迷っている ', 'x'), e('progress', '進んだ')] }),
+      D('A2', '2026-11-05', { entries: [e('stuck', '詰まった')] }),
+      D('A3', '2026-11-05', { entries: [e('progress', '進んだ')] }),
+      D('A1', '2026-11-03', { entries: [e('stuck', 'x')], absent: true }),
     ]);
     expect(out).toEqual([
-      { date: '2026-11-05', sid: 'A2', text: '詰まった' }, { date: '2026-11-04', sid: 'A1', text: '迷っている' },
+      { date: '2026-11-05', sid: 'A2', taskId: 't', text: '詰まった' }, { date: '2026-11-04', sid: 'A1', taskId: 'x', text: '迷っている' },
     ]);
   });
   test('メンバーごとに触れたタスク (重複なし)', () => {

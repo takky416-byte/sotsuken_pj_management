@@ -17,7 +17,7 @@ import {
   carryOver, meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
 } from '../../lib/meeting';
 import {
-  concerns, delayedTasks, touchedByMember, unassignedTasks, untouchedTasks,
+  delayedTasks, stuckItems, touchedByMember, unassignedTasks, untouchedTasks,
 } from '../../lib/meetingView';
 import { overallProgress } from '../../lib/wbs';
 import type { Team } from '../../types';
@@ -95,7 +95,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const untouched = untouchedTasks(tasks, dailies, today);
   const upcoming = milestones.filter((m) => (m.endDate ?? m.date) >= today).slice(0, 3);
   const touched = touchedByMember(tasks, range);
-  const concernList = concerns(range);
+  const stuckList = stuckItems(range);
   const nameOf = (sid: string) => team.members.find((m) => m.sid === sid)?.name ?? sid;
 
   const run = (fn: () => Promise<unknown>) => fn().catch(() => undefined);
@@ -172,11 +172,15 @@ function MeetingScreen({ team }: { team: Team }) {
         </section>
 
         <section className="card">
-          <h3>④ 困っていること</h3>
-          {concernList.length === 0 ? <p className="hint">日報に書かれた困りごとはありません。</p> : (
+          <h3>④ 詰まっていること</h3>
+          <p className="hint">チームで相談して、解決しましょう。</p>
+          {stuckList.length === 0 ? <p className="hint">「詰まった」の日報はありません。</p> : (
             <ul className="plain">
-              {concernList.map((c, i) => (
-                <li key={i} className="blocker"><strong>{nameOf(c.sid)}</strong> <span className="hint">{formatDate(c.date)}</span><br />{c.text}</li>
+              {stuckList.map((c, i) => (
+                <li key={i} className="blocker">
+                  <strong>{nameOf(c.sid)}</strong> <span className="hint">{formatDate(c.date)}</span>
+                  {c.taskId && <> 「{tasks.find((t) => t.id === c.taskId)?.title ?? '(削除されたタスク)'}」</>}<br />{c.text}
+                </li>
               ))}
             </ul>
           )}

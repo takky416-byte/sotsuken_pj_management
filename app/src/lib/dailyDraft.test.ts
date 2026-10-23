@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import type { Daily } from './daily';
 import {
-  AUTO_BLOCKER_PREFIX, candidateTasks, composeBlocker, initialItems, itemsToEntries, nextCandidates, splitBlocker, statusChanges,
+  candidateTasks, initialItems, itemsToEntries, nextCandidates, statusChanges,
 } from './dailyDraft';
 
 const TODAY = '2026-11-10';
@@ -48,15 +48,6 @@ describe('initialItems', () => {
     expect(itemsToEntries(items)).toEqual([
       { kind: 'task', taskId: 'inperiod', note: 'ここまで進めた', result: 'progress' }, { kind: 'study', note: '資料を読んだ' },
     ]);
-  });
-});
-
-describe('困っていること', () => {
-  test('詰まったタスクは、自動で載せる。編集のとき二重にならない', () => {
-    const b = composeBlocker('先生に相談したい', [{ title: '画面遷移図', note: ' ツールの使い方が分からない ' }]);
-    expect(b).toBe(`先生に相談したい\n${AUTO_BLOCKER_PREFIX}「画面遷移図」 ツールの使い方が分からない`);
-    expect(splitBlocker(b)).toBe('先生に相談したい');
-    expect(composeBlocker('', [])).toBe('');
   });
 });
 

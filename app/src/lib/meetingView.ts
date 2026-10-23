@@ -39,12 +39,12 @@ export function untouchedTasks(tasks: Task[], dailies: Daily[], today: string): 
     && !touched.has(t.id));
 }
 
-export type Concern = { date: string; sid: string; text: string };
+export type StuckItem = { date: string; sid: string; taskId?: string; text: string };
 
-/** 日報の「困っていること」。新しい順。 */
-export function concerns(dailies: Daily[]): Concern[] {
-  return dailies.filter((d) => statusOf(d) !== 'absent' && d.blocker.trim() !== '')
-    .map((d) => ({ date: d.date, sid: d.sid, text: d.blocker.trim() }))
+/** 日報で「詰まった」を選んだ項目。新しい順。チームで相談して解決する材料として、ミーティングに出す。 */
+export function stuckItems(dailies: Daily[]): StuckItem[] {
+  return dailies.filter((d) => statusOf(d) !== 'absent')
+    .flatMap((d) => d.entries.filter((e) => e.result === 'stuck').map((e) => ({ date: d.date, sid: d.sid, taskId: e.taskId, text: e.note.trim() })))
     .sort((a, b) => b.date.localeCompare(a.date) || a.sid.localeCompare(b.sid, 'en', { numeric: true }));
 }
 

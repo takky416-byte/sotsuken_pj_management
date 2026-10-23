@@ -58,7 +58,6 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
               </li>
             ))}
           </ul>
-          {d.blocker.trim() && <div className="blocker">困っていること: {d.blocker}</div>}
           {d.next?.trim() && <div className="next-plan">次にやること: {d.next}</div>}
         </div>
       ))}

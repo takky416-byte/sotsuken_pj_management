@@ -87,8 +87,8 @@ const NOTES = {
   2: ['少し進めた', '調べた', '確認した', 'やってみた'],
 };
 const BLOCKERS = {
-  1: { 4: 'ヒアリングの相手が見つからず、困っている', 8: 'ワイヤーフレームを描くツールの使い方が分からない' },
-  2: { 5: '何から手を付ければよいか分からない', 9: '技術の比較で迷っている。方針を相談したい' },
+  1: { 4: 'ヒアリングの相手が見つからない。チームの人に紹介を頼んでみる', 8: 'ワイヤーフレームのツールの使い方が分からない。チームの人に聞いてみる' },
+  2: { 5: '何から手を付ければよいか分からず、止まっている', 9: '技術の比較で迷っている。チームで決めたい' },
 };
 
 /** 人 (番号) ごとの、提出する授業日の番号。主力は全部、ふつうは2日休み、消極的は途切れがちで直近は2回連続未提出。 */
@@ -200,7 +200,7 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
         const t = mine[(di + k) % mine.length];
         const finished = t.data.status === 'done' && t.data.endDate && t.data.endDate <= d.date && k === 0;
         entries.push({
-          kind: 'task', taskId: t.id, note: notes[(di + k * 2 + mi) % notes.length],
+          kind: 'task', taskId: t.id, note: hasBlocker && k === 0 ? BLOCKERS[pe][di] : notes[(di + k * 2 + mi) % notes.length],
           result: hasBlocker && k === 0 ? 'stuck' : finished ? 'done' : 'progress',
         });
       }
@@ -210,7 +210,7 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
       // 次にやること: 主力は具体的に、ふつうは短く、消極的な人は書かない
       const first = tasks.find((x) => x.id === entries.find((e) => e.taskId)?.taskId);
       const next = pe === 2 || !first ? '' : pe === 0 ? `「${first.data.title}」の続きを進めて、できた分をチームに共有する。` : `「${first.data.title}」を進める。`;
-      dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries, blocker: BLOCKERS[pe]?.[di] ?? '', next, absent: false, submittedAt: ts, updatedAt: ts } });
+      dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries, blocker: '', next, absent: false, submittedAt: ts, updatedAt: ts } });
     });
   });
 

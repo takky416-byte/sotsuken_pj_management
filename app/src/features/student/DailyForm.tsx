@@ -6,7 +6,7 @@ import {
   type Daily, type DailyKind, type DailyResult,
 } from '../../lib/daily';
 import {
-  composeBlocker, initialItems, itemsToEntries, kindItemId, nextCandidates, splitBlocker, statusChanges, type DraftItem,
+  initialItems, itemsToEntries, kindItemId, nextCandidates, statusChanges, type DraftItem,
 } from '../../lib/dailyDraft';
 import { periodLabel } from '../../lib/wbs';
 import type { Task } from '../../types';
@@ -15,7 +15,7 @@ const RESULTS: DailyResult[] = ['progress', 'done', 'stuck'];
 const PLACEHOLDER: Record<DailyResult, string> = {
   progress: '何を、どこまでやった? 分かったことは?\n例: ER図の主なテーブルを3つ作った。ユーザーとイベントの関係で迷っている。',
   done: '何ができあがった? どう確かめた?\n例: ログイン画面を作り終えた。正しい/誤ったパスワードの両方で動くことを確認した。',
-  stuck: 'どこで詰まった? 何を試した?\n例: ツールの図形がそろわない。ヘルプを読んで2通り試したが直らなかった。',
+  stuck: 'どこで詰まった? 何を試した? チームの誰と相談して、どう進める?\n例: ツールの図形がそろわない。2通り試したが直らない。高瀬さんに聞いてみる。',
 };
 const KIND_PLACEHOLDER: Record<Exclude<DailyKind, 'task'>, string> = {
   study: '何を調べて、何が分かった?\n例: 認証の仕組みを調べて、セッションとトークンの違いが分かった。',
@@ -24,7 +24,7 @@ const KIND_PLACEHOLDER: Record<Exclude<DailyKind, 'task'>, string> = {
 };
 
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
-type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind }[]; next: string; blocker: string };
+type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind }[]; next: string };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
 const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, JSON.stringify(d)); } catch { /* 保存できなくても入力はできる */ } };
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
@@ -51,14 +51,13 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
     return merged;
   });
   const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
-  const [blocker, setBlocker] = useState(() => (prev ? splitBlocker(prev.blocker) : loadDraft(key)?.blocker ?? ''));
   const [extra, setExtra] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const [shown, setShown] = useState(false); // 「提出する」を押してから、足りない点を赤く示す
 
-  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind }) => ({ id, result, note, kind })), next, blocker }); }, [items, next, blocker, key, prev]);
-  useEffect(() => setState('idle'), [items, next, blocker]);
+  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind }) => ({ id, result, note, kind })), next }); }, [items, next, key, prev]);
+  useEffect(() => setState('idle'), [items, next]);
 
   const title = (i: DraftItem) => (i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
   const included = items.filter((i) => i.kind !== 'task' || i.result !== null);
@@ -82,8 +81,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
     setState('saving'); setErr('');
     try {
       const first = statusOf(prev) !== 'submitted';
-      const stuck = items.filter((i) => i.result === 'stuck').map((i) => ({ title: title(i), note: i.note }));
-      await saveDaily(teamId, sid, today, entries, composeBlocker(blocker, stuck), prev, next.trim());
+      await saveDaily(teamId, sid, today, entries, prev?.blocker ?? '', prev, next.trim()); // 以前の日報の「困っていること」は、そのまま残す (新しくは書かない)
       setState('saved');
       clearDraft(key);
       onSubmitted(first);
@@ -176,10 +174,6 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
         <div className="counter-row">{counter(charCount(next), MIN_NEXT_CHARS)}</div>
       </section>
 
-      <section className="card">
-        <h3>③ 先生に相談したいこと <span className="hint">(任意)</span></h3>
-        <textarea rows={2} maxLength={1000} aria-label="先生に相談したいこと" placeholder="困っていること、確認したいこと。「詰まった」を選んだ内容は、自動でここにも載ります。" value={blocker} onChange={(e) => setBlocker(e.target.value)} />
-      </section>
 
       {err && <p className="error">{err}</p>}
       {shown && problems.length > 0 && (

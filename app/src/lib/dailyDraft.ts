@@ -66,18 +66,6 @@ export function itemsToEntries(items: DraftItem[]): DailyEntry[] {
     }));
 }
 
-/** 「詰まった」を選んだタスクは、困っていること にも自動で載せる。この印で始まる行が、自動で足した行。 */
-export const AUTO_BLOCKER_PREFIX = '【詰まった】';
-
-/** 保存済みの困っていること を、自分で書いた分と、自動で足した分に分ける (編集のとき、自動の分が二重にならないように)。 */
-export function splitBlocker(blocker: string): string {
-  return blocker.split('\n').filter((l) => !l.startsWith(AUTO_BLOCKER_PREFIX)).join('\n').trim();
-}
-
-export function composeBlocker(manual: string, stuck: { title: string; note: string }[]): string {
-  return [manual.trim(), ...stuck.map((s) => `${AUTO_BLOCKER_PREFIX}「${s.title}」 ${s.note.trim()}`)].filter(Boolean).join('\n');
-}
-
 /** 「次にやること」の候補: 今日完了にしなかった、自分のタスク (急ぎのもの) 上位 n 件。 */
 export function nextCandidates(tasks: Task[], sid: string, today: string, items: DraftItem[], n = 3): Task[] {
   const done = new Set(items.filter((i) => i.result === 'done').map((i) => i.id));

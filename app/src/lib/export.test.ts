@@ -59,11 +59,11 @@ describe('各CSV', () => {
     expect(lines).toContain('2026-10-28 12:00'); // 日本時間
     expect(lines.indexOf('要件定義')).toBeLessThan(lines.indexOf('SUM')); // 大項目が先
   });
-  test('日報: 1項目1行。タスク名、困りごと、欠席', () => {
+  test('日報: 1項目1行。タスク名、結果、次にやること、欠席', () => {
     const out = dailiesCsv(backup()).replace('﻿', '').split('\r\n');
-    expect(out[1]).toBe(`2026-10-28,A,A1,岩田,タスク,"'=SUM(1,2)",,進めた,困った,,FALSE`);
-    expect(out[2]).toBe('2026-10-28,A,A1,岩田,調査・勉強,,,調べた,,,FALSE');
-    expect(out[3]).toBe('2026-10-28,A,A2,,,,,,,,TRUE'); // 欠席 (内容なし)。名簿にない sid は苗字なし
+    expect(out[1]).toBe(`2026-10-28,A,A1,岩田,タスク,"'=SUM(1,2)",,進めた,,FALSE`);
+    expect(out[2]).toBe('2026-10-28,A,A1,岩田,調査・勉強,,,調べた,,FALSE');
+    expect(out[3]).toBe('2026-10-28,A,A2,,,,,,,TRUE'); // 欠席 (内容なし)。名簿にない sid は苗字なし
   });
   test('ミーティング記録・名簿・予定と授業日・教員メモ', () => {
     expect(meetingsCsv(backup())).toContain('A,2026-10-29,決定,"やる1\nやる2",やる1,');
