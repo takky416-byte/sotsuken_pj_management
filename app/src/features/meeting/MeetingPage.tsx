@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
+import { AnalysisView } from '../../components/AnalysisView';
 import { DailyMatrix } from '../../components/DailyViews';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
@@ -11,6 +12,7 @@ import {
 } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
+import { analyze } from '../../lib/analysis';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
 import { addDays, dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import {
@@ -52,6 +54,7 @@ export function MeetingPage() {
  */
 function MeetingScreen({ team }: { team: Team }) {
   const me = useProfile();
+  const base = useBase();
   const teacher = me.role === 'teacher';
   const today = jstDate();
   const settings = useSettings();
@@ -90,6 +93,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const next = neighborTeam(order, team.id, 1);
   const before = neighborTeam(order, team.id, -1);
 
+  const analysis = analyze(tasks, milestones, team.members, today);
   const delayed = delayedTasks(tasks, today);
   const unassigned = unassignedTasks(tasks);
   const untouched = untouchedTasks(tasks, dailies, today);
@@ -169,6 +173,11 @@ function MeetingScreen({ team }: { team: Team }) {
             {upcoming.map((m) => <li key={m.id}><strong>{formatDate(m.date)}</strong> {m.title}{m.teamId && <span className="badge">チーム</span>}</li>)}
             {upcoming.length === 0 && <li className="hint">予定はありません</li>}
           </ul>
+        </section>
+
+        <section className="card analysis-card">
+          <h3>📊 プロジェクト分析{me.role === 'student' && <Link to={`${base}/report`} className="hint"> 報告書を開く</Link>}</h3>
+          <AnalysisView a={analysis} />
         </section>
 
         <section className="card">

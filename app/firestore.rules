@@ -43,7 +43,7 @@ service cloud.firestore {
         && d.assignees is list && d.assignees.size() <= 10
         && isDateOrNull(d.startDate) && isDateOrNull(d.endDate)
         && d.links is list && d.links.size() <= 10
-        && d.source in ['user', 'draft']
+        && d.source in ['user', 'draft', 'adhoc']
         && (isTeacher() || d.updatedBy == actor()) // 教員は、バックアップの復元で、元の更新者のまま書ける
         && d.deleted is bool;
     }

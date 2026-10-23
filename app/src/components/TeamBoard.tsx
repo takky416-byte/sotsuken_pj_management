@@ -69,7 +69,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
       <div className="table-wrap">
         <StackTable className="board">
           <thead>
-            <tr><th>メンバー</th><th>日報</th><th>日報で触れたタスク</th><th>担当</th><th>完了</th><th>期限超過</th><th>約束</th><th>ありがとう</th><th /></tr>
+            <tr><th>メンバー</th><th>日報</th><th>日報で触れたタスク</th><th>担当</th><th>完了</th><th>期限超過</th><th>WBS外</th><th>約束</th><th>ありがとう</th><th /></tr>
           </thead>
           <tbody>
             {stats.map((s) => {
@@ -82,6 +82,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
                   <td>{s.assigned}</td>
                   <td>{s.done}</td>
                   <td className={s.overdue > 0 ? 'bad' : ''}>{s.overdue}</td>
+                  <td title="日報で「WBSにない作業」として追加した作業">{s.adhoc}</td>
                   <td>{s.promises.total === 0 ? '—' : `${s.promises.done}/${s.promises.total}`}</td>
                   <td>受 {s.thanks.received} / 送 {s.thanks.sent}</td>
                   <td>

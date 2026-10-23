@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { saveDaily } from '../../data/daily';
-import { updateTask } from '../../data/tasks';
+import { createTasks, newTaskId, setDeleted, updateTask } from '../../data/tasks';
 import {
   FIXED_KINDS, MIN_NEXT_CHARS, MIN_NOTE_CHARS, RESULT_LABEL, charCount, statusOf, validateDaily,
   type Daily, type DailyKind, type DailyResult,
 } from '../../lib/daily';
 import {
-  initialItems, itemsToEntries, kindItemId, nextCandidates, statusChanges, type DraftItem,
+  ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, nextCandidates, statusChanges, type DraftItem,
 } from '../../lib/dailyDraft';
+import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
 import { periodLabel } from '../../lib/wbs';
 import type { Task } from '../../types';
 
@@ -24,7 +25,7 @@ const KIND_PLACEHOLDER: Record<Exclude<DailyKind, 'task'>, string> = {
 };
 
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
-type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind }[]; next: string };
+type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
 const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, JSON.stringify(d)); } catch { /* 保存できなくても入力はできる */ } };
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
@@ -47,7 +48,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
     // 下書きの内容を、いまのタスクの候補に重ねる (消えたタスクは捨てる)
     const saved = new Map(d.items.map((i) => [i.id, i]));
     const merged = base.map((i) => (saved.has(i.id) ? { ...i, result: saved.get(i.id)!.result, note: saved.get(i.id)!.note } : i));
-    for (const i of d.items) if (i.kind !== 'task' && !merged.some((m) => m.id === i.id)) merged.push({ id: i.id, kind: i.kind, result: null, note: i.note });
+    for (const i of d.items) if ((i.kind !== 'task' || i.adhoc) && !merged.some((m) => m.id === i.id)) merged.push({ id: i.id, kind: i.kind, result: i.result, note: i.note, ...(i.adhoc ? { adhoc: i.adhoc } : {}) });
     return merged;
   });
   const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
@@ -56,24 +57,32 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
   const [err, setErr] = useState('');
   const [shown, setShown] = useState(false); // 「提出する」を押してから、足りない点を赤く示す
 
-  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind }) => ({ id, result, note, kind })), next }); }, [items, next, key, prev]);
+  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next }); }, [items, next, key, prev]);
   useEffect(() => setState('idle'), [items, next]);
 
-  const title = (i: DraftItem) => (i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
+  const title = (i: DraftItem) => (i.adhoc ? i.adhoc.title.trim() || 'WBSにない作業' : i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
   const included = items.filter((i) => i.kind !== 'task' || i.result !== null);
   const entries = itemsToEntries(items);
-  const problems = validateDaily(entries, next, (e) => (e.taskId ? live.find((t) => t.id === e.taskId)?.title ?? '' : FIXED_KINDS.find((k) => k.kind === e.kind)?.label ?? ''));
+  const adhocItems = items.filter((i) => i.adhoc && i.result !== null);
+  const adhocTitle = (id?: string) => items.find((i) => i.id === id)?.adhoc?.title.trim();
+  const problems = [
+    ...adhocItems.filter((i) => charCount(i.adhoc!.title) < MIN_ADHOC_TITLE).map((i) => ({ key: `adhoc-title:${i.id}`, message: '「WBSにない作業」の名前を書いてください' })),
+    ...validateDaily(entries, next, (e) => (e.taskId ? live.find((t) => t.id === e.taskId)?.title ?? adhocTitle(e.taskId) ?? '' : FIXED_KINDS.find((k) => k.kind === e.kind)?.label ?? '')),
+  ];
   const patch = (id: string, change: Partial<DraftItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...change } : x)));
   const pick = (i: DraftItem, r: DailyResult) => patch(i.id, { result: i.result === r ? null : r });
   const addKind = (kind: Exclude<DailyKind, 'task'>) => setItems((xs) => (xs.some((x) => x.id === kindItemId(kind)) ? xs : [...xs, { id: kindItemId(kind), kind, result: null, note: '' }]));
   const addTask = (id: string) => setItems((xs) => (xs.some((x) => x.id === id) ? xs.map((x) => (x.id === id ? { ...x, result: x.result ?? 'progress' } : x)) : [...xs, { id, kind: 'task', taskId: id, result: 'progress', note: '' }]));
+  const addAdhoc = () => setItems((xs) => [...xs, { id: `${ADHOC_PREFIX}${Date.now().toString(36)}`, kind: 'task', result: 'progress', note: '', adhoc: { title: '', parentId: null } }]);
   const removeKind = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
 
   const shownIds = new Set(items.map((i) => i.id));
   const others = live.filter((t) => !shownIds.has(t.id) && !live.some((c) => c.parentId === t.id));
   const suggestions = nextCandidates(tasks, sid, today, items, 3);
-  const taskCards = items.filter((i) => i.kind === 'task');
-  const kindCards = items.filter((i) => i.kind !== 'task');
+  const taskCards = items.filter((i) => i.kind === 'task' && !i.adhoc);
+  const adhocCards = items.filter((i) => !!i.adhoc);
+  const parentChoices = adhocParents(live);
+  const kindCards = items.filter((i) => i.kind !== 'task' && !i.adhoc);
 
   const submit = async () => {
     setShown(true);
@@ -81,7 +90,18 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
     setState('saving'); setErr('');
     try {
       const first = statusOf(prev) !== 'submitted';
-      await saveDaily(teamId, sid, today, entries, prev?.blocker ?? '', prev, next.trim()); // 以前の日報の「困っていること」は、そのまま残す (新しくは書かない)
+      // WBSにない作業は、先にタスクとして作る (WBSとガントに載り、日報とひも付く)
+      const idOf = new Map<string, string>();
+      if (adhocItems.length > 0) {
+        const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId })), () => newTaskId(teamId));
+        if (plan.restoreRoot) await setDeleted(teamId, sid, [ADHOC_ROOT_ID], false);
+        // 「WBS外の作業」の大項目は、チームに1つ。ほかの人が先に作っていたときは、作れなくても続ける
+        if (plan.root) await createTasks(teamId, sid, [plan.root], 'adhoc').catch(() => undefined);
+        await createTasks(teamId, sid, plan.tasks.map((p) => p.task), 'adhoc');
+        plan.tasks.forEach((p) => idOf.set(p.key, p.task.id));
+      }
+      const real = entries.map((e) => (e.taskId && idOf.has(e.taskId) ? { ...e, taskId: idOf.get(e.taskId) } : e));
+      await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, next.trim()); // 以前の日報の「困っていること」は、そのまま残す (新しくは書かない)
       setState('saved');
       clearDraft(key);
       onSubmitted(first);
@@ -130,6 +150,38 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
             </div>
           );
         })}
+        {adhocCards.map((i) => {
+          const n = charCount(i.note);
+          const set = (c: Partial<NonNullable<DraftItem['adhoc']>>) => patch(i.id, { adhoc: { ...i.adhoc!, ...c } });
+          return (
+            <div key={i.id} className={`dcard on r-${i.result ?? 'progress'} adhoc-card`}>
+              <div className="dcard-head">
+                <strong>WBSにない作業</strong>
+                <button type="button" className="ghost icon" aria-label="WBSにない作業をやめる" onClick={() => removeKind(i.id)}>×</button>
+              </div>
+              <input
+                className={`adhoc-title ${shown && charCount(i.adhoc!.title) < MIN_ADHOC_TITLE ? 'need' : ''}`} maxLength={100} aria-label="WBSにない作業の名前"
+                placeholder="作業の名前 例: 先生へのAPI仕様の確認メールを書いた" value={i.adhoc!.title} onChange={(e) => set({ title: e.target.value })}
+              />
+              <label className="adhoc-parent">入れる場所
+                <select aria-label="入れる場所" value={i.adhoc!.parentId ?? ''} onChange={(e) => set({ parentId: e.target.value || null })}>
+                  <option value="">{ADHOC_ROOT_TITLE}</option>
+                  {parentChoices.map((t) => <option key={t.id} value={t.id}>{t.depth === 2 ? '　' : ''}{t.title}</option>)}
+                </select>
+              </label>
+              <div className="seg" role="group" aria-label="WBSにない作業の結果">
+                {RESULTS.map((r) => (
+                  <button key={r} type="button" className={`seg-btn r-${r} ${i.result === r ? 'on' : ''}`} aria-pressed={i.result === r} onClick={() => patch(i.id, { result: r })}>{RESULT_LABEL[r]}</button>
+                ))}
+              </div>
+              <textarea
+                className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label="WBSにない作業の説明"
+                placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })}
+              />
+              <div className="counter-row">{counter(n, MIN_NOTE_CHARS)}<span className="hint">提出すると、WBSにタスクとして追加されます(あなたが担当)</span></div>
+            </div>
+          );
+        })}
         {others.length > 0 && (
           <select value={extra} onChange={(e) => { if (e.target.value) addTask(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
             <option value="">＋ ほかのタスクを選ぶ…</option>
@@ -150,6 +202,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
           );
         })}
         <div className="chips">
+          <button type="button" className="chip-btn adhoc-btn" onClick={addAdhoc}>＋ WBSにない作業をした</button>
           {FIXED_KINDS.filter((k) => !items.some((i) => i.id === kindItemId(k.kind))).map((k) => (
             <button key={k.kind} type="button" className="chip-btn" onClick={() => addKind(k.kind)}>＋ {k.label}</button>
           ))}

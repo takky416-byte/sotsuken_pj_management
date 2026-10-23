@@ -143,6 +143,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
                 onMove={(d) => patch(planMove(tasks, t.id, d))}
               />
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
+              {t.source === 'adhoc' && <span className="badge adhoc" title="日報で「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
             <div className="w-prog">{hasChildren && <Progress {...progressOf(tasks, t.id)} />}</div>
             <div className="w-status">

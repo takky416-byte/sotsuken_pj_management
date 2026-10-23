@@ -287,6 +287,15 @@ import { dailyDoc, dailyId } from '../src/lib/daily';
 describe('アプリの書き込みの形', () => {
   const nt = (id: string, over = {}) => ({ id, parentId: null, depth: 1 as const, title: 'タスク', detail: '', order: 1024, ...over });
 
+  test('学生: 日報の「WBSにない作業」を、後追いのタスクとして作れる (完了済み・自分が担当)', async () => {
+    const db = as(A1);
+    await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/adhoc-root'), taskDoc(nt('adhoc-root', { title: 'WBS外の作業(あとから追加)' }), 'A1', 'adhoc')));
+    await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/ad1'),
+      taskDoc({ ...nt('ad1', { parentId: 'adhoc-root', depth: 2 }), assignees: ['A1'], startDate: '2026-11-04', endDate: '2026-11-04', status: 'done' }, 'A1', 'adhoc')));
+    // 知らない種類は作れない
+    await assertFails(setDoc(doc(db, 'teams/A/tasks/ad2'), taskDoc(nt('ad2'), 'A1', 'other' as never)));
+  });
+
   test('学生: 新規作成・状態変更・並べ替え・担当/日付/リンク・削除と復元', async () => {
     const db = as(A1);
     const ref = doc(db, 'teams/A/tasks/new1');

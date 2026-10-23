@@ -20,6 +20,8 @@ export type MemberStat = {
   overdue: number;
   promises: { done: number; total: number };
   thanks: { received: number; sent: number };
+  /** 日報で「WBSにない作業」として追加した作業の数 */
+  adhoc: number;
 };
 
 export type EngagementInput = {
@@ -82,6 +84,7 @@ export function engagement(input: EngagementInput): MemberStat[] {
       overdue: mine.filter((t) => t.status !== 'done' && t.endDate !== null && t.endDate < today).length,
       promises: { done: promises.filter((a) => a.done).length, total: promises.length },
       thanks: { received: thanks.filter((t) => t.to === m.sid).length, sent: thanks.filter((t) => t.from === m.sid).length },
+      adhoc: live.filter((t) => t.source === 'adhoc' && t.id !== 'adhoc-root' && t.createdBy === m.sid).length,
     };
   });
 }

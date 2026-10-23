@@ -13,6 +13,8 @@ export type NewTask = {
   assignees?: string[];
   startDate?: string | null;
   endDate?: string | null;
+  /** 省略すると未着手 */
+  status?: Task['status'];
 };
 
 /**

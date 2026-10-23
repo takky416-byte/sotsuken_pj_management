@@ -5,6 +5,7 @@ import { MeetingIndex, MeetingPage } from '../meeting/MeetingPage';
 import { StudentDaily } from './StudentDaily';
 import { StudentGantt } from './StudentGantt';
 import { StudentHome } from './StudentHome';
+import { StudentReport } from './StudentReport';
 import { StudentTeam } from './StudentTeam';
 import { StudentWbs } from './StudentWbs';
 
@@ -16,6 +17,7 @@ export function StudentNav({ teamId }: { teamId: string | null }) {
       <NavLink to={`${base}/wbs`}>WBS</NavLink>
       <NavLink to={`${base}/gantt`}>ガント</NavLink>
       <NavLink to={`${base}/team`}>チーム</NavLink>
+      <NavLink to={`${base}/report`}>報告書</NavLink>
       <NavLink to={`${base}/daily`}>日報</NavLink>
       <NavLink to={`${base}/meeting/${teamId ?? 'A'}`}>ミーティング</NavLink>
       <NavLink to={`${base}/help`}>使い方</NavLink>
@@ -32,6 +34,7 @@ export function StudentApp() {
       <Route path="wbs" element={<StudentWbs />} />
       <Route path="gantt" element={<StudentGantt />} />
       <Route path="team" element={<StudentTeam />} />
+      <Route path="report" element={<StudentReport />} />
       <Route path="daily" element={<StudentDaily />} />
       <Route path="help" element={<Help role="student" />} />
       <Route path="meeting" element={<MeetingIndex />} />

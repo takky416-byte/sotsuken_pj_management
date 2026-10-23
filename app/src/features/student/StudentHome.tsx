@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
+import { Missions } from '../../components/Missions';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
 import { useMyDailies, useSettings } from '../../data/daily';
@@ -12,6 +13,7 @@ import { isHttpUrl } from '../../data/util';
 import { celebrate } from '../../lib/celebrate';
 import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
+import { dailyMissions, weeklyMissions } from '../../lib/missions';
 import {
   dayInfo, doToday, lastNextPlan, myPromises, periodsLabel, unassigned, upcoming, type PlanItem,
 } from '../../lib/todayPlan';
@@ -91,6 +93,8 @@ export function StudentHome() {
         <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
       </section>
       {err && <p className="error">{err}</p>}
+
+      <Missions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay })} weekly={weeklyMissions(tasks, team.members, today)} />
 
       <section className="card">
         <h3>🎯 今日やること</h3>

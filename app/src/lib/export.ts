@@ -71,7 +71,7 @@ export function tasksCsv(b: Backup): string {
         t, k.id, k.parentId ?? '', k.depth, k.title, status[str(k.status)] ?? str(k.status),
         list<string>(k.assignees).map(nameOf).join('・'), k.startDate ?? '', k.endDate ?? '', k.detail,
         list<{ url: string; label: string }>(k.links).map((l) => (l.label ? `${l.label} ${l.url}` : l.url)).join(' / '),
-        k.source === 'draft' ? '叩き台' : '', k.deleted === true, nameOf(str(k.createdBy)), nameOf(str(k.updatedBy)), jstDateTime(k.updatedAt),
+        k.source === 'draft' ? '叩き台' : k.source === 'adhoc' ? 'WBS外(後追い)' : '', k.deleted === true, nameOf(str(k.createdBy)), nameOf(str(k.updatedBy)), jstDateTime(k.updatedAt),
       ]);
     }
   }

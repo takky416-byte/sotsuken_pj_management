@@ -13,7 +13,12 @@ export type DraftItem = {
   /** null: 今日は、やっていない (日報に入れない)。タスク以外 (調査・勉強など) は、常に入る */
   result: DailyResult | null;
   note: string;
+  /** WBSにない作業。提出のときにタスクとして作る (それまでは taskId なし) */
+  adhoc?: { title: string; parentId: string | null };
 };
+
+export const ADHOC_PREFIX = 'adhoc:';
+export const isAdhocItem = (i: DraftItem) => !!i.adhoc;
 
 export const kindItemId = (kind: DailyKind) => `kind:${kind}`;
 
@@ -62,7 +67,8 @@ export function itemsToEntries(items: DraftItem[]): DailyEntry[] {
   return items
     .filter((i) => i.kind !== 'task' || i.result !== null)
     .map((i) => ({
-      kind: i.kind, ...(i.taskId ? { taskId: i.taskId } : {}), note: i.note.trim(), ...(i.kind === 'task' && i.result ? { result: i.result } : {}),
+      // WBSにない作業は、提出のときにタスクができるまで、仮の id (adhoc:…) を入れておく
+      kind: i.kind, ...(i.taskId ? { taskId: i.taskId } : i.adhoc ? { taskId: i.id } : {}), note: i.note.trim(), ...(i.kind === 'task' && i.result ? { result: i.result } : {}),
     }));
 }
 
