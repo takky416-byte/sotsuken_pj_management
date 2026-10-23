@@ -122,4 +122,25 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(s.locator('.thanks-card .received li.fresh')).toContainText('助かった');
     await s.close();
   });
+
+  test('アクセス履歴: 学生が開いた記録が、教員だけに見える', async ({ browser }) => {
+    // 学生が画面を開く (開いた直後に、記録が書かれる)
+    const sp = await browser.newPage();
+    await login(sp, 'a1@trident.ac.jp');
+    await sp.getByRole('link', { name: 'WBS', exact: true }).click();
+    await sp.waitForTimeout(1500);
+    // 学生には、アクセス履歴の画面が出ない (ナビにも出ない)
+    await expect(sp.getByRole('link', { name: 'アクセス', exact: true })).toHaveCount(0);
+
+    const t = await browser.newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await t.getByRole('link', { name: 'アクセス', exact: true }).click();
+    await expect(t.getByRole('heading', { name: 'アクセス履歴' })).toBeVisible();
+    const row = t.locator('table.access tbody tr', { hasText: 'A1' }).first();
+    await expect(row).toContainText('今日');
+    await row.getByRole('button').click();
+    await expect(t.locator('tr.detail')).toContainText('開いた');
+    await expect(t.locator('tr.detail')).toContainText('ホーム');
+    await sp.close(); await t.close();
+  });
 });

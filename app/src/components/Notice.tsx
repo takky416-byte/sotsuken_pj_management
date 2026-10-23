@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const KEY = (email: string) => `notice-ack:${email}`;
+const KEY = (email: string) => `notice-ack2:${email}`;
 
 /** 初回ログイン時の案内。何が記録され、誰が見られるかを伝える。確認すると、その端末では表示しない。 */
 export function Notice({ email, children }: { email: string; children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export function NoticeBody({ onConfirm }: { onConfirm?: () => void }) {
         <ul>
           <li>先生は、<strong>全チーム・全員の情報</strong>(WBS、日報)を見られます。</li>
           <li>日報は、設定によって、同じチームのメンバーにも見えます。</li>
-          <li>記録されるのは、あなたが入力したWBSと日報の内容です。作業時間や、順位づけは記録しません。</li>
+          <li>記録されるのは、あなたが入力したWBSと日報の内容と、<strong>アプリを開いた記録</strong>(日付・時刻・開いた回数・開いた画面の種類)です。アプリを開いた記録は、<strong>先生だけ</strong>が見られます。作業時間の計測や、順位づけはしません。</li>
           <li>先生だけが見られるメモがあります。学生の画面には出ません。</li>
           <li>日報は、やったタスクの結果を選んで、何をどこまでやったかを書きます。調べたことや、チームで相談したことも書きます。</li>
         </ul>

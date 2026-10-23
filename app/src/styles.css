@@ -524,3 +524,16 @@ table.facts td.bad { color:var(--danger); font-weight:700; }
 .idle-person { background:var(--bg); border-radius:12px; padding:10px 12px; margin:8px 0; }
 .suggest { display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; padding:6px 0; border-top:1px dashed var(--line); }
 .suggest-act { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* アクセス履歴 */
+.pill { display:inline-block; padding:4px 12px; border-radius:999px; background:var(--accent-soft); }
+.pill.warn { background:#fff3e0; }
+table.access { border-collapse:collapse; width:100%; font-size:15px; }
+table.access th, table.access td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:middle; }
+table.access tr.quiet td { background:#fff8ee; }
+table.access tr.detail td { background:var(--bg); }
+.linklike { background:none; border:none; color:var(--accent); font-weight:700; padding:0; text-decoration:underline dotted; }
+.dots { display:inline-flex; gap:3px; }
+.dot { width:12px; height:16px; border-radius:3px; background:var(--line); display:inline-block; }
+.dot.on { background:var(--ok, #22b573); }
+.dot.cls { box-shadow:0 2px 0 0 var(--accent2); }

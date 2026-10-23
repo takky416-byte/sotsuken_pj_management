@@ -8,6 +8,8 @@ import { ThemePicker } from './components/ThemePicker';
 import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
+import { AccessTracker } from './components/AccessTracker';
+import { AccessLogPage } from './features/teacher/AccessLog';
 import { Attendance } from './features/teacher/Attendance';
 import { CalendarPage } from './features/teacher/CalendarPage';
 import { Export } from './features/teacher/Export';
@@ -42,6 +44,7 @@ function Shell() {
             <NavLink to="/meeting">ミーティング</NavLink>
             <NavLink to="/teacher/preview">学生の画面</NavLink>
             <NavLink to="/teacher/attendance">欠席</NavLink>
+            <NavLink to="/teacher/access">アクセス</NavLink>
             <NavLink to="/teacher/roster">名簿</NavLink>
             <NavLink to="/teacher/calendar">カレンダー</NavLink>
             <NavLink to="/teacher/export">書き出し</NavLink>
@@ -68,6 +71,7 @@ function Shell() {
             <Route path="/teacher/preview" element={<Preview />} />
             <Route path="/teacher/preview/:sid/*" element={<Preview />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
+            <Route path="/teacher/access" element={<AccessLogPage />} />
             <Route path="/teacher/roster" element={<Roster />} />
             <Route path="/teacher/export" element={<Export />} />
             <Route path="/teacher/settings" element={<Settings />} />
@@ -77,6 +81,7 @@ function Shell() {
           </Routes>
         ) : (
           <Notice email={profile.email}>
+            {profile.sid && <AccessTracker sid={profile.sid} teamId={profile.teamId} />}
             <StudentApp />
           </Notice>
         )}

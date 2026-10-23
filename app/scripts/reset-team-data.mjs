@@ -39,6 +39,10 @@ export async function resetTeams({ db, teams, resetTeam = false, includeTeacherN
       counts.teacherNotes = notes.size;
       if (!dryRun) await Promise.all(notes.docs.map((d) => d.ref.delete()));
     }
+    // 試運転のアクセス履歴 (そのチームの学生の分) も消す
+    const access = await db.collection('accessLogs').where('teamId', '==', id).get();
+    counts.accessLogs = access.size;
+    if (!dryRun) await Promise.all(access.docs.map((d) => d.ref.delete()));
     if (resetTeam) {
       counts.teamReset = 1;
       if (!dryRun) {

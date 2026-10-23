@@ -3,7 +3,7 @@ import { Restore } from './Restore';
 import { download, loadBackup } from '../../data/export';
 import { jstDate } from '../../lib/dates';
 import {
-  calendarCsv, counts, dailiesCsv, meetingsCsv, rosterCsv, tasksCsv, teacherNotesCsv, withoutTeacherOnly, type Backup,
+  accessCsv, calendarCsv, counts, dailiesCsv, meetingsCsv, rosterCsv, tasksCsv, teacherNotesCsv, withoutTeacherOnly, type Backup,
 } from '../../lib/export';
 
 const LAST_KEY = 'last-export';
@@ -85,6 +85,7 @@ export function Export() {
             <button className="ghost" onClick={() => csv('roster', rosterCsv(backup))}>名簿</button>
             <button className="ghost" onClick={() => csv('calendar', calendarCsv(backup))}>予定・授業日</button>
             <button className="ghost" onClick={() => csv('teacher-notes', teacherNotesCsv(backup))}>教員メモ(専用)</button>
+            <button className="ghost" onClick={() => csv('access', accessCsv(backup))}>アクセス履歴(専用)</button>
           </div>
         </>
       )}

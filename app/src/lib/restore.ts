@@ -47,14 +47,14 @@ export function inScope(path: string, scope: Scope): boolean {
   if (scope.teams === 'all') return true;
   const seg = path.split('/');
   if (seg[0] === 'teams') return seg.length === 1 || scope.teams.includes(seg[1]);
-  return path === 'teacherNotes' || path === 'followups';
+  return path === 'teacherNotes' || path === 'followups' || path === 'accessLogs';
 }
 
 /** 文書が範囲に入るか。teams コレクション自体と教員メモは、チームの指定を文書ごとに見る。 */
 function docInScope(path: string, d: Doc, scope: Scope): boolean {
   if (scope.teams === 'all') return true;
   if (path === 'teams') return scope.teams.includes(d.id);
-  if (path === 'teacherNotes' || path === 'followups') return scope.teacherOnly && typeof d.teamId === 'string' && scope.teams.includes(d.teamId);
+  if (path === 'teacherNotes' || path === 'followups' || path === 'accessLogs') return scope.teacherOnly && typeof d.teamId === 'string' && scope.teams.includes(d.teamId);
   return true;
 }
 

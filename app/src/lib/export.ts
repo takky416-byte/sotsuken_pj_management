@@ -9,8 +9,8 @@ export type Backup = {
 };
 
 const TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'evaluationsPublished'] as const;
-export const TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw'] as const;
-export const TEACHER_ONLY = ['teacherNotes', 'followups', 'evaluationsRaw'];
+export const TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'] as const;
+export const TEACHER_ONLY = ['teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'];
 
 export const teamSubcollections = (teamIds: string[]): string[] =>
   teamIds.flatMap((t) => TEAM_SUBCOLLECTIONS.map((s) => `teams/${t}/${s}`));
@@ -135,6 +135,15 @@ export function teacherNotesCsv(b: Backup): string {
   return toCsv(rows);
 }
 
+export function accessCsv(b: Backup): string {
+  const rows: unknown[][] = [['日付', 'チーム', '学生ID', '初回', '最終', '訪問', '画面表示', '画面ごとの回数']];
+  for (const a of sortBy(col(b, 'accessLogs'), (x) => str(x.date), (x) => str(x.sid))) {
+    rows.push([str(a.date), str(a.teamId), str(a.sid), jstDateTime(a.firstAt), jstDateTime(a.lastAt), a.visits ?? 0, a.views ?? 0,
+      Object.entries((a.screens ?? {}) as Record<string, number>).map(([k, n]) => `${k}:${n}`).join(' ')]);
+  }
+  return toCsv(rows);
+}
+
 /** 画面に出す、コレクションごとの件数 */
 export function counts(b: Backup): { label: string; n: number }[] {
   const sum = (suffix: string) => teamIds(b).reduce((acc, t) => acc + col(b, `teams/${t}/${suffix}`).length, 0);
@@ -148,6 +157,7 @@ export function counts(b: Backup): { label: string; n: number }[] {
     { label: 'ありがとう', n: sum('thanks') },
     { label: '予定', n: col(b, 'milestones').length },
     { label: '教員メモ', n: col(b, 'teacherNotes').length },
+    { label: 'アクセス履歴', n: col(b, 'accessLogs').length },
   ];
 }
 

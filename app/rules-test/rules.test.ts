@@ -284,6 +284,33 @@ describe('ミーティング記録・コメント・設定', () => {
 import { taskDoc } from '../src/lib/taskDoc';
 import { dailyDoc, dailyId } from '../src/lib/daily';
 
+describe('アクセス履歴', () => {
+  const log = (sid: string, over: Record<string, unknown> = {}) => ({
+    sid, teamId: 'A', date: jstDate(), firstAt: 1000, lastAt: 1000, visits: 1, views: 1, screens: { home: 1 }, ...over,
+  });
+  const id = (sid: string) => `${jstDate()}_${sid}`;
+
+  test('学生: 自分の今日の分を作り、増える方向にだけ更新できる。読めるのは教員だけ', async () => {
+    const db = as(A1);
+    const ref = doc(db, 'accessLogs', id('A1'));
+    await assertSucceeds(setDoc(ref, log('A1')));
+    await assertSucceeds(updateDoc(ref, { lastAt: 2000, visits: 2, views: 5, 'screens.home': 4, 'screens.wbs': 1 }));
+    await assertFails(updateDoc(ref, { views: 1 })); // 減らせない
+    await assertFails(updateDoc(ref, { firstAt: 5 })); // 初回は変えられない
+    await assertFails(updateDoc(ref, { extra: 1 })); // 余計な項目
+    await assertFails(getDoc(ref)); // 学生は、自分の分も読めない
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'accessLogs', id('A1'))));
+  });
+
+  test('学生: 他人の分・過去の日・別のID・教員の書き込みは拒否', async () => {
+    await assertFails(setDoc(doc(as(A1), 'accessLogs', id('A2')), log('A2')));
+    await assertFails(setDoc(doc(as(A1), 'accessLogs', '2020-01-01_A1'), log('A1', { date: '2020-01-01' })));
+    await assertFails(setDoc(doc(as(A1), 'accessLogs', 'x_A1'), log('A1')));
+    await assertFails(setDoc(doc(as(TEACHER), 'accessLogs', id('A1')), log('A1')));
+    await assertFails(deleteDoc(doc(as(A1), 'accessLogs', id('A1'))));
+  });
+});
+
 describe('アプリの書き込みの形', () => {
   const nt = (id: string, over = {}) => ({ id, parentId: null, depth: 1 as const, title: 'タスク', detail: '', order: 1024, ...over });
 

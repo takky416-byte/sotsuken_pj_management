@@ -152,6 +152,31 @@ service cloud.firestore {
     // ---- 教員専用 (学生からは読めない) ----
     match /teacherNotes/{id} { allow read, write: if isTeacher(); }
     match /followups/{id} { allow read, write: if isTeacher(); }
+
+    // アクセス履歴: 学生が自分の今日の分だけ書き (数は増える方向にだけ)、教員だけが読む
+    function validAccess(d) {
+      return d.keys().hasOnly(['sid', 'teamId', 'date', 'firstAt', 'lastAt', 'visits', 'views', 'screens'])
+        && d.sid is string && (d.teamId == null || d.teamId is string)
+        && d.date is string && d.date.size() == 10
+        && d.firstAt is number && d.lastAt is number && d.lastAt >= d.firstAt
+        && d.visits is int && d.visits >= 0 && d.visits <= 1000
+        && d.views is int && d.views >= 0 && d.views <= 20000
+        && d.screens is map && d.screens.size() <= 20;
+    }
+    match /accessLogs/{logId} {
+      allow read: if isTeacher();
+      allow create: if isStudent() && validAccess(request.resource.data)
+        && request.resource.data.sid == me().sid && request.resource.data.teamId == me().teamId
+        && logId == request.resource.data.date + '_' + me().sid
+        && dateKey(request.resource.data.date) == todayJst();
+      allow update: if isStudent() && validAccess(request.resource.data)
+        && resource.data.sid == me().sid && request.resource.data.sid == resource.data.sid
+        && request.resource.data.date == resource.data.date && dateKey(resource.data.date) == todayJst()
+        && request.resource.data.teamId == resource.data.teamId && request.resource.data.firstAt == resource.data.firstAt
+        && request.resource.data.lastAt >= resource.data.lastAt
+        && request.resource.data.visits >= resource.data.visits && request.resource.data.views >= resource.data.views;
+      allow delete: if false;
+    }
     match /evaluationsRaw/{id} { allow read, write: if isTeacher(); }
   }
 }
