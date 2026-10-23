@@ -21,6 +21,11 @@ test.describe.serial('ガントと使い方', () => {
     await page.getByRole('button', { name: 'ガント', exact: true }).click();
     await expect(page.locator('.gantt-row', { hasText: 'ガント確認用の大項目' }).locator('.gantt-bar')).toHaveCount(1);
     await expect(page.locator('.gantt-row', { hasText: 'ガント確認用の日付なし' }).locator('.gantt-bar')).toHaveCount(0);
+    // 稲妻線は、既定で出る。チェックで消せる
+    await expect(page.getByRole('img', { name: '稲妻線' })).toBeVisible();
+    await page.getByLabel('稲妻線を表示する').uncheck();
+    await expect(page.getByRole('img', { name: '稲妻線' })).toHaveCount(0);
+    await page.getByLabel('稲妻線を表示する').check();
     await page.screenshot({ path: 'e2e-shots/teacher-gantt.png', fullPage: true });
     await page.getByText(/日付が未設定のタスク/).click();
     await expect(page.locator('details li', { hasText: 'ガント確認用の日付なし' })).toBeVisible();
