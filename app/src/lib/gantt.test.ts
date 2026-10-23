@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, progressRatio, weekTicks } from './gantt';
+import { buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, weekTicks } from './gantt';
 
 const t = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [],
@@ -83,34 +83,30 @@ describe('buildGantt', () => {
     const today = '2026-11-10';
     const tasks = [
       t('P', { startDate: '2026-11-01', endDate: '2026-11-20' }),
-      t('on', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-20', status: 'doing' }), // 予定の半分を過ぎて、進行中(50%)
-      t('late', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-10', status: 'todo' }), // 終わっているはずが未着手
-      t('ahead', { parentId: 'P', depth: 2, startDate: '2026-11-10', endDate: '2026-11-11', status: 'doing' }), // 2日の予定の初日に、もう半分
+      t('doing', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-20', status: 'doing' }),
+      t('late', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-10', status: 'todo' }), // 始まっているはずが未着手
+      t('overdue', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'doing' }), // 期限超過でも、進行中は今日の線の上
       t('done', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'done' }),
+      t('hold', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'hold' }),
       t('future', { parentId: 'P', depth: 2, startDate: '2026-11-15', endDate: '2026-11-20' }),
       t('nodate', { parentId: 'P', depth: 2 }),
     ];
     const g = buildGantt(tasks, [], today);
-    const pts = lightning(tasks, g, today);
+    const parents = (id: string) => id === 'P';
+    const pts = lightning(g, today, 2, parents);
     const at = (id: string) => pts.find((p) => p.row === g.rows.findIndex((r) => r.task.id === id))!;
 
-    test('進み具合は、状態から (未着手0・進行中0.5・完了1)。親は、子の平均 (保留を除く)', () => {
-      expect(progressRatio(tasks, 'on')).toBe(0.5);
-      expect(progressRatio(tasks, 'done')).toBe(1);
-      expect(progressRatio(tasks, 'P')).toBeCloseTo((0.5 + 0 + 0.5 + 1 + 0 + 0) / 6);
-      expect(progressRatio([...tasks, t('h', { parentId: 'P', depth: 2, status: 'hold' })], 'P')).toBeCloseTo((0.5 + 0 + 0.5 + 1 + 0 + 0) / 6);
+    test('左に折れるのは、予定の期間に入っているのに未着手のタスクだけ', () => {
+      expect(at('late').days).toBeLessThan(-8);
+      expect(at('late').x).toBeLessThan(at('nodate').x);
+    });
+    test('進行中・完了・保留・日付なし・まだ始まっていないタスクは、今日の線の上', () => {
+      for (const id of ['doing', 'overdue', 'done', 'hold', 'future', 'nodate']) expect(at(id).days).toBe(0);
+      expect(at('doing').x).toBeCloseTo(at('nodate').x);
     });
     test('子が表示されている親の行には、点を打たない (子を出さないときは、親に打つ)', () => {
       expect(pts.some((p) => p.row === g.rows.findIndex((r) => r.task.id === 'P'))).toBe(false);
-      expect(lightning(tasks, g, today, 1).some((p) => p.row === 0)).toBe(true);
-    });
-    test('遅れは今日の線より左 (負)、先行は右 (正)。期間に入っていないものは、今日の線の上', () => {
-      expect(at('late').days).toBeLessThan(-8); // 10日の予定で、まだ手つかず
-      expect(at('late').x).toBeLessThan(at('nodate').x);
-      expect(at('ahead').days).toBeGreaterThan(0);
-      expect(Math.abs(at('on').days)).toBeLessThan(1); // 20日の予定の10日目に50%なら、ほぼ予定どおり
-      for (const id of ['done', 'future', 'nodate']) expect(at(id).days).toBe(0);
-      expect(at('done').x).toBeCloseTo(at('nodate').x);
+      expect(lightning(g, today, 1, parents).some((p) => p.row === 0)).toBe(true);
     });
   });
 });

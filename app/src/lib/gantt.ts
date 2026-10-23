@@ -125,25 +125,6 @@ export function placeMilestones(
   return { places, lanes: Math.max(1, laneEnd.length) };
 }
 
-const WEIGHT: Record<TaskStatus, number> = { todo: 0, doing: 0.5, done: 1, hold: 0 };
-
-/**
- * タスクの進み具合 (0〜1)。子のないタスクは、状態から (未着手 0、進行中 0.5、完了 1)。
- * 親は、子 (保留を除く) の平均を、孫まで含めて求める。
- */
-export function progressRatio(tasks: Task[], id: string): number {
-  const live = tasks.filter((t) => !t.deleted);
-  const walk = (t: Task): { sum: number; n: number } => {
-    const kids = live.filter((c) => c.parentId === t.id);
-    if (kids.length === 0) return t.status === 'hold' ? { sum: 0, n: 0 } : { sum: WEIGHT[t.status], n: 1 };
-    return kids.map(walk).reduce((a, b) => ({ sum: a.sum + b.sum, n: a.n + b.n }), { sum: 0, n: 0 });
-  };
-  const self = live.find((t) => t.id === id);
-  if (!self) return 0;
-  const r = walk(self);
-  return r.n === 0 ? 0 : r.sum / r.n;
-}
-
 export type LightningPoint = {
   /** 行の番号 (上から 0) */
   row: number;
@@ -154,23 +135,21 @@ export type LightningPoint = {
 };
 
 /**
- * 稲妻線: 「実際の進み具合の位置」を求め、上から順につなぐ。
- * 今日の線より左なら予定より遅れ、右なら先行。予定の期間に入っていないもの (日付なし・未開始・完了・保留) は、今日の線の上に置く。
- * 子の表示されている親の行 (大項目など) は、子と重なって意味が薄いので、点を打たない (前後の点を、まっすぐつなぐ)。
+ * 稲妻線: 予定どおりなら今日の線の上、遅れていれば左に折れる。上から順につなぐ。
+ * 左に折れるのは、予定の期間に入っているのに「未着手」のタスク (開始日の位置まで戻る。長く着手していないほど、大きく左へ)。
+ * 進行中・完了・保留、日付なし、まだ始まっていないタスクは、今日の線の上に置く。
+ * 子が表示されている親の行 (大項目など) は、子と重なって意味が薄いので、点を打たない (前後の点を、まっすぐつなぐ)。
  */
 export function lightning(
-  tasks: Task[], g: Pick<Gantt, 'start' | 'days' | 'rows'>, today: string, maxDepth: 1 | 2 | 3 = 2,
+  g: Pick<Gantt, 'start' | 'days' | 'rows'>, today: string, maxDepth: 1 | 2 | 3 = 2, hasChildren: (id: string) => boolean = () => false,
 ): LightningPoint[] {
-  const live = tasks.filter((t) => !t.deleted);
   const nowDay = daysBetween(g.start, today) + 0.5; // 今日の真ん中
   const toX = (day: number) => Math.min(100, Math.max(0, (day / g.days) * 100));
   const out: LightningPoint[] = [];
   g.rows.forEach((r, row) => {
-    const childrenShown = live.some((c) => c.parentId === r.task.id) && r.depth < maxDepth;
-    if (childrenShown) return;
-    if (!r.start || !r.end || r.status === 'done' || r.status === 'hold' || r.start > today) { out.push({ row, x: toX(nowDay), days: 0 }); return; }
-    const length = daysBetween(r.start, r.end) + 1;
-    const at = daysBetween(g.start, r.start) + length * progressRatio(tasks, r.task.id);
+    if (hasChildren(r.task.id) && r.depth < maxDepth) return; // 子が表示されている親
+    if (!r.start || r.status !== 'todo' || r.start > today) { out.push({ row, x: toX(nowDay), days: 0 }); return; }
+    const at = daysBetween(g.start, r.start); // 未着手: 開始日の位置 (進み具合 0)
     out.push({ row, x: toX(at), days: Math.round((at - nowDay) * 10) / 10 });
   });
   return out;
