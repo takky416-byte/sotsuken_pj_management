@@ -5,6 +5,8 @@ import type { Task } from '../types';
 import { addDays, jstDate } from './dates';
 import { ADHOC_ROOT_ID } from './adhoc';
 import { isLeaf, isPlaceholder } from './meetingView';
+import type { Thank } from './engagement';
+import { sendersSince } from './thanksView';
 
 export type Mission = {
   id: string;
@@ -13,7 +15,7 @@ export type Mission = {
   hint: string;
   done: boolean;
   /** 行き先 (画面の名前) */
-  to: 'wbs' | 'daily' | 'gantt';
+  to: 'wbs' | 'daily' | 'gantt' | 'home';
 };
 
 const open = (t: Task) => t.status !== 'done' && t.status !== 'hold';
@@ -29,7 +31,7 @@ export const touchedToday = (live: Task[], sid: string, today: string): number =
 const dayOf = (ms: number): string => (Number.isFinite(ms) ? jstDate(new Date(ms)) : '');
 
 export function dailyMissions(
-  tasks: Task[], sid: string, today: string, opts: { dailySubmitted: boolean; isClassDay: boolean },
+  tasks: Task[], sid: string, today: string, opts: { dailySubmitted: boolean; isClassDay: boolean; thankedToday?: boolean },
 ): Mission[] {
   const live = tasks.filter((t) => !t.deleted);
   const mine = myOpen(live, sid);
@@ -49,6 +51,9 @@ export function dailyMissions(
   if (opts.isClassDay || opts.dailySubmitted) {
     out.push({ id: 'daily', to: 'daily', done: opts.dailySubmitted, label: '日報を提出する', hint: '何を・どこまでやったかを書きます' });
   }
+  if (opts.thankedToday !== undefined) {
+    out.push({ id: 'thanks', to: 'home', done: opts.thankedToday, label: 'チームの誰かに、ありがとうを送る', hint: 'ホームの「ありがとう」から、スタンプを1タップで送れます' });
+  }
   return out;
 }
 
@@ -61,7 +66,7 @@ export function weekStart(today: string): string {
 export type WeeklyMission = Mission & { detail: string };
 
 /** チームの今週のミッション。メンバー全員で達成するもの。 */
-export function weeklyMissions(tasks: Task[], members: { sid: string; name: string }[], today: string): WeeklyMission[] {
+export function weeklyMissions(tasks: Task[], members: { sid: string; name: string }[], today: string, thanks?: Thank[]): WeeklyMission[] {
   const live = tasks.filter((t) => !t.deleted);
   const start = weekStart(today);
   const leaves = live.filter((t) => isLeaf(live, t) && !isPlaceholder(live, t) && open(t));
@@ -87,6 +92,15 @@ export function weeklyMissions(tasks: Task[], members: { sid: string; name: stri
       detail: overdue.length === 0 ? '期限超過はありません' : `あと${overdue.length}件`,
     },
   ];
+  if (thanks) {
+    const senders = sendersSince(thanks, start);
+    const quietT = members.filter((m) => !senders.has(m.sid));
+    out.push({
+      id: 'thanks', to: 'home', done: members.length > 0 && quietT.length === 0,
+      label: '全員が、今週だれかにありがとうを送る', hint: 'スタンプ1つで送れます',
+      detail: quietT.length === 0 ? '全員が送りました' : `まだ: ${quietT.map((m) => m.name).join('・')}`,
+    });
+  }
   if (adhocKids.length > 0) {
     out.push({
       id: 'adhoc', to: 'wbs', done: false,

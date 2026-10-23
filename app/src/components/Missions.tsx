@@ -16,7 +16,7 @@ export function Missions({ sid, today, daily, weekly }: { sid: string; today: st
   const key = flagKey(sid, today);
   // 全部そろった瞬間に1日1回だけ演出する (開き直しでは出さない)
   useEffect(() => { if (all && !seen(key)) { mark(key); celebrate('今日のミッション、ぜんぶ達成!'); } }, [all, key]);
-  const href = (to: Mission['to']) => `${base}/${to}`;
+  const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
   const weeklyDone = weekly.filter((m) => m.done).length;
 
   return (

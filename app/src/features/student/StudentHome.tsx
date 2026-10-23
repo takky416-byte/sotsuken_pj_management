@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
 import { Missions } from '../../components/Missions';
+import { ThanksCard } from '../../components/ThanksCard';
+import { useThanks } from '../../data/thanks';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
 import { useMyDailies, useSettings } from '../../data/daily';
@@ -35,6 +37,7 @@ export function StudentHome() {
   const { data: mine, error: e3 } = useMyDailies(me.teamId, me.sid, dailyWindowFrom(today));
   const classDays = useClassDays();
   const settings = useSettings();
+  const { data: thanks, error: e4 } = useThanks(me.teamId, dailyWindowFrom(today));
   const [err, setErr] = useState('');
 
   if (!me.teamId || !me.sid) return <p>チームが設定されていません。先生に連絡してください。</p>;
@@ -49,9 +52,9 @@ export function StudentHome() {
     );
   }
   // どれかが読み込めないとき (権限・通信・設定の不備) に、「読み込み中」のまま止まらないよう、理由を出す
-  const loadError = e1 ?? e2 ?? e3;
+  const loadError = e1 ?? e2 ?? e3 ?? e4;
   if (loadError) return <p className="error">読み込めませんでした: {loadError}</p>;
-  if (!tasks || !meetings || !mine || !classDays || !settings) return <p>読み込み中…</p>;
+  if (!tasks || !meetings || !mine || !classDays || !settings || !thanks) return <p>読み込み中…</p>;
 
   const sid = me.sid;
   const run = async (fn: () => Promise<unknown>) => { setErr(''); try { await fn(); } catch (e) { setErr(`できませんでした: ${(e as Error).message}`); } };
@@ -94,7 +97,9 @@ export function StudentHome() {
       </section>
       {err && <p className="error">{err}</p>}
 
-      <Missions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay })} weekly={weeklyMissions(tasks, team.members, today)} />
+      <Missions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} weekly={weeklyMissions(tasks, team.members, today, thanks)} />
+
+      <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
 
       <section className="card">
         <h3>🎯 今日やること</h3>

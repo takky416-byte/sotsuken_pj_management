@@ -9,8 +9,7 @@ import { dailyWindowFrom, formatDate, jstDate } from '../lib/dates';
 import { attention, engagement } from '../lib/engagement';
 import type { Team } from '../types';
 
-/** 1日に送れるありがとうの数 (送りすぎで意味が薄れないように、画面で制限する) */
-export const THANKS_PER_DAY = 3;
+import { STAMPS, THANKS_PER_DAY, stampNote } from '../lib/thanksView';
 
 /**
  * チームのようす (直近3週間)。日報・担当・約束・ありがとうの目安を、メンバーごとに並べる。
@@ -51,10 +50,10 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
   const sentToday = thanks.filter((t) => t.from === viewer && t.date === today).length;
   const left = THANKS_PER_DAY - sentToday;
 
-  const send = async () => {
+  const send = async (stamp?: string) => {
     if (!to) return;
     // 押したらすぐに閉じる (続けて別の人に送れるように)。送れなかったときは、表の下にメッセージを出す
-    const target = to; const text = note;
+    const target = to; const text = stamp ?? note;
     setTo(null); setNote(''); setErr('');
     try { await sendThanks(team.id, viewer, target, text); }
     catch (e) { setErr(`送れませんでした: ${(e as Error).message}`); }
@@ -102,10 +101,13 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
       {to && (
         <div className="card form">
           <div className="label">{nameOf(to)}さんに、ありがとう{!teacher && <span className="hint">(今日はあと{left}回)</span>}</div>
+          <div className="stamps" role="group" aria-label="スタンプ(押すとそのまま送れます)">
+            {STAMPS.map((s) => <button key={s.label} type="button" className="stamp" onClick={() => send(stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
+          </div>
           <input aria-label="ありがとうの一言" placeholder="一言(任意。例: レビューしてくれて助かった)" maxLength={100} value={note}
             onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) send(); }} />
           <div className="row">
-            <button onClick={send}>送る</button>
+            <button onClick={() => send()}>送る</button>
             <button className="ghost" onClick={() => setTo(null)}>やめる</button>
           </div>
         </div>

@@ -488,3 +488,39 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
 .analysis-card { grid-column:1 / -1; }
+
+/* ありがとう */
+.stamps { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0; }
+.stamp { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:8px 14px; font-weight:700; background:var(--accent-soft); color:var(--accent); border:2px solid transparent; }
+.stamp:hover:not(:disabled) { border-color:var(--accent2); transform:translateY(-1px); }
+.stamp:disabled { opacity:.5; }
+.stamp span { font-size:20px; }
+.thanks-card .idea { background:var(--bg); border-radius:12px; padding:8px 12px; margin:6px 0; }
+.thanks-card .received li { padding:6px 10px; border-radius:10px; margin:4px 0; }
+.thanks-card .received li.fresh { background:#fff3c4; box-shadow:0 0 0 2px #ffd54f; }
+.badge.new { background:var(--accent2); color:#fff; font-weight:800; }
+.chip-btn.on { background:var(--accent); color:var(--on-accent); }
+
+/* 会議の進め方 */
+.stepper-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+.stepper-head h3 { margin:0; }
+.stepper-timer { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.timer { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
+.timer.over, .hint.over { color:var(--danger); }
+.steps { list-style:none; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:0; margin:10px 0; }
+.step { width:100%; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:2px solid var(--line); background:var(--card); color:var(--fg); text-align:left; }
+.step.on { border-color:var(--accent); background:var(--accent-soft); }
+.step.now { box-shadow:0 0 0 3px var(--accent2); }
+.step-no { flex:none; width:26px; height:26px; border-radius:50%; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font-weight:800; }
+.step-title { flex:1; font-weight:700; } .step-min { color:var(--muted); font-size:13px; }
+.step-guide { background:var(--bg); border-radius:12px; padding:8px 14px; }
+.asks li { margin:4px 0; }
+.stepper-foot { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+@media (max-width:700px) { .steps { grid-template-columns:1fr 1fr; } }
+table.facts { border-collapse:collapse; width:100%; font-size:15px; }
+table.facts th, table.facts td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; }
+table.facts td.bad { color:var(--danger); font-weight:700; }
+.fact-notes li { background:#fff3e0; border-radius:10px; padding:6px 10px; margin:4px 0; }
+.idle-person { background:var(--bg); border-radius:12px; padding:10px 12px; margin:8px 0; }
+.suggest { display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; padding:6px 0; border-top:1px dashed var(--line); }
+.suggest-act { display:flex; gap:6px; flex-wrap:wrap; }

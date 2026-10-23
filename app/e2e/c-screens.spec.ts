@@ -15,7 +15,7 @@ test.describe.serial('画面の見た目', () => {
     await page.getByRole('heading', { name: 'チーム一覧' }).waitFor();
     await page.waitForTimeout(800);
     await shot(page, 'teacher-dashboard');
-    await page.goto('/meeting/A'); await page.getByText('⑤ 今日決めること').waitFor(); await page.waitForTimeout(800);
+    await page.goto('/meeting/A'); await page.getByLabel('ぜんぶ表示').check(); await page.getByText('今日決めること').first().waitFor(); await page.waitForTimeout(800);
     await shot(page, 'teacher-meeting');
     await page.goto('/teacher/calendar'); await page.getByRole('heading', { name: 'カレンダー' }).waitFor(); await page.waitForTimeout(500);
     await shot(page, 'teacher-calendar');
@@ -35,7 +35,7 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'student-wbs-mobile');
     await page.getByRole('link', { name: '日報', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-mobile');
-    await page.goto('/meeting/A'); await page.getByText('⑤ 今日決めること').waitFor(); await page.waitForTimeout(800);
+    await page.goto('/meeting/A'); await page.getByLabel('ぜんぶ表示').check(); await page.getByText('今日決めること').first().waitFor(); await page.waitForTimeout(800);
     await shot(page, 'student-meeting-mobile');
   });
 });

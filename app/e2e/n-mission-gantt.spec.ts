@@ -96,6 +96,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await page.screenshot({ path: 'e2e-shots/report.png', fullPage: true });
 
     await page.getByRole('link', { name: 'ミーティング', exact: true }).click();
+    await page.locator('.step').nth(1).click();
     await expect(page.getByRole('heading', { name: /プロジェクト分析/ })).toBeVisible();
     await expect(page.locator('.analysis-card .meter')).toBeVisible();
   });
@@ -105,5 +106,20 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await page.goto('/teacher/team/A');
     await page.getByRole('button', { name: '報告書', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
+  });
+
+  test('ありがとう: ホームからスタンプを1タップで送れて、受け取った人には新着が出る', async ({ page, browser }) => {
+    await login(page, 'a2@trident.ac.jp');
+    const card = page.locator('.thanks-card');
+    await expect(card).toBeVisible();
+    await card.locator('.chips .chip-btn').first().click();
+    await card.locator('.chips + .stamps').getByRole('button', { name: /助かった/ }).click();
+    await expect(card.locator('.chips .chip-btn', { hasText: '✓' })).toHaveCount(1);
+    await expect(card).toContainText(/今日あと\d回/);
+
+    const s = await browser.newPage();
+    await login(s, 'a1@trident.ac.jp');
+    await expect(s.locator('.thanks-card .received li.fresh')).toContainText('助かった');
+    await s.close();
   });
 });

@@ -66,8 +66,8 @@ test.describe.serial('読み取り回数', () => {
     const first = await measure(page, '教員: ダッシュボード (初回)', async () => { await page.getByRole('link', { name: 'チーム', exact: true }).click(); await page.getByRole('heading', { name: 'チーム一覧' }).waitFor(); });
     const detail = await measure(page, '教員: Cチーム詳細 (WBS)', async () => { await page.locator('tr', { has: page.getByRole('link', { name: 'C', exact: true }) }).getByRole('link').click(); await page.getByText('WBS・タスク').first().waitFor(); });
     const daily = await measure(page, '教員: Cチーム 日報タブ', async () => { await page.getByRole('button', { name: '日報' }).click(); await page.getByText('提出状況').waitFor(); });
-    await measure(page, '教員: ミーティング画面 (最初のチーム)', async () => { await page.getByRole('link', { name: 'ミーティング', exact: true }).click(); await page.getByText('⑤ 今日決めること').waitFor(); });
-    await measure(page, '教員: 次のチームのミーティング', async () => { await page.getByRole('link', { name: /^[A-H] →$/ }).click(); await page.getByText('⑤ 今日決めること').waitFor(); });
+    await measure(page, '教員: ミーティング画面 (最初のチーム)', async () => { await page.getByRole('link', { name: 'ミーティング', exact: true }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
+    await measure(page, '教員: 次のチームのミーティング', async () => { await page.getByRole('link', { name: /^[A-H] →$/ }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
     const back = await measure(page, '教員: ダッシュボードに戻る', async () => { await page.getByRole('link', { name: 'チーム', exact: true }).click(); await page.getByRole('heading', { name: 'チーム一覧' }).waitFor(); });
     console.log('教員 ラベル別 (合計):', JSON.stringify((await reads(page)).byLabel));
     // 上限 (回帰の防止): 初回は規模に比例する。画面を移っても、同じデータを読み直さない
@@ -82,7 +82,7 @@ test.describe.serial('読み取り回数', () => {
     const home = await measure(page, '学生: ログイン直後 (ホーム)', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('今日やること').waitFor(); });
     const wbs = await measure(page, '学生: WBS', async () => { await page.getByRole('link', { name: 'WBS', exact: true }).click(); await page.getByText('WBS・タスク').waitFor(); });
     const daily = await measure(page, '学生: 日報', async () => { await page.getByRole('link', { name: '日報', exact: true }).click(); await page.getByRole('heading', { name: '日報', exact: true }).waitFor(); });
-    const meeting = await measure(page, '学生: ミーティング', async () => { await page.getByRole('link', { name: 'ミーティング' }).click(); await page.getByText('⑤ 今日決めること').waitFor(); });
+    const meeting = await measure(page, '学生: ミーティング', async () => { await page.getByRole('link', { name: 'ミーティング' }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
     const back = await measure(page, '学生: ホームに戻る', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('今日やること').waitFor(); });
     console.log('学生 合計:', (await reads(page)).total, 'ラベル別:', JSON.stringify((await reads(page)).byLabel));
     expect(home).toBeLessThan(150);

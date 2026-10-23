@@ -177,6 +177,7 @@ test.describe.serial('運用の流れ', () => {
     await expect(t.getByPlaceholder(/^メモ/)).toHaveValue(''); // サーバーへの保存が終わると、入力欄が空になる
 
     await t.goto('/meeting/A');
+    await t.locator('.step').nth(3).click();
     await t.getByPlaceholder('学生にも見えるコメント').fill('よく進んでいます');
     await t.getByRole('button', { name: '送信' }).click();
     await expect(t.getByText('よく進んでいます')).toBeVisible();
@@ -185,6 +186,7 @@ test.describe.serial('運用の流れ', () => {
     const s = await (await browser.newContext()).newPage();
     await login(s, A1);
     await s.goto('/meeting/A');
+    await s.locator('.step').nth(3).click();
     await expect(s.getByText('よく進んでいます')).toBeVisible();
     await expect(s.getByText('内密のメモ')).toHaveCount(0);
     await s.goto('/');
@@ -195,15 +197,24 @@ test.describe.serial('運用の流れ', () => {
     const t = await (await browser.newContext()).newPage();
     await login(t, TEACHER);
     await t.goto('/meeting/A');
-    await expect(t.getByRole('heading', { name: /① 前回のアクション/ })).toBeVisible();
+    const goStep = (page: typeof t, n: number) => page.locator('.step').nth(n).click();
+    await expect(t.getByRole('heading', { name: '進捗確認会議の進め方' })).toBeVisible();
+    await expect(t.getByRole('heading', { name: /前回のアクション/ })).toBeVisible();
     await expect(t.getByText('設計を進める')).toBeVisible();
     await expect(t.getByText('前回決めたこと: 前回の決定')).toBeVisible();
-    await expect(t.getByRole('heading', { name: /② 今週の活動/ })).toBeVisible();
+    await goStep(t, 1);
+    await expect(t.getByRole('heading', { name: /事実の確認/ })).toBeVisible();
+    await expect(t.locator('table.facts')).toContainText('岩田');
+    await expect(t.getByRole('heading', { name: /今週の活動/ })).toBeVisible();
     await expect(t.locator('.matrix')).toContainText('岩田');
-    await expect(t.getByText('(記録済み)')).toBeVisible(); // ミーティング日に開くと、確認した記録ができる
+    await goStep(t, 2);
+    await expect(t.getByRole('heading', { name: '手待ちの人と、タスクの振り分け' })).toBeVisible();
 
+    await goStep(t, 0);
     await t.getByRole('checkbox', { name: '設計を進める' }).click();
     await expect(t.getByRole('checkbox', { name: '設計を進める' })).toBeChecked();
+    await goStep(t, 3);
+    await expect(t.getByText('(記録済み)')).toBeVisible(); // ミーティング日に開くと、確認した記録ができる
     await t.getByLabel('決まったこと').fill('画面を先に作る');
     await t.getByLabel('決まったこと').blur();
     const input = t.getByPlaceholder('やることを入力して Enter');
@@ -213,14 +224,17 @@ test.describe.serial('運用の流れ', () => {
     await t.waitForTimeout(1500); // サーバーへの保存が終わる前に再読み込みすると、画面だけの変更が消える
 
     await t.reload(); // 保存されている
+    await goStep(t, 3);
     await expect(t.getByLabel('決まったこと')).toHaveValue('画面を先に作る');
     await expect(t.getByText('ワイヤーフレームを完成させる')).toBeVisible();
+    await goStep(t, 0);
     await expect(t.getByRole('checkbox', { name: '設計を進める' })).toBeChecked();
 
     // 学生は、記録を入力できない (設定が許可していないチーム)
     const s = await (await browser.newContext()).newPage();
     await login(s, A1);
     await s.goto('/meeting/A');
+    await goStep(s, 3);
     await expect(s.getByText('ワイヤーフレームを完成させる')).toBeVisible();
     await expect(s.getByPlaceholder('やることを入力して Enter')).toHaveCount(0);
     await expect(s.getByText('記録は先生が入力します')).toBeVisible();

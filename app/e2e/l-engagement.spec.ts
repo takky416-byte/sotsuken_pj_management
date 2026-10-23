@@ -24,8 +24,8 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(rows.filter({ hasText: 'A2' })).toContainText('受 1');
     await expect(rows.filter({ hasText: 'A1' })).toContainText('送 1');
 
-    // 1日3回まで
-    for (const n of ['2', '3']) {
+    // 1日5回まで
+    for (const n of ['2', '3', '4', '5']) {
       await page.getByRole('button', { name: /A2.*にありがとう/ }).click();
       await page.getByLabel('ありがとうの一言').fill(`その${n}`);
       await page.getByRole('button', { name: '送る', exact: true }).click();
@@ -39,7 +39,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await page.goto('/teacher/team/A');
     await page.getByRole('button', { name: '関与', exact: true }).click();
     await expect(page.locator('table.board tbody tr').filter({ hasText: 'A1' })).toBeVisible();
-    await expect(page.locator('table.board tbody tr').filter({ hasText: 'A2' })).toContainText('受 3');
+    await expect(page.locator('table.board tbody tr').filter({ hasText: 'A2' })).toContainText('受 5');
 
     const b = await (await browser.newContext()).newPage();
     await login(b, 'b1@trident.ac.jp');

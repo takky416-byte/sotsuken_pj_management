@@ -48,9 +48,9 @@ test.describe.serial('名簿の修正と、教員の表示名', () => {
     await expect(t.locator('tr', { hasText: NEW })).toContainText('A3'); // A1, A2 の次
     await s.reload();
     await expect(s.getByText('新人改(Aチーム)')).toBeVisible();
-    await expect(s.getByText('岩田・近内・新人改')).toBeVisible(); // 新しいチームのメンバー表示
+    await expect(s.getByText('岩田・近内・新人改', { exact: true })).toBeVisible(); // 新しいチームのメンバー表示
     await t.goto('/teacher/team/A');
-    await expect(t.getByText('岩田・近内・新人改')).toBeVisible();
+    await expect(t.getByText('岩田・近内・新人改', { exact: true })).toBeVisible();
     await t.getByRole('link', { name: '名簿' }).click();
 
     // 名簿から外す (2段階) → 学生は、画面を更新すると入れない。メンバー表からも外れる
