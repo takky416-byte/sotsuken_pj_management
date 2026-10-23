@@ -28,9 +28,9 @@ export function StudentHome() {
   const team = useTeam(me.teamId);
   const today = jstDate();
   const milestones = useMilestones(me.teamId ?? 'none');
-  const { data: tasks } = useTasks(me.teamId);
-  const { data: meetings } = useMeetings(me.teamId);
-  const { data: mine } = useMyDailies(me.teamId, me.sid, dailyWindowFrom(today));
+  const { data: tasks, error: e1 } = useTasks(me.teamId);
+  const { data: meetings, error: e2 } = useMeetings(me.teamId);
+  const { data: mine, error: e3 } = useMyDailies(me.teamId, me.sid, dailyWindowFrom(today));
   const classDays = useClassDays();
   const settings = useSettings();
   const [err, setErr] = useState('');
@@ -46,6 +46,9 @@ export function StudentHome() {
       </>
     );
   }
+  // どれかが読み込めないとき (権限・通信・設定の不備) に、「読み込み中」のまま止まらないよう、理由を出す
+  const loadError = e1 ?? e2 ?? e3;
+  if (loadError) return <p className="error">読み込めませんでした: {loadError}</p>;
   if (!tasks || !meetings || !mine || !classDays || !settings) return <p>読み込み中…</p>;
 
   const sid = me.sid;

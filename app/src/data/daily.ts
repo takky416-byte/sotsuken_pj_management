@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_DAILY_START, dailyDoc, dailyId, type Daily, type DailyEntry } from '../lib/daily';
@@ -12,12 +13,19 @@ export function useTeamDailies(teamId: string | null, from: string) {
   return useQuery<Daily>(teamId ? query(col(teamId), where('date', '>=', from)) : null, `dailies:${teamId}:${from}`);
 }
 
-/** 自分の日報だけ (from 以降)。 */
+/**
+ * 自分の日報だけ (from 以降)。
+ * 「sid が等しい」と「date が from 以降」を同時に指定する検索は、Firestore に複合インデックスが必要で、
+ * 本番では、作らないとエラーになる (エミュレータでは起きない)。インデックスを増やさないため、自分の日報 (授業日の数だけで少ない)
+ * をすべて読み、from 以降を画面側で選ぶ。
+ */
 export function useMyDailies(teamId: string | null, sid: string | null, from: string) {
-  return useQuery<Daily>(
-    teamId && sid ? query(col(teamId), where('sid', '==', sid), where('date', '>=', from)) : null,
-    `dailies:${teamId}:${sid}:${from}`,
+  const r = useQuery<Daily>(
+    teamId && sid ? query(col(teamId), where('sid', '==', sid)) : null,
+    `dailies-mine:${teamId}:${sid}`,
   );
+  const data = useMemo(() => r.data && r.data.filter((d) => d.date >= from), [r.data, from]);
+  return { data, error: r.error };
 }
 
 export type Settings = { peerDailyView: boolean; rotateOrder: boolean; dailyStartDate: string };
