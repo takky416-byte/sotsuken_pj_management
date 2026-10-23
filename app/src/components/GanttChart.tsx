@@ -6,7 +6,7 @@ import { formatDate, jstDate } from '../lib/dates';
 import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { STATUS_LABEL, type Member } from '../types';
 
-const LANE_PX = 18;
+const LANE_PX = 22;
 const ROW_PX = 30; // ガントの1行の高さ (稲妻線の位置合わせのため、固定)
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
@@ -62,7 +62,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
           </div>
         </div>
         <div className="gantt-row ms-row" style={{ height: msH }}>
-          <div className="gantt-name"><small>マイルストーン</small></div>
+          <div className="gantt-name ms-label">マイルストーン</div>
           <div className="gantt-track" style={{ height: ms.lanes * LANE_PX + 2 }}>
             {milestones.map((m) => {
               const pl = ms.places.find((p) => p.id === m.id)!;

@@ -107,14 +107,14 @@ export type MilestonePlace = { id: string; lane: number; align: 'left' | 'right'
  * 右端に近いものは、右に伸ばすと切れるので、左に伸ばす (align: 'right')。
  */
 export function placeMilestones(
-  ms: { id: string; title: string; date: string }[], g: Pick<Gantt, 'start' | 'days'>, trackPx = 800, charPx = 11,
+  ms: { id: string; title: string; date: string }[], g: Pick<Gantt, 'start' | 'days'>, trackPx = 800, charPx = 14,
 ): { places: MilestonePlace[]; lanes: number } {
   const sorted = [...ms].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
   const laneEnd: number[] = [];
   const places: MilestonePlace[] = [];
   for (const m of sorted) {
     const x = (pct(g, m.date) / 100) * trackPx;
-    const w = 16 + m.title.length * charPx;
+    const w = 22 + m.title.length * charPx;
     const align = x + w > trackPx ? 'right' : 'left';
     const [from, to] = align === 'left' ? [x - 6, x - 6 + w] : [x + 6 - w, x + 6];
     let lane = laneEnd.findIndex((end) => end + 6 <= from);
@@ -144,7 +144,7 @@ export type LightningPoint = {
 export function lightning(
   g: Pick<Gantt, 'start' | 'days' | 'rows'>, today: string, maxDepth: 1 | 2 | 3 = 2, hasChildren: (id: string) => boolean = () => false,
 ): LightningPoint[] {
-  const nowDay = daysBetween(g.start, today) + 0.5; // 今日の真ん中
+  const nowDay = daysBetween(g.start, today); // 今日の線 (赤い縦線) と同じ位置。点が重なるので、稲妻線の始まり・終わりが斜めにならない
   const toX = (day: number) => Math.min(100, Math.max(0, (day / g.days) * 100));
   const out: LightningPoint[] = [];
   g.rows.forEach((r, row) => {

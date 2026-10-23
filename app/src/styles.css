@@ -28,7 +28,7 @@
   :root[data-palette="classic"] { --bg:#14161b; --card:#1d2027; --fg:#e6e8ee; --muted:#9aa1ad; --line:#2d313b; --accent:#6a9bff; --accent-soft:#232a3d; --on-accent:#fff; --danger:#ff6b6b; --warn:#f0a93b; --ok:#4cc27e; --header-bg:var(--card); --header-fg:var(--fg); --page-bg:none; }
 }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.7 "Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","BIZ UDPGothic","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif; -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.7 "Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans","BIZ UDPGothic","Yu Gothic UI","Meiryo",system-ui,sans-serif; -webkit-text-size-adjust:100%; }
 header { display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); }
 header h1 { margin:0; font-size:20px; }
 .spacer { flex:1; }
@@ -337,3 +337,8 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
   .w-acts { margin-left:auto; }
   .w-assign, .w-period { font-size:14px; align-self:center; }
 }
+
+/* ガント: マイルストーンの見出しと文字 */
+.gantt-name.ms-label { font-size:17px; font-weight:700; color:var(--fg); }
+.gantt-ms { font-size:17px; line-height:22px; }
+.gantt-ms small { font-size:14px; color:var(--fg); opacity:.85; }
