@@ -3,6 +3,7 @@
 URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 
 ## 10/27 (火)
+- [ ] **本番の動作確認** (`docs/production-check.md` の A〜E を、学生の試験アカウントと教員で一通り)。Apps Script の `Code.js` を最新に反映し、`backupDaily` を1回実行 (アクセス履歴も入る)
 - [ ] 試運転(Dチーム)を終える → Actions の **reset-pilot**(teams=D, reset_team=true, **restore_calendar=true**)を、まず dry_run=true で、次に false で実行。試運転データ(pilot-data)で足した過去の授業日(備考「ダミー(試運転)」)を消し、日報の運用開始日を 10/28 に戻す。実行後、カレンダーと設定で確認する
 - [ ] FIXER 発表後、企画発表資料(PPTX/PDF)を夕方までに Claude へ渡す(氏名入りの資料はリポジトリにコミットしない)
 - [ ] Claude が16企画の大項目・タスク案を作成 → 内容を確認(10/27夜〜10/28朝)
