@@ -10,6 +10,10 @@ import {
   appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
+import { jstDate } from '../lib/dates';
+import { nextDates } from '../lib/gantt';
+import { parseQuickAdd } from '../lib/quickAdd';
+import { addDays } from '../lib/dates';
 import type { TaskLink } from '../types';
 import { Progress } from './Progress';
 import { useEditableText } from './useEditableText';
@@ -24,6 +28,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
+  const [pop, setPop] = useState<{ id: string; kind: 'assign' | 'period' } | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [err, setErr] = useState('');
   const closeToast = useCallback(() => setToast(null), []);
@@ -53,7 +58,9 @@ export function WbsEditor({ teamId, actor, members }: Props) {
     const id = newTaskId(teamId);
     const order = afterId ? orderAfter(tasks, afterId) : appendOrder(tasks, parentId);
     setFocusId(afterId ? id : null);
-    return run(() => createTasks(teamId, actor, [{ id, parentId, depth, title, detail: '', order }]));
+    // 「タスク名 @小林 〜10/30」のように書くと、担当と期限も一緒に決まる
+    const q = title ? parseQuickAdd(title, members, jstDate()) : { title, assignees: [], endDate: null };
+    return run(() => createTasks(teamId, actor, [{ id, parentId, depth, title: q.title, detail: '', order, assignees: q.assignees, endDate: q.endDate }]));
   };
 
   const paste = (parentId: string | null, text: string) => {
@@ -164,8 +171,50 @@ export function WbsEditor({ teamId, actor, members }: Props) {
                 </select>
               )}
             </div>
-            <div className="w-assign">{!hasChildren && t.assignees.length > 0 && t.assignees.map(nameOf).join('・')}</div>
-            <div className={`w-period${periodOf(tasks, t).derived ? ' derived' : ''}`}>{periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end)}</div>
+            <div className="w-assign">
+              {hasChildren ? null : (
+                <PopCell
+                  label={t.assignees.length > 0 ? t.assignees.map(nameOf).join('・') : '＋ 担当'} empty={t.assignees.length === 0}
+                  ariaLabel={`担当を変える: ${t.title}`} open={pop?.id === t.id && pop.kind === 'assign'}
+                  onToggle={() => setPop(pop?.id === t.id && pop.kind === 'assign' ? null : { id: t.id, kind: 'assign' })} onClose={() => setPop(null)}
+                >
+                  <div className="pop-title">担当(タップで切り替え)</div>
+                  <div className="chips">
+                    {members.map((m) => (
+                      <button
+                        key={m.sid} type="button" className={`chip-btn ${t.assignees.includes(m.sid) ? 'on' : ''}`} aria-pressed={t.assignees.includes(m.sid)}
+                        onClick={() => run(() => updateTaskArray(teamId, actor, t.id, 'assignees', t.assignees.includes(m.sid) ? 'remove' : 'add', m.sid))}
+                      >{t.assignees.includes(m.sid) ? '✓ ' : ''}{m.name}</button>
+                    ))}
+                  </div>
+                </PopCell>
+              )}
+            </div>
+            <div className={`w-period${periodOf(tasks, t).derived ? ' derived' : ''}`}>
+              {hasChildren ? periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end) : (
+                <PopCell
+                  label={periodLabel(t.startDate, t.endDate) || '＋ 期間'} empty={!t.startDate && !t.endDate}
+                  ariaLabel={`期間を変える: ${t.title}`} open={pop?.id === t.id && pop.kind === 'period'}
+                  onToggle={() => setPop(pop?.id === t.id && pop.kind === 'period' ? null : { id: t.id, kind: 'period' })} onClose={() => setPop(null)}
+                >
+                  <div className="pop-title">期間</div>
+                  <div className="pop-dates">
+                    <label>開始日<input type="date" value={t.startDate ?? ''} onChange={(e) => run(() => updateTask(teamId, actor, t.id, nextDates(t, 'startDate', e.target.value)))} /></label>
+                    <label>終了日<input type="date" value={t.endDate ?? ''} onChange={(e) => run(() => updateTask(teamId, actor, t.id, nextDates(t, 'endDate', e.target.value)))} /></label>
+                  </div>
+                  <div className="pop-title">かんたん設定(開始日から)</div>
+                  <div className="chips">
+                    {[[1, '1日'], [3, '3日間'], [7, '1週間'], [14, '2週間']].map(([n, label]) => (
+                      <button
+                        key={n} type="button" className="chip-btn"
+                        onClick={() => { const s = t.startDate ?? jstDate(); run(() => updateTask(teamId, actor, t.id, { startDate: s, endDate: addDays(s, Number(n) - 1) })); }}
+                      >{label}</button>
+                    ))}
+                    <button type="button" className="chip-btn" onClick={() => run(() => updateTask(teamId, actor, t.id, { startDate: null, endDate: null }))}>クリア</button>
+                  </div>
+                </PopCell>
+              )}
+            </div>
             <div className="w-acts">
               {t.depth < 3 && (
                 <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
@@ -206,7 +255,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
 
       <div className="wbs-add depth-1">
         <AddBox
-          placeholder="タスクを追加 (Enterで追加。箇条書きを貼り付けると、まとめて追加できます)"
+          placeholder="タスクを追加 (Enterで追加。例: ログイン画面を作る @小林 〜11/30)"
           onAdd={(title) => add(null, title)}
           onPaste={(text) => paste(null, text)}
         />
@@ -224,6 +273,27 @@ export function WbsEditor({ teamId, actor, members }: Props) {
         </div>
       )}
       <Toast toast={toast} onClose={closeToast} />
+    </div>
+  );
+}
+
+/** 行の中の、押すと小さな入力欄が開くセル (担当・期間)。外を押す・Esc で閉じる。 */
+function PopCell({ label, empty, ariaLabel, open, onToggle, onClose, children }: {
+  label: string; empty: boolean; ariaLabel: string; open: boolean; onToggle: () => void; onClose: () => void; children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) onClose(); };
+    const key = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('pointerdown', down);
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
+  }, [open, onClose]);
+  return (
+    <div className="pop-wrap" ref={ref}>
+      <button type="button" className={`pop-btn ${empty ? 'empty' : ''}`} aria-label={ariaLabel} aria-expanded={open} onClick={onToggle}>{label}</button>
+      {open && <div className="popover" role="dialog">{children}</div>}
     </div>
   );
 }

@@ -42,7 +42,9 @@ test('データの書き出し: バックアップ(JSON)と CSV', async ({ page 
 
   const [d4] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '日報', exact: true }).click()]);
   const dailies = readFileSync((await d4.path())!, 'utf8');
-  expect(dailies).toContain('画面の下書きを作り、レビューした');
+  expect(dailies).toContain('画面の下書きを3枚作り、レビューした');
+  expect(dailies).toContain('下書きをレビューして、清書する'); // 次にやること
+  expect(dailies).toContain('完了した'); // 結果
   expect(dailies).toContain('岩田');
 
   await expect(page.getByText(/最後に書き出した日/)).toBeVisible();

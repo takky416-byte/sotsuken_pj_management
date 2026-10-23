@@ -53,11 +53,12 @@ service cloud.firestore {
 
     function validDaily(d) {
       return d.keys().hasOnly([
-          'sid', 'date', 'dayKey', 'entries', 'blocker', 'absent', 'submittedAt', 'updatedAt'])
+          'sid', 'date', 'dayKey', 'entries', 'blocker', 'next', 'absent', 'submittedAt', 'updatedAt'])
         && d.sid is string && d.date is string && d.date.size() == 10
         && d.dayKey is int
         && d.entries is list && d.entries.size() <= 30
         && d.blocker is string && d.blocker.size() <= 2000
+        && (!('next' in d) || (d.next is string && d.next.size() <= 1000))
         && d.absent is bool;
     }
 

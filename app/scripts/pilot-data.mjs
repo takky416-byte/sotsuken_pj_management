@@ -83,7 +83,7 @@ function taskPlan(S, T) {
 // 日報の一言。タスクの題名に関わらず使える言い回しを、人ごとの「積極さ」に合わせて選ぶ。
 const NOTES = {
   0: ['調べた内容を整理して、チームに共有した', '資料を作り進めた。あと少しで形になる', '前回の指摘を直して、見せられる形にした', '手順を確認しながら進めた。思ったより早く終わった', '分からない点を洗い出して、メンバーに相談した'],
-  1: ['担当の部分を進めた', '先週の続きをやった。半分くらい終わった', '資料を読んで、自分の担当の範囲を確認した', 'チームで話した内容を、メモにまとめた'],
+  1: ['担当の部分を進めて、内容を確認した', '先週の続きをやった。半分くらい終わった', '資料を読んで、自分の担当の範囲を確認した', 'チームで話した内容を、メモにまとめた'],
   2: ['少し進めた', '調べた', '確認した', 'やってみた'],
 };
 const BLOCKERS = {
@@ -187,22 +187,30 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
       const id = `${d.date}_${m.sid}`;
       const ts = at(d.date, d.periods === '1-2' ? '12:30' : '16:20');
       if (plans[mi].absent.has(di)) {
-        dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries: [], blocker: '', absent: true, submittedAt: ts, updatedAt: ts } });
+        dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries: [], blocker: '', absent: true, next: '', submittedAt: ts, updatedAt: ts } });
         return;
       }
       if (!plans[mi].submit.has(di)) return;
       const mine = taskByOwner(m.sid).filter((t) => (t.data.startDate ?? start) <= d.date && (t.data.status !== 'done' || (t.data.endDate ?? d.date) >= addDays(d.date, -3)));
       const entries = [];
       const notes = NOTES[pe];
+      const hasBlocker = !!BLOCKERS[pe]?.[di];
       const count = pe === 0 ? 2 : 1;
       for (let k = 0; k < Math.min(count, mine.length); k++) {
         const t = mine[(di + k) % mine.length];
-        entries.push({ kind: 'task', taskId: t.id, note: notes[(di + k * 2 + mi) % notes.length] });
+        const finished = t.data.status === 'done' && t.data.endDate && t.data.endDate <= d.date && k === 0;
+        entries.push({
+          kind: 'task', taskId: t.id, note: notes[(di + k * 2 + mi) % notes.length],
+          result: hasBlocker && k === 0 ? 'stuck' : finished ? 'done' : 'progress',
+        });
       }
       if (di % 4 === 1) entries.push({ kind: 'discuss', note: pe === 2 ? '話し合いに参加した' : 'チームで、次にやることを相談した' });
       if (di % 5 === 2 && pe !== 2) entries.push({ kind: 'study', note: '必要な技術について、公式の資料を読んだ' });
       if (entries.length === 0) entries.push({ kind: 'study', note: notes[di % notes.length] });
-      dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries, blocker: BLOCKERS[pe]?.[di] ?? '', absent: false, submittedAt: ts, updatedAt: ts } });
+      // 次にやること: 主力は具体的に、ふつうは短く、消極的な人は書かない
+      const first = tasks.find((x) => x.id === entries.find((e) => e.taskId)?.taskId);
+      const next = pe === 2 || !first ? '' : pe === 0 ? `「${first.data.title}」の続きを進めて、できた分をチームに共有する。` : `「${first.data.title}」を進める。`;
+      dailies.push({ id, data: { sid: m.sid, date: d.date, dayKey: dayKey(d.date), entries, blocker: BLOCKERS[pe]?.[di] ?? '', next, absent: false, submittedAt: ts, updatedAt: ts } });
     });
   });
 

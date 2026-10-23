@@ -323,7 +323,7 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .w-title { display:flex; align-items:center; gap:4px; padding-left:var(--indent); min-width:0; }
 .w-title .title-input { flex:1; min-width:0; }
 .w-prog, .w-status, .w-assign, .w-period { min-width:0; }
-.w-assign { font-size:15px; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.w-assign { font-size:15px; color:var(--fg); }
 .w-period { font-size:15px; color:var(--muted); white-space:nowrap; }
 .w-period.derived { font-style:italic; opacity:.75; }
 .w-acts { display:flex; justify-content:flex-end; }
@@ -333,7 +333,6 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
   .wbs-row { display:flex; flex-wrap:wrap; row-gap:2px; column-gap:10px; padding:6px 0; }
   .w-title { flex:1 1 100%; }
   .w-prog:empty, .w-assign:empty, .w-period:empty { display:none; }
-  .w-assign::before { content:"担当 "; color:var(--muted); font-size:13px; }
   .w-acts { margin-left:auto; }
   .w-assign, .w-period { font-size:14px; align-self:center; }
 }
@@ -342,3 +341,72 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .gantt-name.ms-label { font-size:17px; font-weight:700; color:var(--fg); }
 .gantt-ms { font-size:17px; line-height:22px; }
 .gantt-ms small { font-size:14px; color:var(--fg); opacity:.85; }
+
+.result-badge { display:inline-block; margin-left:6px; padding:1px 10px; border-radius:999px; font-size:13px; font-weight:700; background:var(--accent-soft); color:var(--accent); }
+.result-badge.r-done { background:color-mix(in srgb, var(--ok) 16%, var(--card)); color:var(--ok); }
+.result-badge.r-stuck { background:color-mix(in srgb, var(--danger) 14%, var(--card)); color:var(--danger); }
+.next-plan { margin-top:4px; color:var(--accent); font-weight:500; }
+
+/* 日報の入力 */
+.daily-form h3 { margin-top:0; }
+.dcard { border:2px solid var(--line); border-radius:var(--radius); padding:12px; margin:10px 0; background:var(--card); }
+.dcard.on { border-color:var(--accent); background:color-mix(in srgb, var(--accent-soft) 45%, var(--card)); }
+.dcard.on.r-done { border-color:var(--ok); background:color-mix(in srgb, var(--ok) 9%, var(--card)); }
+.dcard.on.r-stuck { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 8%, var(--card)); }
+.dcard-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+.dcard-head strong { font-size:18px; }
+.seg { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.seg-btn { background:var(--card); color:var(--fg); border:2px solid var(--line); box-shadow:none; padding:10px 6px; min-height:48px; font-size:17px; }
+.seg-btn.on { color:#fff; border-color:transparent; }
+.seg-btn.r-progress.on { background:var(--accent); }
+.seg-btn.r-done.on { background:var(--ok); }
+.seg-btn.r-stuck.on { background:var(--danger); }
+.note-area { width:100%; margin-top:10px; min-height:96px; line-height:1.6; }
+.note-area.need { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 6%, var(--bg)); }
+.counter-row { display:flex; justify-content:space-between; gap:8px; margin-top:4px; }
+.counter { font-size:14px; color:var(--muted); } .counter.ok { color:var(--ok); font-weight:700; } .counter.bad { color:var(--danger); font-weight:700; }
+.chip-btn { background:var(--card); color:var(--accent); border:1px solid var(--accent); box-shadow:none; border-radius:999px; padding:6px 14px; font-weight:500; font-size:15px; }
+.chip-btn:hover:not(:disabled) { background:var(--accent-soft); }
+.daily-form .chips { margin:10px 0; gap:8px; }
+.problems { border:2px solid var(--danger); border-radius:var(--radius); padding:10px 14px; margin:10px 0; background:color-mix(in srgb, var(--danger) 6%, var(--card)); color:var(--danger); }
+.problems li { padding:2px 0; }
+.big-btn { font-size:19px; padding:12px 28px; min-height:52px; }
+.submit-row { align-items:center; gap:14px; margin:14px 0 24px; }
+
+/* 学生のホーム */
+.hero { background:var(--header-bg); color:var(--header-fg); border-radius:var(--radius); padding:18px 18px 16px; margin:4px 0 14px; box-shadow:var(--shadow); }
+.hero-date { font-size:15px; opacity:.9; }
+.hero-hello { margin:2px 0 4px; font-size:26px; } .hero-hello::after { display:none; }
+.hero-sub { margin:0 0 12px; font-size:17px; }
+.cta { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:rgba(255,255,255,.18); border-radius:12px; padding:10px 14px; font-weight:700; }
+.cta .btn { background:var(--card); color:var(--accent); border-color:var(--card); }
+.cta .btn.ghost-btn { background:transparent; color:inherit; border-color:currentColor; }
+.cta-todo { background:rgba(255,255,255,.95); color:var(--fg); } .cta-todo .btn { background:var(--accent); color:var(--on-accent); }
+.cta-done { background:rgba(255,255,255,.22); }
+.todo-list { margin:6px 0; }
+.todo-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+.todo-item:last-child { border-bottom:none; }
+.todo-main { min-width:0; }
+.todo-title { font-size:18px; font-weight:700; color:var(--fg); text-decoration:none; overflow-wrap:anywhere; }
+.reason-badge { display:inline-block; padding:0 10px; border-radius:999px; font-size:13px; font-weight:700; background:var(--accent-soft); color:var(--accent); }
+.reason-badge.r-overdue { background:color-mix(in srgb, var(--danger) 14%, var(--card)); color:var(--danger); }
+.reason-badge.r-promise { background:color-mix(in srgb, var(--warn) 18%, var(--card)); color:var(--warn); }
+.next-quote { margin:6px 0 10px; padding:10px 14px; border-left:5px solid var(--accent); background:var(--accent-soft); border-radius:0 12px 12px 0; white-space:pre-wrap; }
+.soon-item { padding:4px 0; }
+.todo-item button { flex:none; }
+@media (max-width:640px) { .todo-item { flex-wrap:wrap; } .todo-item button { width:100%; } }
+
+/* WBS: 担当・期間を、行の中で、1タップで変える */
+.pop-wrap { position:relative; min-width:0; }
+.pop-btn { background:transparent; color:var(--fg); border:1px dashed transparent; box-shadow:none; padding:4px 8px; font-weight:500; font-size:15px; width:100%; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-radius:10px; }
+.pop-btn:hover:not(:disabled) { background:var(--accent-soft); border-color:var(--accent); transform:none; }
+.pop-btn.empty { color:var(--muted); }
+.w-period .pop-btn { color:var(--muted); }
+.popover { position:absolute; z-index:30; top:100%; left:0; min-width:260px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 8px 28px rgba(0,0,0,.22); padding:12px; margin-top:4px; }
+.pop-title { font-size:14px; font-weight:700; color:var(--accent); margin:6px 0 4px; } .pop-title:first-child { margin-top:0; }
+.pop-dates { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.chip-btn.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+@media (max-width:640px) {
+  .popover { position:fixed; left:12px; right:12px; bottom:12px; top:auto; margin:0; box-shadow:0 -4px 28px rgba(0,0,0,.3); }
+  .w-assign .pop-btn, .w-period .pop-btn { width:auto; max-width:100%; }
+}

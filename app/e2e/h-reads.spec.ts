@@ -79,11 +79,11 @@ test.describe.serial('読み取り回数', () => {
 
   test('学生: ホーム → WBS → 日報 → ミーティング → ホーム (再読み込みなし)', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    const home = await measure(page, '学生: ログイン直後 (ホーム)', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('これからの予定').waitFor(); });
+    const home = await measure(page, '学生: ログイン直後 (ホーム)', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('今日やること').waitFor(); });
     const wbs = await measure(page, '学生: WBS', async () => { await page.getByRole('link', { name: 'WBS', exact: true }).click(); await page.getByText('WBS・タスク').waitFor(); });
     const daily = await measure(page, '学生: 日報', async () => { await page.getByRole('link', { name: '日報', exact: true }).click(); await page.getByRole('heading', { name: '日報', exact: true }).waitFor(); });
     const meeting = await measure(page, '学生: ミーティング', async () => { await page.getByRole('link', { name: 'ミーティング' }).click(); await page.getByText('⑤ 今日決めること').waitFor(); });
-    const back = await measure(page, '学生: ホームに戻る', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('これからの予定').waitFor(); });
+    const back = await measure(page, '学生: ホームに戻る', async () => { await page.getByRole('link', { name: 'ホーム' }).click(); await page.getByText('今日やること').waitFor(); });
     console.log('学生 合計:', (await reads(page)).total, 'ラベル別:', JSON.stringify((await reads(page)).byLabel));
     expect(home).toBeLessThan(150);
     expect(wbs + daily + meeting + back).toBeLessThan(60); // 画面を移るたびに、タスク全件を読み直さない

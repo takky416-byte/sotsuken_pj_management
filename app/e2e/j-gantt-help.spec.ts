@@ -38,7 +38,7 @@ test.describe.serial('ガントと使い方', () => {
     await page.getByRole('link', { name: '使い方', exact: true }).click();
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible();
     await page.getByText('日報の書き方').click();
-    await expect(page.getByText('一言は必須です')).toBeVisible();
+    await expect(page.getByText('何を・どこまでやったか', { exact: false }).first()).toBeVisible();
   });
 
   test('教員: 使い方(教員)が見える', async ({ page }) => {

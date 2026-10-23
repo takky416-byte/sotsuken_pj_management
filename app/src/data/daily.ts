@@ -40,8 +40,8 @@ export function useSettings(): Settings | null {
 }
 
 export const saveDaily = (
-  teamId: string, sid: string, date: string, entries: DailyEntry[], blocker: string, prev?: Daily,
-) => setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries, blocker, absent: false }, prev));
+  teamId: string, sid: string, date: string, entries: DailyEntry[], blocker: string, prev?: Daily, next = '',
+) => setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries, blocker, absent: false, next }, prev));
 
 /** 教員のみ。欠席にすると内容は空になる。欠席を取り消しても、日報は空のまま (未提出) になる。 */
 export const setAbsent = (teamId: string, sid: string, date: string, absent: boolean, prev?: Daily) =>

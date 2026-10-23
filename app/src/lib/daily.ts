@@ -2,7 +2,11 @@ import type { ClassDay } from '../types';
 import { dayKey } from './dates';
 
 export type DailyKind = 'task' | 'study' | 'discuss' | 'other';
-export type DailyEntry = { kind: DailyKind; taskId?: string; note: string };
+/** その日の取り組みの結果: 進んだ / 完了した / 詰まった */
+export type DailyResult = 'progress' | 'done' | 'stuck';
+export const RESULT_LABEL: Record<DailyResult, string> = { progress: '進んだ', done: '完了した', stuck: '詰まった' };
+
+export type DailyEntry = { kind: DailyKind; taskId?: string; note: string; result?: DailyResult };
 
 export type Daily = {
   id: string;
@@ -11,6 +15,8 @@ export type Daily = {
   dayKey: number;
   entries: DailyEntry[];
   blocker: string;
+  /** 次にやること (次の授業日までに何をやるか) */
+  next?: string;
   absent: boolean;
   submittedAt?: number;
   updatedAt?: number;
@@ -34,6 +40,36 @@ export type DayStatus = 'submitted' | 'absent' | 'missing';
 /** 選んだ項目の一言は必須。一言のない項目は、提出に数えない。 */
 export const hasNote = (e: DailyEntry) => e.note.trim() !== '';
 
+/**
+ * 日報の記述の最低文字数。「やった」だけで済ませず、何をどこまでやったかを書かせるための目安 (文字数は空白を除く)。
+ * 提出の判定 (statusOf) は、これまでの日報との互換のため、一言があれば成立とする。新しく提出するときの画面だけが、この長さを求める。
+ */
+export const MIN_NOTE_CHARS = 10;
+export const MIN_NEXT_CHARS = 10;
+export const charCount = (s: string) => s.replace(/\s/g, '').length;
+
+export type DailyProblem = { key: string; message: string };
+
+/**
+ * 新しく提出する日報の検査。問題がなければ空の配列。
+ * - 取り組みが1つ以上ある
+ * - 各項目の説明が MIN_NOTE_CHARS 字以上 (何を・どこまで)
+ * - 次にやることが MIN_NEXT_CHARS 字以上
+ */
+export function validateDaily(
+  entries: DailyEntry[], next: string, titleOf: (e: DailyEntry) => string = () => '',
+): DailyProblem[] {
+  const out: DailyProblem[] = [];
+  if (entries.length === 0) out.push({ key: 'entries', message: '今日やったことを1つ以上選んでください' });
+  entries.forEach((e, i) => {
+    const n = charCount(e.note);
+    if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、あと${MIN_NOTE_CHARS - n}字以上書いてください(何を、どこまでやったか)` });
+  });
+  const n = charCount(next);
+  if (n < MIN_NEXT_CHARS) out.push({ key: 'next', message: `「次にやること」を、あと${MIN_NEXT_CHARS - n}字以上書いてください` });
+  return out;
+}
+
 /** 一言が未入力の項目 (画面で「一言を書いてください」と示す)。 */
 export const entriesMissingNote = (entries: DailyEntry[]): DailyEntry[] => entries.filter((e) => !hasNote(e));
 
@@ -49,14 +85,16 @@ export function statusOf(d: Daily | undefined): DayStatus {
 
 /** Firestore に書き込む形。firestore.rules の validDaily と対応している。 */
 export function dailyDoc(
-  p: { sid: string; date: string; entries: DailyEntry[]; blocker: string; absent: boolean },
+  p: { sid: string; date: string; entries: DailyEntry[]; blocker: string; absent: boolean; next?: string },
   prev: Pick<Daily, 'submittedAt'> | undefined,
   now = Date.now(),
 ) {
   return {
     sid: p.sid, date: p.date, dayKey: dayKey(p.date),
-    entries: p.entries.map((e) => (e.taskId ? { kind: e.kind, taskId: e.taskId, note: e.note } : { kind: e.kind, note: e.note })),
-    blocker: p.blocker, absent: p.absent,
+    entries: p.entries.map((e) => ({
+      kind: e.kind, ...(e.taskId ? { taskId: e.taskId } : {}), note: e.note, ...(e.result ? { result: e.result } : {}),
+    })),
+    blocker: p.blocker, next: p.next ?? '', absent: p.absent,
     submittedAt: prev?.submittedAt ?? now, updatedAt: now,
   };
 }

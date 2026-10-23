@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
 import { useProfile } from '../../auth/AuthProvider';
 import { DailyFeed } from '../../components/DailyViews';
+import { DailyForm } from './DailyForm';
 import { useClassDays } from '../../data/calendar';
-import { saveDaily, useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
+import { useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { celebrate } from '../../lib/celebrate';
 import { streakIfSubmitted } from '../../lib/engagement';
-import { FIXED_KINDS, dailyId, entriesMissingNote, statusOf, type Daily, type DailyEntry, type DailyKind } from '../../lib/daily';
-import { isLeaf } from '../../lib/meetingView';
+import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 
 
@@ -36,7 +35,7 @@ export function StudentDaily() {
     <>
       <h2>日報</h2>
       <p className="hint">
-        今日({formatDate(today)})の分を書きます。できたことを選んで、<strong>選んだ項目ごとに一言</strong>(何をしたか)を添えてください。提出した日のうちは、何度でも直せます。
+        今日({formatDate(today)})の分を書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
       </p>
       {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
@@ -56,111 +55,5 @@ export function StudentDaily() {
         emptyText="まだ日報がありません。"
       />
     </>
-  );
-}
-
-function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
-  teamId: string; sid: string; today: string; prev: Daily | undefined; tasks: ReturnType<typeof useTasks>['data'] & object;
-  onSubmitted: (first: boolean) => void;
-}) {
-  const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
-  // まだ書いていないときは、今日自分が更新したタスクを、先に選んでおく (選ぶ手間を減らす。一言は、自分で書く)
-  const [preselected] = useState(() => prev ? [] : live.filter((t) => isLeaf(live, t) && t.updatedBy === sid && jstDate(new Date(t.updatedAt)) === today).map((t) => t.id));
-  const [taskNotes, setTaskNotes] = useState<Map<string, string>>(
-    new Map(prev
-      ? (prev.entries ?? []).filter((e) => e.kind === 'task' && e.taskId).map((e) => [e.taskId!, e.note])
-      : preselected.map((id) => [id, ''])));
-  const [kindNotes, setKindNotes] = useState<Map<DailyKind, string>>(
-    new Map((prev?.entries ?? []).filter((e) => e.kind !== 'task').map((e) => [e.kind, e.note])));
-  const [blocker, setBlocker] = useState(prev?.blocker ?? '');
-  const [extra, setExtra] = useState('');
-  const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [err, setErr] = useState('');
-  useEffect(() => setState('idle'), [taskNotes, kindNotes, blocker]);
-
-  // 候補: 自分が担当、または進行中のタスク。すでに選んだものも残す。
-  // 親タスク (子のあるタスク) は、担当も状態もないので、候補にしない (子タスクを選ぶ)
-  const leaves = live.filter((t) => isLeaf(live, t) || taskNotes.has(t.id));
-  const candidates = leaves.filter((t) =>
-    taskNotes.has(t.id) || (t.status !== 'hold' && t.status !== 'done' && (t.assignees.includes(sid) || t.status === 'doing')));
-  const others = leaves.filter((t) => !candidates.some((c) => c.id === t.id));
-
-  const toggleTask = (id: string) => setTaskNotes((m) => { const n = new Map(m); if (n.has(id)) n.delete(id); else n.set(id, ''); return n; });
-  const toggleKind = (k: DailyKind) => setKindNotes((m) => { const n = new Map(m); if (n.has(k)) n.delete(k); else n.set(k, ''); return n; });
-
-  const entries: DailyEntry[] = [
-    ...[...taskNotes].map(([taskId, note]) => ({ kind: 'task' as const, taskId, note: note.trim() })),
-    ...[...kindNotes].map(([kind, note]) => ({ kind, note: note.trim() })),
-  ];
-  const missing = entriesMissingNote(entries);
-  const canSubmit = missing.length === 0 && (entries.length > 0 || blocker.trim() !== '');
-  const noteMissing = (note: string | undefined) => (note ?? '').trim() === '';
-
-  const submit = async () => {
-    setState('saving'); setErr('');
-    try {
-      const first = statusOf(prev) !== 'submitted';
-      await saveDaily(teamId, sid, today, entries, blocker.trim(), prev);
-      setState('saved');
-      onSubmitted(first);
-    } catch (e) {
-      setState('idle');
-      setErr(`提出できませんでした: ${(e as Error).message}`);
-    }
-  };
-
-  const submitted = statusOf(prev) === 'submitted';
-  return (
-    <div className="card form">
-      <div className="label">今日やったこと(あてはまるものを選んでください)</div>
-      {preselected.length > 0 && <p className="hint">今日、あなたが更新したタスクを、選んでおきました(外してもかまいません)。</p>}
-      {candidates.length === 0 && <p className="hint">選べるタスクがまだありません。下の「調査・勉強」などを選ぶか、WBSにタスクを追加してください。</p>}
-      {candidates.map((t) => (
-        <div className="pick" key={t.id}>
-          <label className={`chip ${taskNotes.has(t.id) ? 'on' : ''}`}>
-            <input type="checkbox" checked={taskNotes.has(t.id)} onChange={() => toggleTask(t.id)} />
-            {t.title}
-          </label>
-          {taskNotes.has(t.id) && (
-            <input
-              className={`note-input ${noteMissing(taskNotes.get(t.id)) ? 'need' : ''}`} placeholder="何をしたか一言(必須)" maxLength={200}
-              value={taskNotes.get(t.id)} onChange={(e) => setTaskNotes((m) => new Map(m).set(t.id, e.target.value))}
-            />
-          )}
-        </div>
-      ))}
-      {others.length > 0 && (
-        <select value={extra} onChange={(e) => { if (e.target.value) toggleTask(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
-          <option value="">ほかのタスクを選ぶ…</option>
-          {others.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
-        </select>
-      )}
-      {FIXED_KINDS.map(({ kind, label }) => (
-        <div className="pick" key={kind}>
-          <label className={`chip ${kindNotes.has(kind) ? 'on' : ''}`}>
-            <input type="checkbox" checked={kindNotes.has(kind)} onChange={() => toggleKind(kind)} />
-            {label}
-          </label>
-          {kindNotes.has(kind) && (
-            <input
-              className={`note-input ${noteMissing(kindNotes.get(kind)) ? 'need' : ''}`} placeholder="何をしたか一言(必須)" maxLength={200}
-              value={kindNotes.get(kind)} onChange={(e) => setKindNotes((m) => new Map(m).set(kind, e.target.value))}
-            />
-          )}
-        </div>
-      ))}
-      <label>困っていること・先生に相談したいこと(任意)
-        <textarea rows={2} maxLength={1000} value={blocker} onChange={(e) => setBlocker(e.target.value)} />
-      </label>
-      {err && <p className="error">{err}</p>}
-      {missing.length > 0 && <p className="error">選んだ項目に、一言を書いてください({missing.length}件)。</p>}
-      <div className="row">
-        <button disabled={!canSubmit || state === 'saving'} onClick={submit}>
-          {submitted ? '更新する' : '提出する'}
-        </button>
-        {state === 'saved' && <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>}
-        {state === 'idle' && submitted && <span className="hint">提出済み</span>}
-      </div>
-    </div>
   );
 }

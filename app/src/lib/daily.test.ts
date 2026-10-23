@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { ClassDay } from '../types';
 import {
-  classDatesBetween, consecutiveMisses, dailyDoc, dailyId, entriesMissingNote, statusOf, type Daily, type DayStatus,
+  charCount, classDatesBetween, consecutiveMisses, dailyDoc, dailyId, entriesMissingNote, statusOf, validateDaily, type Daily, type DayStatus,
 } from './daily';
 
 const d = (over: Partial<Daily> = {}): Daily => ({
@@ -56,5 +56,37 @@ describe('classDatesBetween / consecutiveMisses', () => {
     expect(consecutiveMisses(m(['missing', 'missing', 'absent', 'missing']), dates)).toBe(3);
     expect(consecutiveMisses(new Map(), dates)).toBe(4);
     expect(consecutiveMisses(new Map(), [])).toBe(0);
+  });
+});
+
+describe('validateDaily: 新しく提出する日報は、しっかり書かせる', () => {
+  const long = '設計書の画面一覧を整理して、足りない画面を3つ見つけた';
+  test('取り組み・説明・次にやること がそろっていれば、問題なし', () => {
+    expect(validateDaily([{ kind: 'task', taskId: 't', note: long, result: 'progress' }], '管理者画面のワイヤーフレームを描く')).toEqual([]);
+  });
+  test('取り組みがない', () => {
+    expect(validateDaily([], '管理者画面のワイヤーフレームを描く').map((p) => p.key)).toEqual(['entries']);
+  });
+  test('説明が短い (空白は数えない)。あと何字かを示す', () => {
+    const p = validateDaily([{ kind: 'study', note: '  調べた   ' }], '管理者画面のワイヤーフレームを描く', () => '調査');
+    expect(p).toHaveLength(1);
+    expect(p[0].key).toBe('note:0');
+    expect(p[0].message).toContain('あと7字');
+    expect(charCount(' あ い\nう ')).toBe(3);
+  });
+  test('次にやることが短い・ない', () => {
+    expect(validateDaily([{ kind: 'study', note: long }], '').map((p) => p.key)).toEqual(['next']);
+    expect(validateDaily([{ kind: 'study', note: long }], '続きをやる').map((p) => p.key)).toEqual(['next']);
+  });
+});
+
+describe('dailyDoc: 結果と次にやること', () => {
+  test('result と next を保存する。結果のない項目には result を付けない', () => {
+    const doc = dailyDoc({
+      sid: 'A1', date: '2026-10-28', blocker: '', absent: false, next: '続きをやる予定',
+      entries: [{ kind: 'task', taskId: 't', note: 'x', result: 'done' }, { kind: 'study', note: 'y' }],
+    }, undefined, 1);
+    expect(doc.next).toBe('続きをやる予定');
+    expect(doc.entries).toEqual([{ kind: 'task', taskId: 't', note: 'x', result: 'done' }, { kind: 'study', note: 'y' }]);
   });
 });

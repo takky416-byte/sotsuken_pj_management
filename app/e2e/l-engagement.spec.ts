@@ -79,10 +79,11 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     });
     await login(page, 'a1@trident.ac.jp');
     await page.getByRole('link', { name: '日報', exact: true }).click();
-    await expect(page.getByRole('checkbox', { name: '先に選ばれるタスク' })).toBeChecked();
-    const notes = page.getByPlaceholder('何をしたか一言(必須)');
-    for (let i = 0; i < await notes.count(); i++) await notes.nth(i).fill('進めた');
-    await page.getByRole('button', { name: '提出する' }).click();
+    const card = page.locator('.dcard', { hasText: '先に選ばれるタスク' });
+    await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true'); // 今日更新したので、先に入っている
+    for (const c of await page.locator('.dcard.on textarea').all()) await c.fill('調べた内容を整理して、共有した');
+    await page.getByLabel('次にやること', { exact: true }).fill('続きを進めて、レビューを受ける');
+    await page.getByRole('button', { name: '日報を提出する' }).click();
     await expect(page.locator('.celebrate-msg')).toContainText('提出しました');
     await d.doc('teams/A/tasks/mine-today').delete();
   });

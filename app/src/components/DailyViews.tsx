@@ -1,4 +1,4 @@
-import { FIXED_KINDS, statusOf, type Daily, type DayStatus } from '../lib/daily';
+import { FIXED_KINDS, RESULT_LABEL, statusOf, type Daily, type DayStatus } from '../lib/daily';
 import { formatDate } from '../lib/dates';
 import type { Member, Task } from '../types';
 
@@ -53,11 +53,13 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
               <li key={i}>
                 <span className="badge">{e.kind === 'task' ? 'タスク' : kindLabel.get(e.kind)}</span>
                 {' '}{e.kind === 'task' ? (title.get(e.taskId ?? '') ?? '(削除されたタスク)') : ''}
+                {e.result && <span className={`result-badge r-${e.result}`}>{RESULT_LABEL[e.result]}</span>}
                 {e.note && <span className="note">　{e.note}</span>}
               </li>
             ))}
           </ul>
           {d.blocker.trim() && <div className="blocker">困っていること: {d.blocker}</div>}
+          {d.next?.trim() && <div className="next-plan">次にやること: {d.next}</div>}
         </div>
       ))}
     </div>

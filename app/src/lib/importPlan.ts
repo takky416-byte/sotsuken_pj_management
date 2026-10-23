@@ -9,6 +9,10 @@ export type NewTask = {
   title: string;
   detail: string;
   order: number;
+  /** 1行入力 (@名前 〜10/30) から決まった担当・期限 */
+  assignees?: string[];
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 /**

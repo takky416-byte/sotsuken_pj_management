@@ -98,39 +98,53 @@ test.describe.serial('運用の流れ', () => {
     await expect(page.getByRole('checkbox', { name: '岩田' })).toBeChecked();
   });
 
-  test('学生: 日報は、選んだ項目に一言がないと提出できない。提出後も、今日は直せる', async ({ page }) => {
+  test('学生: 日報は、結果と説明 (10字以上) と次にやることがないと提出できない。提出後も、今日は直せる。タスクの状態も更新される', async ({ page }) => {
     await login(page, A1);
     await page.getByRole('link', { name: '日報', exact: true }).click();
     await expect(page.getByRole('heading', { name: '日報', exact: true })).toBeVisible();
 
-    // 今日自分が更新したタスク (この流れで作ったもの) は、先に選ばれている。一言がないので、まだ提出できない
-    const submit = page.getByRole('button', { name: '提出する' });
-    await expect(page.getByText('今日、あなたが更新したタスクを、選んでおきました')).toBeVisible();
-    await expect(page.getByLabel('画面遷移図を描く')).toBeChecked();
-    await expect(submit).toBeDisabled();
-    await expect(page.getByText('選んだ項目に、一言を書いてください')).toBeVisible();
-    await page.getByLabel('画面遷移図を描く').uncheck(); // 外せる
-    await page.getByLabel('画面遷移図を描く').check();
-    const notes = page.getByPlaceholder('何をしたか一言(必須)');
-    for (let i = 0; i < await notes.count(); i++) await notes.nth(i).fill(i === 0 ? '画面の下書きを作った' : '手を入れた');
-    await expect(submit).toBeEnabled();
+    // 今日自分が更新したタスク (この流れで作ったもの) は、「進んだ」で先に入っている。説明がまだなので、足りない点が出る
+    const submit = page.getByRole('button', { name: '日報を提出する' });
+    const card = page.locator('.dcard', { hasText: '画面遷移図を描く' });
+    await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true');
+    await submit.click();
+    await expect(page.getByRole('alert')).toContainText('画面遷移図を描くの説明を、あと10字以上');
+    await expect(page.getByRole('alert')).toContainText('「次にやること」');
+
+    // 説明が短いと、まだ足りない (あと何字かが出る)
+    await page.getByLabel('画面遷移図を描くの説明').fill('下書きを作った');
+    await expect(card).toContainText('あと3字');
+    await page.getByLabel('画面遷移図を描くの説明').fill('画面の下書きを3枚作った');
+    await expect(card).toContainText('✓');
+    // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
+    await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');
+    await page.getByLabel('次にやること', { exact: true }).fill('下書きをレビューして、清書する');
+    // 「完了した」を選ぶと、提出でタスクも完了になる
+    await card.getByRole('button', { name: '完了した' }).click();
     await submit.click();
     await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
 
-    // 再読み込み → 「更新する」になり、内容も残る。直して更新できる
+    // 再読み込み → 「日報を更新する」になり、内容も残る。直して更新できる
     await page.reload();
-    const update = page.getByRole('button', { name: '更新する' });
+    const update = page.getByRole('button', { name: '日報を更新する' });
     await expect(update).toBeVisible();
-    await page.getByPlaceholder('何をしたか一言(必須)').first().fill('画面の下書きを作り、レビューした');
+    await expect(page.getByLabel('画面遷移図を描くの説明')).toHaveValue('画面の下書きを3枚作った');
+    await expect(page.getByLabel('次にやること', { exact: true })).toHaveValue('下書きをレビューして、清書する');
+    await page.getByLabel('画面遷移図を描くの説明').fill('画面の下書きを3枚作り、レビューした');
     await update.click();
     await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
-    await expect(page.locator('.feed').getByText('画面の下書きを作り、レビューした')).toBeVisible();
+    await expect(page.locator('.feed').getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
+    await expect(page.locator('.feed').getByText('次にやること: 下書きをレビューして、清書する')).toBeVisible();
+
+    // タスクが完了になっている (WBS)
+    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await expect(row(page, '画面遷移図を描く').getByLabel('状態', { exact: true })).toHaveValue('done');
   });
 
   test('学生: 同じチームの日報は見える。他のチームのミーティング画面には入れない', async ({ page }) => {
     await login(page, A2);
     await page.getByRole('link', { name: '日報', exact: true }).click();
-    await expect(page.locator('.feed').getByText('画面の下書きを作り、レビューした')).toBeVisible(); // 岩田さんの日報
+    await expect(page.locator('.feed').getByText('画面の下書きを3枚作り、レビューした')).toBeVisible(); // 岩田さんの日報
 
     await page.goto('/meeting/B');
     await expect(page).toHaveURL(/\/meeting\/A$/);
@@ -220,7 +234,7 @@ test.describe.serial('運用の流れ', () => {
     await page.locator('.preview-head').getByRole('link', { name: 'WBS', exact: true }).click();
     await expect(page.getByPlaceholder(/^タスクを追加/)).toBeDisabled();
     await page.locator('.preview-head').getByRole('link', { name: '日報', exact: true }).click();
-    await expect(page.getByRole('button', { name: '更新する' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /日報を(提出|更新)する/ })).toBeDisabled();
   });
 
   test('設定: 日報のチーム内閲覧をオフにすると、学生は自分の分だけが見える', async ({ browser }) => {
@@ -234,7 +248,7 @@ test.describe.serial('運用の流れ', () => {
     await login(s, A2); // 近内さんは今日は欠席で、日報なし。岩田さんの日報は見えない
     await s.getByRole('link', { name: '日報', exact: true }).click();
     await expect(s.getByText('自分の日報')).toBeVisible();
-    await expect(s.getByText('画面の下書きを作り、レビューした')).toHaveCount(0);
+    await expect(s.getByText('画面の下書きを3枚作り、レビューした')).toHaveCount(0);
   });
 
   test('日報の運用開始日の設定: 開始前の学生には「日報は〜から始まります」と出る', async ({ page }) => {

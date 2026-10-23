@@ -184,6 +184,13 @@ describe('日報', () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
       daily('A1', { date: '2026-01-01', dayKey: jstDayKey() })));
   });
+  test('結果つきの項目と、次にやることを保存できる。次にやることは1000字まで', async () => {
+    const ref = doc(as(A1), `teams/A/dailyReports/${jstDate()}_A1`);
+    const entries = [{ kind: 'task', taskId: 't1', note: '画面を作った', result: 'done' }];
+    await assertSucceeds(setDoc(ref, daily('A1', { entries, next: '管理者画面のワイヤーフレームを描く' })));
+    await assertFails(setDoc(ref, daily('A1', { entries, next: 'あ'.repeat(1001) })));
+    await assertFails(setDoc(ref, daily('A1', { entries, next: 123 })));
+  });
   test('他人の分は作成・編集できない', async () => {
     await assertFails(setDoc(doc(as(A1), `teams/A/dailyReports/${jstDate()}_A2`), daily('A2')));
     await assertFails(updateDoc(doc(as(A1), `teams/A/dailyReports/${jstDate()}_A2`), { blocker: 'x' }));

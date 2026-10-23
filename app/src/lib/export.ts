@@ -80,17 +80,18 @@ export function tasksCsv(b: Backup): string {
 
 export function dailiesCsv(b: Backup): string {
   const who = names(b);
-  const rows: unknown[][] = [['日付', 'チーム', '学生ID', '苗字', '種別', 'タスク', '一言', '困っていること', '欠席']];
+  const rows: unknown[][] = [['日付', 'チーム', '学生ID', '苗字', '種別', 'タスク', '結果', '内容', '困っていること', '次にやること', '欠席']];
   const kind: Record<string, string> = { task: 'タスク', study: '調査・勉強', discuss: 'チームで相談', other: 'その他' };
+  const result: Record<string, string> = { progress: '進んだ', done: '完了した', stuck: '詰まった' };
   for (const t of teamIds(b)) {
     const title = new Map(col(b, `teams/${t}/tasks`).map((k) => [k.id, str(k.title)]));
     for (const d of sortBy(col(b, `teams/${t}/dailyReports`), (x) => str(x.date), (x) => str(x.sid))) {
-      const entries = list<{ kind: string; taskId?: string; note: string }>(d.entries);
+      const entries = list<{ kind: string; taskId?: string; note: string; result?: string }>(d.entries);
       const base = [str(d.date), t, str(d.sid), who.get(str(d.sid)) ?? ''];
-      if (entries.length === 0) rows.push([...base, '', '', '', str(d.blocker), d.absent === true]);
+      if (entries.length === 0) rows.push([...base, '', '', '', '', str(d.blocker), str(d.next), d.absent === true]);
       entries.forEach((e, i) => rows.push([
-        ...base, kind[e.kind] ?? e.kind, e.taskId ? title.get(e.taskId) ?? '(削除されたタスク)' : '', e.note,
-        i === 0 ? str(d.blocker) : '', d.absent === true,
+        ...base, kind[e.kind] ?? e.kind, e.taskId ? title.get(e.taskId) ?? '(削除されたタスク)' : '', result[e.result ?? ''] ?? '', e.note,
+        i === 0 ? str(d.blocker) : '', i === 0 ? str(d.next) : '', d.absent === true,
       ]));
     }
   }
