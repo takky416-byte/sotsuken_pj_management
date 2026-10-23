@@ -7,10 +7,9 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
-import { formatDate } from '../lib/dates';
 import type { TaskLink } from '../types';
 import { Progress } from './Progress';
 import { useEditableText } from './useEditableText';
@@ -110,66 +109,71 @@ export function WbsEditor({ teamId, actor, members }: Props) {
       )}
       {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
+      {rows.length > 0 && (
+        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>進捗</div><div>状態</div><div>担当</div><div>期間</div><div /></div>
+      )}
       {rows.map(({ task: t, hasChildren }) => {
         const status = eff.get(t.id) ?? t.status;
         return (
         <div key={t.id}>
           <div className={`wbs-row depth-${t.depth} st-${status}`}>
-            <button
-              className="ghost icon"
-              aria-label={collapsed.has(t.id) ? '開く' : '閉じる'}
-              style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
-              onClick={() => setCollapsed((s) => { const n = new Set(s); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })}
-            >{collapsed.has(t.id) ? '▸' : '▾'}</button>
-
-            <TitleInput
-              task={t}
-              by={nameOf(t.updatedBy)}
-              autoFocus={focusId === t.id}
-              onFocused={() => setFocusId(null)}
-              onSave={(title) => run(() => updateTask(teamId, actor, t.id, { title }))}
-              onEnter={() => add(t.parentId, '', t.id)}
-              onIndent={() => indent(t)}
-              onOutdent={() => patch(planOutdent(tasks, t.id))}
-              onMove={(d) => patch(planMove(tasks, t.id, d))}
-            />
-            {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
-            {hasChildren && <Progress {...progressOf(tasks, t.id)} />}
-
-            {hasChildren ? (
-              // 親タスクの状態は、子タスクから自動で決まる (自分では変えられない)
-              <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}・自動</span>
-            ) : (
-              <select
-                className={`status st-${t.status}`}
-                value={t.status}
-                aria-label="状態"
-                onChange={(e) => {
-                  const next = e.target.value as TaskStatus;
-                  const parents = newlyCompletedParents(tasks, t.id, next);
-                  run(() => updateTask(teamId, actor, t.id, { status: next })).then((ok) => {
-                    if (ok && next === 'done' && t.status !== 'done') {
-                      const p = overallProgress(tasks);
-                      celebrate(parents.length > 0
-                        ? `「${parents[0].title}」がぜんぶ完了!`
-                        : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
-                    }
-                  });
-                }}
-              >
-                {(Object.keys(STATUS_LABEL) as TaskStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
-            )}
-            <span className="meta">
-              {!hasChildren && t.assignees.length > 0 && t.assignees.map(nameOf).join('・')}
-              {t.endDate && ` 〜${formatDate(t.endDate)}`}
-            </span>
-            {t.depth < 3 && (
-              <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
-            )}
-            <button className="ghost icon" aria-label="詳細" title="詳細" onClick={() => setOpenId(openId === t.id ? null : t.id)}>
-              {openId === t.id ? '▲' : '⋯'}
-            </button>
+            <div className="w-title">
+              <button
+                className="ghost icon"
+                aria-label={collapsed.has(t.id) ? '開く' : '閉じる'}
+                style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
+                onClick={() => setCollapsed((s) => { const n = new Set(s); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })}
+              >{collapsed.has(t.id) ? '▸' : '▾'}</button>
+              <TitleInput
+                task={t}
+                by={nameOf(t.updatedBy)}
+                autoFocus={focusId === t.id}
+                onFocused={() => setFocusId(null)}
+                onSave={(title) => run(() => updateTask(teamId, actor, t.id, { title }))}
+                onEnter={() => add(t.parentId, '', t.id)}
+                onIndent={() => indent(t)}
+                onOutdent={() => patch(planOutdent(tasks, t.id))}
+                onMove={(d) => patch(planMove(tasks, t.id, d))}
+              />
+              {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
+            </div>
+            <div className="w-prog">{hasChildren && <Progress {...progressOf(tasks, t.id)} />}</div>
+            <div className="w-status">
+              {hasChildren ? (
+                // 親タスクの状態は、子タスクから自動で決まる (自分では変えられない)
+                <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}</span>
+              ) : (
+                <select
+                  className={`status st-${t.status}`}
+                  value={t.status}
+                  aria-label="状態"
+                  onChange={(e) => {
+                    const next = e.target.value as TaskStatus;
+                    const parents = newlyCompletedParents(tasks, t.id, next);
+                    run(() => updateTask(teamId, actor, t.id, { status: next })).then((ok) => {
+                      if (ok && next === 'done' && t.status !== 'done') {
+                        const p = overallProgress(tasks);
+                        celebrate(parents.length > 0
+                          ? `「${parents[0].title}」がぜんぶ完了!`
+                          : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+                      }
+                    });
+                  }}
+                >
+                  {(Object.keys(STATUS_LABEL) as TaskStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                </select>
+              )}
+            </div>
+            <div className="w-assign">{!hasChildren && t.assignees.length > 0 && t.assignees.map(nameOf).join('・')}</div>
+            <div className={`w-period${periodOf(tasks, t).derived ? ' derived' : ''}`}>{periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end)}</div>
+            <div className="w-acts">
+              {t.depth < 3 && (
+                <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
+              )}
+              <button className="ghost icon" aria-label="詳細" title="詳細" onClick={() => setOpenId(openId === t.id ? null : t.id)}>
+                {openId === t.id ? '▲' : '⋯'}
+              </button>
+            </div>
           </div>
 
           {openId === t.id && (

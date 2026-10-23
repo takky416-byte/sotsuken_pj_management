@@ -1,3 +1,4 @@
+import { StackTable } from '../../components/StackTable';
 import { Link } from 'react-router-dom';
 import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
@@ -61,7 +62,7 @@ export function TeacherHome() {
     <>
       <h2>チーム一覧</h2>
       <div className="table-wrap">
-        <table className="table">
+        <StackTable>
           <thead>
             <tr>
               <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th>
@@ -69,7 +70,7 @@ export function TeacherHome() {
             </tr>
           </thead>
           <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} />)}</tbody>
-        </table>
+        </StackTable>
       </div>
       <p className="hint">
         「要確認」は目安です。授業日に2回続けて日報が未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。

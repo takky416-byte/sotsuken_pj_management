@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus,
+  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus, periodLabel, periodOf,
 } from './wbs';
 
 let seq = 0;
@@ -142,5 +142,26 @@ describe('親タスクの状態は、子から自動で決まる', () => {
     const done = [T('P'), T('a', { parentId: 'P', depth: 2, status: 'done' }), T('b', { parentId: 'P', depth: 2, status: 'doing' })];
     expect(newlyCompletedParents(done, 'b', 'done').map((t) => t.id)).toEqual(['P']);
     expect(newlyCompletedParents(done, 'b', 'todo')).toEqual([]);
+  });
+});
+
+describe('期間の表示', () => {
+  test('periodLabel / shortDate', () => {
+    expect(periodLabel('2026-10-01', '2026-10-05')).toBe('10/1〜10/5');
+    expect(periodLabel('2026-10-05', '2026-10-05')).toBe('10/5');
+    expect(periodLabel(null, '2026-10-05')).toBe('〜10/5');
+    expect(periodLabel('2026-10-01', null)).toBe('10/1〜');
+    expect(periodLabel(null, null)).toBe('');
+  });
+  test('periodOf: 日付のない親は、子孫の最小・最大から求める', () => {
+    const ts = [
+      T('P'),
+      T('a', { parentId: 'P', depth: 2, startDate: '2026-10-03', endDate: '2026-10-08' }),
+      T('b', { parentId: 'P', depth: 2, startDate: '2026-10-01', endDate: '2026-10-02' }),
+      T('c', { parentId: 'P', depth: 2, deleted: true, startDate: '2020-01-01', endDate: '2020-01-02' }),
+    ];
+    expect(periodOf(ts, ts[0])).toEqual({ start: '2026-10-01', end: '2026-10-08', derived: true });
+    expect(periodOf(ts, ts[1])).toEqual({ start: '2026-10-03', end: '2026-10-08', derived: false });
+    expect(periodOf(ts, T('x'))).toEqual({ start: null, end: null, derived: false });
   });
 });

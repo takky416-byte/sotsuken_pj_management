@@ -192,3 +192,23 @@ export function newlyCompletedParents(tasks: Task[], id: string, status: TaskSta
   return tasks.filter((t) => isLive(t) && t.id !== id && before.get(t.id) !== 'done' && after.get(t.id) === 'done'
     && tasks.some((c) => isLive(c) && c.parentId === t.id));
 }
+
+/** タスクの期間。自分に日付がなければ、子孫の日付の最小・最大から求める (derived)。 */
+export function periodOf(tasks: Task[], t: Task): { start: string | null; end: string | null; derived: boolean } {
+  if (t.startDate || t.endDate) return { start: t.startDate, end: t.endDate, derived: false };
+  const ds = descendantsOf(tasks.filter((x) => !x.deleted), t.id);
+  const starts = ds.map((d) => d.startDate ?? d.endDate).filter((d): d is string => !!d).sort();
+  const ends = ds.map((d) => d.endDate ?? d.startDate).filter((d): d is string => !!d).sort();
+  return { start: starts[0] ?? null, end: ends.at(-1) ?? null, derived: starts.length > 0 };
+}
+
+/** '2026-10-05' → '10/5' */
+export const shortDate = (date: string): string => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+
+/** 期間の表示: 10/1〜10/5、1日なら 10/5、片方だけなら 〜10/5 / 10/1〜 */
+export function periodLabel(start: string | null, end: string | null): string {
+  if (start && end) return start === end ? shortDate(start) : `${shortDate(start)}〜${shortDate(end)}`;
+  if (end) return `〜${shortDate(end)}`;
+  if (start) return `${shortDate(start)}〜`;
+  return '';
+}

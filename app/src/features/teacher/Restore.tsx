@@ -1,3 +1,4 @@
+import { StackTable } from '../../components/StackTable';
 import { useState } from 'react';
 import { applyRestore } from '../../data/restore';
 import { download, loadBackup } from '../../data/export';
@@ -105,12 +106,12 @@ export function Restore() {
               ? <p>変更はありません(いまの状態は、バックアップと同じです)。</p>
               : (
                 <>
-                  <table className="table">
+                  <StackTable>
                     <thead><tr><th>データ</th><th>変更(上書き)</th><th>新しく作る</th></tr></thead>
                     <tbody>
                       {Object.entries(plan.byCollection).map(([p, c]) => <tr key={p}><td>{p}</td><td>{c.changed}</td><td>{c.new}</td></tr>)}
                     </tbody>
-                  </table>
+                  </StackTable>
                   <p className="hint">変更なし: {plan.unchanged}件 / バックアップにないので、そのまま残る: {plan.extra}件</p>
                   <div className="row">
                     {!sure

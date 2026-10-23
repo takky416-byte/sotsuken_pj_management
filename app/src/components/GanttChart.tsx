@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { StackTable } from './StackTable';
+import { useEffect, useRef, useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { updateTask, useTasks } from '../data/tasks';
 import { formatDate, jstDate } from '../lib/dates';
 import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { STATUS_LABEL, type Member } from '../types';
 
-const LANE_PX = 16;
-const ROW_PX = 26; // ガントの1行の高さ (稲妻線の位置合わせのため、固定)
+const LANE_PX = 18;
+const ROW_PX = 30; // ガントの1行の高さ (稲妻線の位置合わせのため、固定)
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
 export function GanttChart({ teamId, actor, members }: { teamId: string; actor: string; members: Member[] }) {
@@ -16,6 +17,16 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
   const [edit, setEdit] = useState(false);
   const [bolt, setBolt] = useState(true);
   const [err, setErr] = useState('');
+  const box = useRef<HTMLDivElement>(null);
+  const ready = !!tasks && !!milestones;
+  // 開いたときに、今日の線が見える位置までスクロールする (スマホなど、横にはみ出すとき)
+  useEffect(() => {
+    const el = box.current;
+    if (!ready || !el) return;
+    const today = el.querySelector<HTMLElement>('.gantt-today');
+    const name = el.querySelector<HTMLElement>('.gantt-name')?.offsetWidth ?? 0;
+    if (today) el.scrollLeft = Math.max(0, today.offsetLeft - name - (el.clientWidth - name) * 0.4);
+  }, [ready]);
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
@@ -42,7 +53,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
         <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>
       </div>
       {err && <p className="error">{err}</p>}
-      <div className="gantt">
+      <div className="gantt" ref={box}>
         <div className="gantt-inner">
         <div className="gantt-head">
           <div className="gantt-name" />
@@ -101,7 +112,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
         <div className="card">
           <div className="label">日付の入力(開始日だけ入れると、1日のタスクになります。終了日は、あとから入れられます)</div>
           <div className="table-wrap">
-            <table className="table">
+            <StackTable>
               <thead><tr><th>タスク</th><th>開始日</th><th>終了日</th></tr></thead>
               <tbody>
                 {[...g.rows.map((r) => r.task), ...g.undated.filter((u) => !g.rows.some((r) => r.task.id === u.id))].map((t) => {
@@ -119,7 +130,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
                   );
                 })}
               </tbody>
-            </table>
+            </StackTable>
           </div>
         </div>
       )}

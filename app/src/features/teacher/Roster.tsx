@@ -1,3 +1,4 @@
+import { StackTable } from '../../components/StackTable';
 import { useMemo, useState } from 'react';
 import { collection, doc, query, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -93,7 +94,7 @@ export function Roster() {
         )}
         {plan.length > 0 && (
           <div className="table-wrap">
-            <table className="table">
+            <StackTable>
               <thead><tr><th>ID</th><th>苗字</th><th>メールアドレス</th><th>チーム</th><th></th></tr></thead>
               <tbody>
                 {plan.map((r) => (
@@ -103,7 +104,7 @@ export function Roster() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </StackTable>
           </div>
         )}
         <div className="row">
@@ -121,7 +122,7 @@ export function Roster() {
         これまでの日報・担当は元のチームに残ります。名簿から外すと、その学生はログインできなくなります(日報などのデータは消えません)。
       </p>
       <div className="table-wrap">
-        <table className="table">
+        <StackTable>
           <thead><tr><th>ID</th><th>苗字</th><th>メールアドレス</th><th>チーム</th><th></th></tr></thead>
           <tbody>
             {students.map((s) => (
@@ -129,7 +130,7 @@ export function Roster() {
                 onRename={(n) => rename(s, n)} onMove={(t) => move(s, t)} onRemove={() => remove(s)} />
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
     </>
   );

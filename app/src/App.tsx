@@ -1,4 +1,5 @@
-import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
 import { Help } from './features/Help';
@@ -19,6 +20,11 @@ import { TeacherTeam } from './features/teacher/TeacherTeam';
 
 function Shell() {
   const { state, logout } = useAuth();
+  const { pathname } = useLocation();
+  // メニューが横にはみ出すとき (スマホ) は、いまのページのメニューが見える位置までスクロールする
+  useEffect(() => {
+    document.querySelector('header nav a.active')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [pathname, state.status]);
 
   if (state.status === 'loading') return <p className="center">読み込み中…</p>;
   if (state.status === 'signedOut') return <LoginPage error={state.error} />;

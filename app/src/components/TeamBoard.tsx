@@ -1,3 +1,4 @@
+import { StackTable } from './StackTable';
 import { useState } from 'react';
 import { useClassDays } from '../data/calendar';
 import { useMyDailies, useSettings, useTeamDailies } from '../data/daily';
@@ -66,7 +67,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
         {!peer && ' (日報は、自分の分だけ表示されます)'}
       </p>
       <div className="table-wrap">
-        <table className="table board">
+        <StackTable className="board">
           <thead>
             <tr><th>メンバー</th><th>日報</th><th>日報で触れたタスク</th><th>担当</th><th>完了</th><th>期限超過</th><th>約束</th><th>ありがとう</th><th /></tr>
           </thead>
@@ -93,7 +94,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
               );
             })}
           </tbody>
-        </table>
+        </StackTable>
       </div>
 
       {err && <p className="error">{err}</p>}

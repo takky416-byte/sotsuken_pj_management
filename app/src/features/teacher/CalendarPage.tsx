@@ -1,3 +1,4 @@
+import { StackTable } from '../../components/StackTable';
 import { useMemo, useState } from 'react';
 import {
   deleteMilestone, saveClassDays, saveMilestone, useClassDays, useMilestones,
@@ -64,7 +65,7 @@ function Milestones({ milestones, run }: { milestones: Milestone[]; run: Run }) 
         })}>追加</button>
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <StackTable>
           <thead><tr><th>日付</th><th>名称</th><th>対象</th><th></th></tr></thead>
           <tbody>
             {milestones.map((m) => editing === m.id ? (
@@ -101,7 +102,7 @@ function Milestones({ milestones, run }: { milestones: Milestone[]; run: Run }) 
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
     </>
   );
@@ -175,7 +176,7 @@ function ClassDays({ days, run }: { days: ClassDay[]; run: Run }) {
 
       <label className="check"><input type="checkbox" checked={showPast} onChange={(e) => setShowPast(e.target.checked)} />過ぎた授業日も表示する</label>
       <div className="table-wrap">
-        <table className="table">
+        <StackTable>
           <thead><tr><th>日付</th><th>時限</th><th>備考</th><th>ミーティング</th><th></th></tr></thead>
           <tbody>
             {shown.map((d) => (
@@ -184,7 +185,7 @@ function ClassDays({ days, run }: { days: ClassDay[]; run: Run }) {
             ))}
             {shown.length === 0 && <tr><td colSpan={5} className="hint">表示できる授業日がありません。</td></tr>}
           </tbody>
-        </table>
+        </StackTable>
       </div>
     </>
   );
