@@ -83,6 +83,7 @@ describe('buildGantt', () => {
     const today = '2026-11-10';
     const tasks = [
       t('P', { startDate: '2026-11-01', endDate: '2026-11-20' }),
+      t('earlystart', { parentId: 'P', depth: 2, startDate: '2026-11-16', endDate: '2026-11-25', status: 'doing' }), // 予定の開始より早く着手
       t('doing', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-20', status: 'doing' }),
       t('late', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-10', status: 'todo' }), // 始まっているはずが未着手
       t('overdue', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'doing' }), // 期限超過でも、進行中は今日の線の上
@@ -101,6 +102,10 @@ describe('buildGantt', () => {
     test('左に折れるのは、予定の期間に入っているのに未着手のタスクだけ', () => {
       expect(at('late').days).toBeLessThan(-8);
       expect(at('late').x).toBeLessThan(at('nodate').x);
+    });
+    test('予定の開始日より前に着手していれば、右に折れる', () => {
+      expect(at('earlystart').days).toBeGreaterThan(5); // 11/16 の始まりまで
+      expect(at('earlystart').x).toBeGreaterThan(at('nodate').x);
     });
     test('予定の終了日より前に完了していれば、右に折れる (早いほど大きく)', () => {
       expect(at('early').days).toBeGreaterThan(7); // 11/18 の終わりまで

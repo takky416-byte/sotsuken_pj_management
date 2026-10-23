@@ -95,7 +95,7 @@ export function GanttChart({ teamId, actor, members }: { teamId: string; actor: 
       <p className="hint">
         <span className="legend todo" />未着手 <span className="legend doing" />進行中 <span className="legend done" />完了 <span className="legend hold" />保留
         <span className="legend overdue" />期限超過 / 赤い縦線は今日
-        {bolt && <> / <span className="legend bolt" />稲妻線(今日の線より左は、予定の期間に入っているのに未着手のタスク、右は、予定より早く完了したタスク。{behind > 0 ? `遅れの目安: ${behind}行` : '遅れはありません'})</>}
+        {bolt && <> / <span className="legend bolt" />稲妻線(今日の線より左は、予定の期間に入っているのに未着手のタスク、右は、予定より早く着手・完了したタスク。{behind > 0 ? `遅れの目安: ${behind}行` : '遅れはありません'})</>}
       </p>
       {edit && (
         <div className="card">
