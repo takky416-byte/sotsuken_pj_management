@@ -129,6 +129,12 @@ describe('タスク', () => {
   test('自チームで作成できる', async () => {
     await assertSucceeds(setDoc(doc(as(A1), 'teams/A/tasks/t2'), task('A1')));
   });
+  test('階層は3つまで。最上位だけが第1階層', async () => {
+    await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/d4'), task('A1', { depth: 4, parentId: 't1' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/d1x'), task('A1', { depth: 1, parentId: 't1' }))); // 親があるのに第1階層
+    await assertFails(setDoc(doc(as(A1), 'teams/A/tasks/d2x'), task('A1', { depth: 2, parentId: null }))); // 親がないのに第2階層
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/tasks/d3'), task('A1', { depth: 3, parentId: 't1' })));
+  });
   test('他チームには作成できない', async () => {
     await assertFails(setDoc(doc(as(A1), 'teams/B/tasks/t2'), task('A1')));
   });

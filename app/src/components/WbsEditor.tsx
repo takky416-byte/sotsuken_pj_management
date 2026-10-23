@@ -7,7 +7,7 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { formatDate } from '../lib/dates';
@@ -79,6 +79,13 @@ export function WbsEditor({ teamId, actor, members }: Props) {
   };
 
   const patch = (plan: ReturnType<typeof planIndent>) => plan && run(() => applyPatches(teamId, actor, plan));
+  // 子にする (Tab)。できないときは、理由を出す
+  const indent = (t: Task) => {
+    const plan = planIndent(tasks, t.id);
+    if (plan) { patch(plan); return; }
+    const first = childrenOf(tasks, t.parentId)[0]?.id === t.id;
+    setErr(first ? '子にできません。直前のタスクがないので、いちばん上のタスクです' : '階層は3つまでです(大項目 → 中項目 → 小項目)');
+  };
   const trash = tasks.filter((t) => t.deleted && !(t.parentId && byId.get(t.parentId)?.deleted));
   const orphans = orphansOf(tasks);
 
@@ -122,7 +129,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
               onFocused={() => setFocusId(null)}
               onSave={(title) => run(() => updateTask(teamId, actor, t.id, { title }))}
               onEnter={() => add(t.parentId, '', t.id)}
-              onIndent={() => patch(planIndent(tasks, t.id))}
+              onIndent={() => indent(t)}
               onOutdent={() => patch(planOutdent(tasks, t.id))}
               onMove={(d) => patch(planMove(tasks, t.id, d))}
             />
@@ -171,7 +178,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
               onAssignee={(sid, add) => run(() => updateTaskArray(teamId, actor, t.id, 'assignees', add ? 'add' : 'remove', sid))}
               onLink={(op, link) => run(() => updateTaskArray(teamId, actor, t.id, 'links', op, link))}
-              onIndent={() => patch(planIndent(tasks, t.id))}
+              onIndent={() => indent(t)}
               onOutdent={() => patch(planOutdent(tasks, t.id))}
               onMove={(d) => patch(planMove(tasks, t.id, d))}
               onDelete={() => remove(t)}

@@ -36,7 +36,8 @@ service cloud.firestore {
         && d.title is string && d.title.size() > 0 && d.title.size() <= 200
         && d.detail is string && d.detail.size() <= 5000
         && (d.parentId == null || d.parentId is string)
-        && d.depth in [1, 2, 3]
+        && d.depth in [1, 2, 3] // 階層は3つまで (大項目→中項目→小項目)
+        && ((d.parentId == null) == (d.depth == 1)) // 最上位だけが、第1階層
         && d.order is number
         && d.status in ['todo', 'doing', 'done', 'hold']
         && d.assignees is list && d.assignees.size() <= 10
