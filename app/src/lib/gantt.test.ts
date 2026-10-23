@@ -86,7 +86,9 @@ describe('buildGantt', () => {
       t('doing', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-20', status: 'doing' }),
       t('late', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-10', status: 'todo' }), // 始まっているはずが未着手
       t('overdue', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'doing' }), // 期限超過でも、進行中は今日の線の上
-      t('done', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'done' }),
+      t('done', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'done' }), // 期限内に完了
+      t('early', { parentId: 'P', depth: 2, startDate: '2026-11-08', endDate: '2026-11-18', status: 'done' }), // 予定より早く完了
+      t('earlyfuture', { parentId: 'P', depth: 2, startDate: '2026-11-15', endDate: '2026-11-20', status: 'done' }), // まだ始まる前の予定が、完了
       t('hold', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'hold' }),
       t('future', { parentId: 'P', depth: 2, startDate: '2026-11-15', endDate: '2026-11-20' }),
       t('nodate', { parentId: 'P', depth: 2 }),
@@ -100,7 +102,12 @@ describe('buildGantt', () => {
       expect(at('late').days).toBeLessThan(-8);
       expect(at('late').x).toBeLessThan(at('nodate').x);
     });
-    test('進行中・完了・保留・日付なし・まだ始まっていないタスクは、今日の線の上', () => {
+    test('予定の終了日より前に完了していれば、右に折れる (早いほど大きく)', () => {
+      expect(at('early').days).toBeGreaterThan(7); // 11/18 の終わりまで
+      expect(at('earlyfuture').days).toBeGreaterThan(at('early').days);
+      expect(at('early').x).toBeGreaterThan(at('nodate').x);
+    });
+    test('進行中・保留・期限内に完了・日付なし・まだ始まっていない未着手は、今日の線の上', () => {
       for (const id of ['doing', 'overdue', 'done', 'hold', 'future', 'nodate']) expect(at(id).days).toBe(0);
       expect(at('doing').x).toBeCloseTo(at('nodate').x);
     });

@@ -135,9 +135,10 @@ export type LightningPoint = {
 };
 
 /**
- * 稲妻線: 予定どおりなら今日の線の上、遅れていれば左に折れる。上から順につなぐ。
- * 左に折れるのは、予定の期間に入っているのに「未着手」のタスク (開始日の位置まで戻る。長く着手していないほど、大きく左へ)。
- * 進行中・完了・保留、日付なし、まだ始まっていないタスクは、今日の線の上に置く。
+ * 稲妻線: 予定どおりなら今日の線の上、遅れていれば左、先行していれば右に折れる。上から順につなぐ。
+ * 左: 予定の期間に入っているのに「未着手」のタスク (開始日の位置まで戻る。長く着手していないほど、大きく左へ)。
+ * 右: 予定の終了日より前に「完了」しているタスク (終了日の位置まで進む。早いほど、大きく右へ)。
+ * それ以外 (進行中・保留、期限が過ぎた完了、日付なし、まだ始まっていない未着手) は、今日の線の上に置く。
  * 子が表示されている親の行 (大項目など) は、子と重なって意味が薄いので、点を打たない (前後の点を、まっすぐつなぐ)。
  */
 export function lightning(
@@ -148,8 +149,9 @@ export function lightning(
   const out: LightningPoint[] = [];
   g.rows.forEach((r, row) => {
     if (hasChildren(r.task.id) && r.depth < maxDepth) return; // 子が表示されている親
-    if (!r.start || r.status !== 'todo' || r.start > today) { out.push({ row, x: toX(nowDay), days: 0 }); return; }
-    const at = daysBetween(g.start, r.start); // 未着手: 開始日の位置 (進み具合 0)
+    let at = nowDay;
+    if (r.start && r.status === 'todo' && r.start <= today) at = daysBetween(g.start, r.start); // 遅れ: 開始日の位置 (進み具合 0)
+    else if (r.end && r.status === 'done' && r.end > today) at = daysBetween(g.start, r.end) + 1; // 先行: 終了日の終わり
     out.push({ row, x: toX(at), days: Math.round((at - nowDay) * 10) / 10 });
   });
   return out;
