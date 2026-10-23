@@ -12,6 +12,7 @@ export function buildPilot(input: {
   existingTasks?: { id: string; title: string; parentId: string | null; depth: number; order: number; deleted?: boolean }[];
   existingClassDays?: { date: string }[];
   projectName?: string;
+  personas?: number[] | null;
 }): {
   start: string;
   days: { date: string; periods: string; meeting: boolean; note: string }[];
@@ -19,4 +20,4 @@ export function buildPilot(input: {
   team: Record<string, unknown>;
   newClassDays: { date: string }[];
 };
-export function applyPilot(opts: { db: Firestore; teamId: string; dryRun?: boolean; now?: number; log?: (m: string) => void }): Promise<unknown>;
+export function applyPilot(opts: { db: Firestore; teamId: string; dryRun?: boolean; now?: number; personas?: number[] | null; log?: (m: string) => void }): Promise<unknown>;

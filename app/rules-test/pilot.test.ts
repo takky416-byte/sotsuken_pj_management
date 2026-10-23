@@ -120,6 +120,15 @@ describe('試運転データ (pilot-data)', () => {
     expect(flags.unassignedOverdue).toBeGreaterThan(0); // 担当なしの期限超過
   });
 
+  test('メンバーごとの型を指定できる (4人目を「ふつう」にする)', () => {
+    const four = [...MEMBERS, { sid: 'D4', name: 'テスト' }];
+    const sub = (pe: number[] | null) => buildPilot({ teamId: 'D', members: four, today: TODAY, personas: pe });
+    const count = (p: ReturnType<typeof buildPilot>, sid: string) => p.dailies.filter((d) => d.data.sid === sid && !d.data.absent).length;
+    expect(count(sub(null), 'D4')).toBeLessThan(7); // 既定: 4人目は、消極的
+    expect(count(sub([0, 1, 2, 1]), 'D4')).toBe(10); // ふつう: 12日のうち2日休む
+    expect(sub(null).thanks.some((t) => t.data.to === 'D4' || t.data.from === 'D4')).toBe(true); // 4人目にも、ありがとうがある
+  });
+
   test('リセット: カレンダーも元に戻る (ダミーの授業日だけを消し、運用開始日を戻す)', async () => {
     await applyPilot({ db, teamId: 'D', dryRun: false, now: NOW, log: quiet });
     const r = await resetTeams({ db, teams: ['D'], resetTeam: true, restoreCalendar: true, dryRun: false, log: quiet });

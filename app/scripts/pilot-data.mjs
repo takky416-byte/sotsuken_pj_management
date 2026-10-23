@@ -101,16 +101,17 @@ function submitPlan(persona, n) {
 
 /**
  * 生成するデータ。Firestore には触れない純粋な関数 (テストしやすいように)。
- * @param {{ teamId: string, members: {sid:string,name:string}[], today: string, existingTasks?: {id:string,title:string,parentId:string|null,depth:number,order:number,deleted?:boolean}[], existingClassDays?: {date:string}[], projectName?: string }} input
+ * personas: メンバーごとの型 (0=主力、1=ふつう、2=消極的)。省略すると、1人目が主力、2人目がふつう、3人目以降が消極的。
+ * @param {{ teamId: string, members: {sid:string,name:string}[], today: string, personas?: number[] | null, existingTasks?: {id:string,title:string,parentId:string|null,depth:number,order:number,deleted?:boolean}[], existingClassDays?: {date:string}[], projectName?: string }} input
  */
-export function buildPilot({ teamId, members, today, existingTasks = [], existingClassDays = [], projectName = '' }) {
+export function buildPilot({ teamId, members, today, existingTasks = [], existingClassDays = [], projectName = '', personas = null }) {
   if (members.length === 0) throw new Error(`チーム ${teamId} にメンバーがいません。先に名簿を登録してください`);
   const days = pastClassDays(today);
   const start = days[0].date;
   const S = (n) => addDays(start, n);
   const T = (n) => addDays(today, n);
   const person = (p) => members[p % members.length].sid;
-  const persona = (i) => Math.min(i, 2);
+  const persona = (i) => personas?.[i] ?? Math.min(i, 2);
   const live = existingTasks.filter((t) => !t.deleted);
 
   // ---- タスク ----
@@ -225,7 +226,8 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
   }));
 
   // ---- ありがとう ----
-  const pairs = [[1, 0, 'レビューしてくれて助かった', 4], [0, 1, 'ヒアリングの相手を紹介してくれてありがとう', 6], [2, 0, '環境づくりを手伝ってくれた', 3], [0, 2, '開発環境を整えてくれて助かった', 3], [1, 0, '資料の構成を一緒に考えてくれた', 9], [0, 1, '遅くまで付き合ってくれた', 10]];
+  const pairs = [[1, 0, 'レビューしてくれて助かった', 4], [0, 1, 'ヒアリングの相手を紹介してくれてありがとう', 6], [2, 0, '環境づくりを手伝ってくれた', 3], [0, 2, '開発環境を整えてくれて助かった', 3], [1, 0, '資料の構成を一緒に考えてくれた', 9], [0, 1, '遅くまで付き合ってくれた', 10],
+    ...(members.length > 3 ? [[0, 3, '質問に丁寧に答えてくれてありがとう', 7], [3, 1, '分からないところを教えてくれた', 8]] : [])];
   const thanks = pairs.filter(([a, b]) => members.length > Math.max(a, b) || a % members.length !== b % members.length)
     .map(([a, b, note, di], i) => {
       const date = days[Math.min(di, days.length - 1)].date;
@@ -242,7 +244,7 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
 }
 
 // ---- 書き込み ----
-export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), log = console.log }) {
+export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), personas = null, log = console.log }) {
   const teamRef = db.doc(`teams/${teamId}`);
   const team = await teamRef.get();
   if (!team.exists) throw new Error(`チーム ${teamId} がありません`);
@@ -252,7 +254,7 @@ export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), 
   const classDaysDoc = await db.doc('config/classDays').get();
   const existingDays = classDaysDoc.exists ? classDaysDoc.data().days ?? [] : [];
 
-  const p = buildPilot({ teamId, members: t.members ?? [], today: jstToday(now), existingTasks, existingClassDays: existingDays, projectName: t.projectName });
+  const p = buildPilot({ teamId, members: t.members ?? [], today: jstToday(now), existingTasks, existingClassDays: existingDays, projectName: t.projectName, personas });
   log(`チーム ${teamId} (メンバー ${t.members.length}人、状態 ${t.status}、タスク ${existingTasks.length}件、日報 ${(await teamRef.collection('dailyReports').count().get()).data().count}件)`);
   log(`作る: タスク ${p.tasks.length} / 日報 ${p.dailies.length} / ミーティング記録 ${p.meetings.length} / コメント ${p.comments.length} / ありがとう ${p.thanks.length} / 授業日 ${p.newClassDays.length}日 (${p.start}〜)`);
   if (dryRun) { log('--- ドライラン: 何も書き込んでいません ---'); return p; }
@@ -289,5 +291,7 @@ if (isMain) {
   const teamId = (process.env.TEAM ?? 'D').trim().toUpperCase();
   if (!/^[A-H]$/.test(teamId)) throw new Error('TEAM は A〜H で指定してください');
   initializeApp({ credential: applicationDefault(), projectId: 'sotsuken-pj' });
-  await applyPilot({ db: getFirestore(), teamId, dryRun: process.env.DRY_RUN !== 'false' });
+  const personas = (process.env.PERSONAS ?? '').trim() ? process.env.PERSONAS.split(',').map((x) => Number(x.trim())) : null;
+  if (personas && personas.some((x) => ![0, 1, 2].includes(x))) throw new Error('PERSONAS は 0,1,2 をカンマ区切りで指定してください (0=主力、1=ふつう、2=消極的)');
+  await applyPilot({ db: getFirestore(), teamId, dryRun: process.env.DRY_RUN !== 'false', personas });
 }

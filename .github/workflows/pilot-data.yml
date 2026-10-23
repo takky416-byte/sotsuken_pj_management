@@ -11,6 +11,10 @@ on:
         description: 対象のチーム (A〜H のどれか1つ)
         required: true
         default: D
+      personas:
+        description: メンバーごとの型 (0=主力、1=ふつう、2=消極的 をカンマ区切り。例 0,1,2,1)。空なら 1人目が主力、2人目がふつう、3人目以降が消極的
+        required: false
+        default: ''
       dry_run:
         description: ドライラン (true なら書き込まない)
         type: boolean
@@ -44,4 +48,5 @@ jobs:
         env:
           TEAM: ${{ inputs.team }}
           DRY_RUN: ${{ inputs.dry_run }}
+          PERSONAS: ${{ inputs.personas }}
         run: node scripts/pilot-data.mjs
