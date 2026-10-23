@@ -17,6 +17,10 @@ on:
         description: チームの状態も「企画検討中」に戻す (キックオフ前に戻す)
         type: boolean
         default: false
+      restore_calendar:
+        description: カレンダーも元に戻す (試運転データ作成で足した「ダミー(試運転)」の授業日を消し、日報の運用開始日を 10/28 に戻す)
+        type: boolean
+        default: false
       include_teacher_notes:
         description: そのチームの教員メモも削除する
         type: boolean
@@ -52,4 +56,5 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           RESET_TEAM: ${{ inputs.reset_team }}
           INCLUDE_TEACHER_NOTES: ${{ inputs.include_teacher_notes }}
+          RESTORE_CALENDAR: ${{ inputs.restore_calendar }}
         run: node scripts/reset-team-data.mjs

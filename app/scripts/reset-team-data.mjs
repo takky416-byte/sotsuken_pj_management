@@ -4,6 +4,8 @@
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { DEFAULT_DAILY_START, DUMMY_NOTE } from './pilot-data.mjs';
+
 const SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks'];
 const VALID_TEAM = /^[A-H]$/;
 
@@ -18,7 +20,7 @@ export function parseTeams(text) {
 /**
  * @returns {Promise<Record<string, Record<string, number>>>} チームごとの、削除した (ドライランでは削除する) 件数
  */
-export async function resetTeams({ db, teams, resetTeam = false, includeTeacherNotes = false, dryRun = true, log = console.log }) {
+export async function resetTeams({ db, teams, resetTeam = false, includeTeacherNotes = false, restoreCalendar = false, dryRun = true, log = console.log }) {
   const report = {};
   for (const id of teams) {
     const team = db.doc(`teams/${id}`);
@@ -46,6 +48,18 @@ export async function resetTeams({ db, teams, resetTeam = false, includeTeacherN
     report[id] = counts;
     log(`チーム ${id}: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(' ')}`);
   }
+  if (restoreCalendar) {
+    // pilot-data が足した授業日 (備考がダミー) を消し、日報の運用開始日を元に戻す
+    const doc = await db.doc('config/classDays').get();
+    const days = doc.exists ? doc.data().days ?? [] : [];
+    const kept = days.filter((d) => d.note !== DUMMY_NOTE);
+    report.calendar = { removedClassDays: days.length - kept.length };
+    log(`カレンダー: ダミーの授業日 ${days.length - kept.length}日、日報の運用開始日 → ${DEFAULT_DAILY_START}`);
+    if (!dryRun) {
+      await db.doc('config/classDays').set({ days: kept });
+      await db.doc('config/settings').set({ dailyStartDate: DEFAULT_DAILY_START }, { merge: true });
+    }
+  }
   log(dryRun ? '--- ドライラン: 何も削除していません ---' : '--- 削除しました ---');
   return report;
 }
@@ -60,6 +74,7 @@ if (isMain) {
     teams,
     resetTeam: flag('RESET_TEAM', false),
     includeTeacherNotes: flag('INCLUDE_TEACHER_NOTES', false),
+    restoreCalendar: flag('RESTORE_CALENDAR', false),
     dryRun: flag('DRY_RUN', true),
   });
 }

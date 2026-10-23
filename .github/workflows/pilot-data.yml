@@ -1,0 +1,47 @@
+name: Create pilot data
+
+# 試運転用のデータを作る。指定したチーム (既定 D) を、キックオフ済みで、プロジェクトが4週間ほど進んだ状態にする。
+# 過去の授業日 (備考「ダミー(試運転)」) を足し、日報の運用開始日を、その初日にする。
+# 運用開始前に、reset-pilot (teams=D, reset_team=true, restore_calendar=true) で、すべて元に戻す。
+# dry_run が true (初期値) のときは、件数を表示するだけで何も書き込まない。
+on:
+  workflow_dispatch:
+    inputs:
+      team:
+        description: 対象のチーム (A〜H のどれか1つ)
+        required: true
+        default: D
+      dry_run:
+        description: ドライラン (true なら書き込まない)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Write credentials
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: Create pilot data
+        working-directory: app
+        env:
+          TEAM: ${{ inputs.team }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/pilot-data.mjs

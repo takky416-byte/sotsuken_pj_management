@@ -6,6 +6,7 @@ export function resetTeams(opts: {
   teams: string[];
   resetTeam?: boolean;
   includeTeacherNotes?: boolean;
+  restoreCalendar?: boolean;
   dryRun?: boolean;
   log?: (msg: string) => void;
 }): Promise<Record<string, Record<string, number>>>;
