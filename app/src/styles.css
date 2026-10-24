@@ -578,8 +578,14 @@ table.access tr.detail td { background:var(--bg); }
 
 /* 日報のやさしい促し */
 .nudge { display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#fff8e1; border:2px solid #ffe08a; }
+.nudge { padding:8px 14px; }
 .nudge p { margin:4px 0 0; }
 .nudge-main { flex:1; min-width:240px; }
+/* 広い画面では、見出しと本文を左右に並べて、低くする */
+@media (min-width: 900px) {
+  .nudge-main { display:grid; grid-template-columns:minmax(150px,max-content) 1fr; gap:0 20px; align-items:center; }
+  .nudge-main p { margin:0; font-size:14px; line-height:1.55; }
+}
 .missions.weekly > summary { cursor:pointer; list-style:none; } .missions.weekly > summary::-webkit-details-marker { display:none; }
 .missions.weekly > summary h3 { display:inline-flex; margin:0; }
 .missions.weekly > summary::after { content:'▼ 開く'; float:right; color:var(--muted); font-size:14px; }

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { downloadBlob } from '../data/export';
+import { shortcutFor } from '../lib/shortcut';
 import { Em } from './Em';
 import { EMPTY_STATE, HOW_TO, KEY, MAX_SNOOZES, load, platformOf, shouldShow, snooze, type BookmarkState } from '../lib/bookmark';
 import { addDays, jstDate } from '../lib/dates';
@@ -12,6 +14,7 @@ const write = (email: string, s: BookmarkState) => { try { localStorage.setItem(
 export function BookmarkPrompt({ email }: { email: string }) {
   const [state, setState] = useState(() => read(email));
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [install, setInstall] = useState<InstallEvent | null>(null);
   // Chrome・Edge などは、「ホーム画面に追加(インストール)」を、ボタンから動かせる
   useEffect(() => {
@@ -35,6 +38,9 @@ export function BookmarkPrompt({ email }: { email: string }) {
   };
   // iPhone・Androidは、共有メニューを開く (「お気に入りに追加」「ホーム画面に追加」を選べる)
   const share = () => { navigator.share({ title: '卒研PJ管理', url }).catch(() => undefined); };
+  // パソコン: デスクトップに置くためのショートカットのファイルを、ダウンロードさせる
+  const file = shortcutFor(platform, url);
+  const saveShortcut = () => { if (!file) return; downloadBlob(file.filename, new Blob([file.content], { type: file.mime })); setSaved(true); };
   const copy = () => { navigator.clipboard?.writeText(url).then(() => setCopied(true), () => undefined); };
 
   return (
@@ -44,11 +50,13 @@ export function BookmarkPrompt({ email }: { email: string }) {
         <span className="bookmark-act">
           {install && <button type="button" onClick={doInstall}>ホーム画面に追加</button>}
           {!install && canShare && <button type="button" onClick={share}>追加のメニューを開く</button>}
+          {file && <button type="button" onClick={saveShortcut}>デスクトップ用ショートカットを保存</button>}
           <button type="button" className="ghost" onClick={copy}>{copied ? 'コピーしました' : 'URLをコピー'}</button>
           <button type="button" onClick={() => update({ ...state, done: true })}>追加しました</button>
           {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
         </span>
       </div>
+      {saved && <p className="hint" role="status">ダウンロードしたファイル「{file?.filename}」を、<strong>デスクトップにドラッグ</strong>して置いてください。ブラウザに「危険なファイル」と出たときは、このアプリのURLだけが入った小さなファイルなので、「保持」を選んでかまいません。</p>}
       <details>
         <summary>{how.title} での追加のしかた</summary>
         <ol>{how.steps.map((s) => <li key={s}>{s}</li>)}</ol>

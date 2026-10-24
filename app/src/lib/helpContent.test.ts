@@ -12,7 +12,7 @@ describe('使い方ページ (トーンごと)', () => {
   it('どのトーンでも、実際の画面のボタン名・画面名が入っている', () => {
     for (const { id } of TONES) {
       const t = text(id);
-      for (const label of ['＋ WBSにない作業をした', 'ガントで編集する', '着手する', '完了にする', '日報を提出する', 'ホーム画面に追加', '詰まっていること', 'WBS外の作業(あとから追加)', 'Excelで保存', 'PDFで保存(印刷)', 'ぜんぶ表示', '次へ']) expect(t, `${id}:${label}`).toContain(label);
+      for (const label of ['＋ WBSにない作業をした', 'ガントで編集する', '着手する', '完了にする', '日報を提出する', 'ホーム画面に追加', 'デスクトップ用ショートカットを保存', '詰まっていること', 'WBS外の作業(あとから追加)', 'Excelで保存', 'PDFで保存(印刷)', 'ぜんぶ表示', '次へ']) expect(t, `${id}:${label}`).toContain(label);
       expect(t, id).toContain('10字以上');
     }
   });

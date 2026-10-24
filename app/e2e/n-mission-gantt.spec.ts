@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -196,6 +197,11 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
       window.dispatchEvent(e);
     });
     await expect(card.getByRole('button', { name: 'ホーム画面に追加' })).toBeVisible();
+    // パソコンでは、デスクトップに置くためのショートカットのファイルを保存できる
+    const [dl] = await Promise.all([page.waitForEvent('download'), card.getByRole('button', { name: 'デスクトップ用ショートカットを保存' }).click()]);
+    // (ヘッドレスのChromiumは、日本語のファイル名を「download」にしてしまうので、名前ではなく中身を確かめる)
+    expect(readFileSync((await dl.path()) as string, 'utf8')).toMatch(/\[InternetShortcut\]\r\nURL=https?:\/\//);
+    await expect(card.getByRole('status')).toContainText('デスクトップにドラッグ');
     await card.getByRole('button', { name: /あとで/ }).click();
     await expect(card).toHaveCount(0);
     await page.reload();
