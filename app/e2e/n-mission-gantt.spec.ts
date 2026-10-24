@@ -172,4 +172,26 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(page.getByRole('heading', { name: '日報', exact: true })).toBeVisible();
     await page.close();
   });
+
+  test('お気に入りの案内: ホームに出て、「追加した」で出なくなる。「あとで」でも一時的に消える', async ({ browser }) => {
+    const page = await (await browser.newContext()).newPage();
+    await login(page, 'a2@trident.ac.jp');
+    const card = page.getByRole('region', { name: 'お気に入りに追加' });
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('/');
+    await card.getByRole('button', { name: /あとで/ }).click();
+    await expect(card).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
+    await expect(card).toHaveCount(0); // 3日間は出ない
+    // 追加した → 保存値を「あとで」前の状態に戻して、「追加した」を試す
+    await page.evaluate(() => localStorage.removeItem('bookmark:a2@trident.ac.jp'));
+    await page.reload();
+    await card.getByRole('button', { name: '追加した' }).click();
+    await expect(card).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
+    await expect(card).toHaveCount(0);
+    await page.close();
+  });
 });

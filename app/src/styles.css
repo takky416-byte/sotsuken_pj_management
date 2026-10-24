@@ -558,3 +558,13 @@ table.access tr.detail td { background:var(--bg); }
 .scene-title { width:100%; text-align:left; background:none; border:none; padding:10px 12px; font-weight:700; color:var(--fg); }
 .scene-body { padding:0 14px 12px; } .scene-body ol { margin:4px 0 8px; padding-left:20px; }
 .guide-btn { white-space:nowrap; }
+
+/* PCでは、ホームなどを左右2段組にする (狭い画面では縦に並べる) */
+.home-grid { display:grid; grid-template-columns:1fr; gap:0 16px; align-items:start; }
+.home-grid .col { min-width:0; }
+@media (min-width:1000px) { .home-grid { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); } }
+
+/* お気に入りの案内 */
+.bookmark { border:2px dashed var(--accent2); }
+.bookmark-url { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+.bookmark-url code { background:var(--bg); border-radius:8px; padding:4px 10px; word-break:break-all; }

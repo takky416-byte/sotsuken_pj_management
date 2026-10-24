@@ -39,6 +39,8 @@ export function StudentDaily() {
       </p>
       {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
+      <div className="home-grid">
+        <div className="col">
       {mineToday?.absent
         ? <p className="card">今日は「欠席」として記録されています。</p>
         : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} onSubmitted={(first) => {
@@ -47,6 +49,8 @@ export function StudentDaily() {
             celebrate(n >= 2 ? `提出しました! ${n}日連続` : '提出しました! おつかれさま');
           }} />}
 
+        </div>
+        <div className="col">
       <h3>{peer ? 'チームの日報' : '自分の日報'}</h3>
       <DailyFeed
         dailies={dailies.filter((d) => d.date <= today)}
@@ -54,6 +58,8 @@ export function StudentDaily() {
         tasks={tasks}
         emptyText="まだ日報がありません。"
       />
+        </div>
+      </div>
     </>
   );
 }

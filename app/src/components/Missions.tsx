@@ -8,8 +8,8 @@ const flagKey = (sid: string, today: string) => `mission-done:${sid}:${today}`;
 const seen = (k: string) => { try { return localStorage.getItem(k) === '1'; } catch { return false; } };
 const mark = (k: string) => { try { localStorage.setItem(k, '1'); } catch { /* 保存できなくても動く */ } };
 
-/** ホームの「今日のミッション」と「チームの今週のミッション」。点数ではなく、やることの一覧。 */
-export function Missions({ sid, today, daily, weekly }: { sid: string; today: string; daily: Mission[]; weekly: WeeklyMission[] }) {
+/** ホームの「今日のミッション」。点数ではなく、やることの一覧。 */
+export function DailyMissions({ sid, today, daily }: { sid: string; today: string; daily: Mission[] }) {
   const base = useBase();
   const doneCount = daily.filter((m) => m.done).length;
   const all = daily.length > 0 && doneCount === daily.length;
@@ -17,10 +17,8 @@ export function Missions({ sid, today, daily, weekly }: { sid: string; today: st
   // 全部そろった瞬間に1日1回だけ演出する (開き直しでは出さない)
   useEffect(() => { if (all && !seen(key)) { mark(key); celebrate('今日のミッション、ぜんぶ達成!'); } }, [all, key]);
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
-  const weeklyDone = weekly.filter((m) => m.done).length;
 
   return (
-    <>
       <section className={`card missions ${all ? 'all-done' : ''}`}>
         <h3>🚩 今日のミッション <span className="mission-count">{doneCount}/{daily.length}</span></h3>
         <ul className="plain mission-list">
@@ -37,7 +35,17 @@ export function Missions({ sid, today, daily, weekly }: { sid: string; today: st
         </ul>
         {all && <p className="mission-clear">ぜんぶ達成! 今日もおつかれさま。</p>}
       </section>
+  );
+}
 
+/** ホームの「チームの今週のミッション」 */
+export function WeeklyMissions({ weekly }: { weekly: WeeklyMission[] }) {
+  const base = useBase();
+  const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
+  const weeklyDone = weekly.filter((m) => m.done).length;
+  if (weekly.length === 0) return null;
+  return (
+    <>
       {weekly.length > 0 && (
         <section className="card missions">
           <h3>🏁 チームの今週のミッション <span className="mission-count">{weeklyDone}/{weekly.length}</span></h3>

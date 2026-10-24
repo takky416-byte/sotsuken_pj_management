@@ -25,6 +25,15 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'teacher-team-daily');
   });
 
+  test('学生の画面 (PC)', async ({ browser }) => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(page, 'a1@trident.ac.jp');
+    await page.waitForTimeout(800);
+    await shot(page, 'student-home-pc');
+    await page.getByRole('link', { name: '日報', exact: true }).click(); await page.waitForTimeout(800);
+    await shot(page, 'student-daily-pc');
+  });
+
   test('学生の画面 (スマホ)', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
