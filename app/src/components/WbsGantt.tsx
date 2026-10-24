@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Member } from '../types';
 import { GanttChart } from './GanttChart';
+import { TaskHistory } from './TaskHistory';
 import { WbsEditor } from './WbsEditor';
 
 /**
@@ -18,6 +19,7 @@ export function WbsGantt({ teamId, actor, members, initial = 'list' }: { teamId:
       {view === 'list'
         ? <WbsEditor teamId={teamId} actor={actor} members={members} timeline />
         : <GanttChart teamId={teamId} actor={actor} members={members} />}
+      <TaskHistory teamId={teamId} members={members} />
     </>
   );
 }

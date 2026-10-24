@@ -74,6 +74,14 @@ test.describe.serial('運用の流れ', () => {
     const t = row(page, '画面遷移図を描く');
     await t.getByLabel('状態', { exact: true }).selectOption('doing');
     await expect(parent.getByLabel('状態(自動)')).toContainText('進行中'); // 子が進行中になると、親も進行中
+    // 変更履歴: 誰が・いつ・何を変えたかが残る (チームの学生にも見える)
+    await page.getByText('変更履歴(誰が').click();
+    await expect(async () => {
+      await page.getByRole('button', { name: '更新する' }).click();
+      await expect(page.locator('.history-list')).toContainText('岩田', { timeout: 1500 });
+      await expect(page.locator('.history-list')).toContainText('状態: 未着手 → 進行中', { timeout: 1500 });
+    }).toPass();
+    await expect(page.locator('.history-list')).toContainText('「画面遷移図を描く」を追加');
     await parent.getByRole('button', { name: '詳細' }).click();
     await expect(page.getByText('親タスクには、担当を付けません')).toBeVisible();
     await expect(page.getByRole('checkbox', { name: '岩田' })).toHaveCount(0);

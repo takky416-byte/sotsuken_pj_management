@@ -127,7 +127,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       clearDraft(key);
       onSubmitted(first);
       // 結果に合わせて、タスクの状態も更新する (完了した → 完了。着手前なら、進行中に)
-      await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status })));
+      await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status }, '作業レポート')));
     } catch (e) {
       setState('idle');
       setErr(`提出できませんでした: ${(e as Error).message}`);

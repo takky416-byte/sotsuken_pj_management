@@ -8,7 +8,7 @@ export type Backup = {
   collections: Record<string, Doc[]>;
 };
 
-export const TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'evaluationsPublished'] as const;
+export const TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'evaluationsPublished'] as const;
 export const TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'] as const;
 export const TEACHER_ONLY = ['teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'];
 

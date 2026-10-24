@@ -48,6 +48,16 @@ service cloud.firestore {
         && d.deleted is bool;
     }
 
+    function validTaskLog(d) {
+      return d.keys().hasOnly(['taskId', 'title', 'by', 'at', 'kind', 'changes', 'via'])
+        && d.taskId is string && d.title is string && d.title.size() <= 200
+        && d.by is string && (isTeacher() || d.by == actor())
+        && d.at is number
+        && d.kind in ['create', 'update', 'delete', 'restore']
+        && d.changes is list && d.changes.size() <= 20
+        && (!('via' in d.keys()) || (d.via is string && d.via.size() <= 60));
+    }
+
     // 'YYYY-MM-DD' を 20261028 の形にする (dayKey と date の食い違いで、過去の日付に後出しされるのを防ぐ)
     function dateKey(s) { return int(s[0:4]) * 10000 + int(s[5:7]) * 100 + int(s[8:10]); }
 
@@ -108,6 +118,14 @@ service cloud.firestore {
         allow read: if canSeeTeam(teamId);
         allow write: if isTeacher()
           || (inTeam(teamId) && get(/databases/$(database)/documents/teams/$(teamId)).data.teamMeetingInput == true);
+      }
+
+      // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (書き換え・削除はできない。教員は、バックアップの復元で書ける)
+      match /taskLogs/{logId} {
+        allow read: if canSeeTeam(teamId);
+        allow create: if canSeeTeam(teamId) && validTaskLog(request.resource.data);
+        allow update: if isTeacher() && validTaskLog(request.resource.data);
+        allow delete: if false;
       }
 
       // ありがとう (感謝スタンプ)。送った人だけが取り消せる。内容は変えられない

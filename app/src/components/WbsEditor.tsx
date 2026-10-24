@@ -259,15 +259,14 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               {canEdit && t.depth < 3 && (
                 <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
               )}
-              {canEdit && (
-                <button className="ghost icon" aria-label="詳細" title="詳細" onClick={() => setOpenId(openId === t.id ? null : t.id)}>
-                  {openId === t.id ? '▲' : '⋯'}
-                </button>
-              )}
+              <button className="ghost icon" aria-label="詳細" title={canEdit ? '詳細' : '詳細(閲覧)'} onClick={() => setOpenId(openId === t.id ? null : t.id)}>
+                {openId === t.id ? '▲' : '⋯'}
+              </button>
             </div>
           </div>
 
-          {canEdit && openId === t.id && (
+          {openId === t.id && (
+            <fieldset disabled={!canEdit} className="detail-fs">
             <Detail
               task={t} members={members} nameOf={nameOf} isParent={hasChildren}
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
@@ -278,6 +277,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               onMove={(d) => patch(planMove(tasks, t.id, d))}
               onDelete={() => remove(t)}
             />
+            </fieldset>
           )}
 
           {canEdit && addingUnder === t.id && (

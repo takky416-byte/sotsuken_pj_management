@@ -429,3 +429,34 @@ describe('名簿の修正: アプリの書き込みの形', () => {
     await assertSucceeds(getDoc(doc(as(A1), `roster/${A1}`))); // 自分の名簿は「ない」と読める (アプリは「名簿に登録されていません」と表示する)
   });
 });
+
+describe('タスクの変更履歴 (taskLogs)', () => {
+  const log = (by: string, over: Record<string, unknown> = {}) => ({
+    taskId: 't1', title: '要件定義', by, at: Date.now(), kind: 'update',
+    changes: [{ field: 'status', from: 'todo', to: 'doing' }], ...over,
+  });
+  test('チームの学生は、自分の名前で追加できる。他人の名前では追加できない', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l1'), log('A1')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l2'), log('A2')));
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l3'), log('A1', { via: '作業レポート' })));
+  });
+  test('書き換え・削除はできない (教員も削除できない)。形が違うものも追加できない', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l4'), log('A1')));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A/taskLogs/l4'), { title: '改ざん' }));
+    await assertFails(deleteDoc(doc(as(A1), 'teams/A/taskLogs/l4')));
+    await assertFails(deleteDoc(doc(as(TEACHER), 'teams/A/taskLogs/l4')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l5'), log('A1', { kind: 'hack' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l6'), log('A1', { extra: 1 })));
+  });
+  test('読めるのは、そのチームの学生と教員だけ。別のチームは、書けも読めもしない', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l7'), log('A1')));
+    await assertSucceeds(getDoc(doc(as(A2), 'teams/A/taskLogs/l7')));
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'teams/A/taskLogs/l7')));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/taskLogs/l7')));
+    await assertFails(setDoc(doc(as(B1), 'teams/A/taskLogs/l8'), log('B1')));
+  });
+  test('教員は、復元のために書き換えられる', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l9'), log('A1')));
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/taskLogs/l9'), log('A1')));
+  });
+});
