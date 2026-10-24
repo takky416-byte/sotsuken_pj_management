@@ -575,3 +575,8 @@ table.access tr.detail td { background:var(--bg); }
 
 /* 使い方: PCでは2段組 (開閉しても、左右の高さがそろわなくてよいように、段組みにする) */
 @media (min-width:1000px) { .help-cols { column-count:2; column-gap:16px; } .help-cols > details { break-inside:avoid; margin-top:0; margin-bottom:12px; } }
+
+/* 日報のやさしい促し */
+.nudge { display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#fff8e1; border:2px solid #ffe08a; }
+.nudge p { margin:4px 0 0; }
+.nudge-main { flex:1; min-width:240px; }

@@ -10,6 +10,8 @@ import { streakIfSubmitted } from '../../lib/engagement';
 import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import { sinceOf } from '../../lib/dailyDraft';
+import { nudgeOf } from '../../lib/dailyNudge';
+import { DailyNudge } from '../../components/DailyNudge';
 
 
 export function StudentDaily() {
@@ -39,6 +41,7 @@ export function StudentDaily() {
       <p className="hint">
         今日({formatDate(today)})の授業で書きます。<strong>{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}</strong>にやったことを、授業時間外の作業も含めて、まとめて書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
       </p>
+      <DailyNudge nudge={nudgeOf(dailies, me.sid, today, classDays, settings.dailyStartDate, from)} isClassDay={isClassDay} link={false} />
       {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
       <div className="home-grid">

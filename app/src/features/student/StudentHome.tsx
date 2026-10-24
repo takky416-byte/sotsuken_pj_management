@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
 import { BookmarkPrompt } from '../../components/BookmarkPrompt';
+import { DailyNudge } from '../../components/DailyNudge';
+import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
 import { ThanksCard } from '../../components/ThanksCard';
 import { useThanks } from '../../data/thanks';
@@ -98,6 +100,7 @@ export function StudentHome() {
       </section>
       {err && <p className="error">{err}</p>}
 
+      <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
       <BookmarkPrompt email={me.email} />
 
       <div className="home-grid">
