@@ -178,6 +178,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await login(page, 'a2@trident.ac.jp');
     const card = page.getByRole('region', { name: 'お気に入りに追加' });
     await expect(card).toBeVisible();
+    await card.getByText(/での追加のしかた/).click();
     await expect(card).toContainText('/');
     await card.getByRole('button', { name: /あとで/ }).click();
     await expect(card).toHaveCount(0);

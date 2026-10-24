@@ -18,20 +18,19 @@ export function BookmarkPrompt({ email }: { email: string }) {
 
   return (
     <section className="card bookmark" aria-label="お気に入りに追加">
-      <h3>⭐ このアプリを、お気に入りに追加しよう</h3>
-      <p className="hint">毎日開くアプリです。お気に入り(ブックマーク)に入れておくと、すぐ開けます。</p>
-      <div className="bookmark-url">
-        <code>{url}</code>
-        <button type="button" className="ghost" onClick={copy}>{copied ? 'コピーしました' : 'URLをコピー'}</button>
+      <div className="bookmark-bar">
+        <strong>⭐ このアプリを、お気に入りに追加しよう</strong>
+        <span className="bookmark-act">
+          <button type="button" className="ghost" onClick={copy}>{copied ? 'コピーしました' : 'URLをコピー'}</button>
+          <button type="button" onClick={() => update({ ...state, done: true })}>追加した</button>
+          {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
+        </span>
       </div>
-      <details open>
+      <details>
         <summary>{how.title} での追加のしかた</summary>
         <ol>{how.steps.map((s) => <li key={s}>{s}</li>)}</ol>
+        <p className="hint">URL: <code>{url}</code>(「あとで」は3日後にまた出ます)</p>
       </details>
-      <div className="row">
-        <button type="button" onClick={() => update({ ...state, done: true })}>追加した</button>
-        {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで(3日後にまた出します)</button>}
-      </div>
     </section>
   );
 }
