@@ -96,13 +96,16 @@ export function statusChanges(items: DraftItem[], tasks: Task[]): { taskId: stri
  * 日報は授業のときにだけ書き、作業は授業時間外にもするので、日報には、前回の日報のあとの作業をまとめて書く。
  * 前回の日報がなければ、7日前の0時 (日本時間) から。
  */
+export const SUBMIT_GRACE_MS = 60_000;
+
 export function sinceOf(dailies: Daily[], sid: string, today: string): { since: number; prevDate: string | null } {
   const prev = dailies
     .filter((d) => d.sid === sid && d.date < today && !d.absent && d.entries.some((e) => e.note.trim() !== ''))
     .sort((a, b) => b.date.localeCompare(a.date))[0];
   if (prev) {
-    const at = Number.isFinite(prev.submittedAt) ? (prev.submittedAt as number) : Date.parse(`${prev.date}T23:59:59+09:00`);
-    return { since: at, prevDate: prev.date };
+    const at = Math.max(Number.isFinite(prev.submittedAt) ? (prev.submittedAt as number) : 0, Number.isFinite(prev.updatedAt) ? (prev.updatedAt as number) : 0);
+    // 提出のあとに、タスクの状態が更新される (完了した→完了など)。その更新を、次の日報で「新しい作業」と数えないよう、少し余裕を見る
+    return { since: at > 0 ? at + SUBMIT_GRACE_MS : Date.parse(`${prev.date}T23:59:59+09:00`), prevDate: prev.date };
   }
   return { since: Date.parse(`${addDays(today, -7)}T00:00:00+09:00`), prevDate: null };
 }

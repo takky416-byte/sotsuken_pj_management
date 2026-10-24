@@ -74,14 +74,21 @@ describe('前回の日報のあと (授業時間外の作業も含む)', () => {
 
   test('sinceOf: 前回の日報を出した時刻。なければ7日前から。今日の分と欠席は数えない', () => {
     const r = sinceOf([daily('2026-11-03'), daily('2026-11-10'), daily('2026-11-05', { absent: true, entries: [] })], 'A1', TODAY);
-    expect(r).toEqual({ since: day('2026-11-03'), prevDate: '2026-11-03' });
+    expect(r).toEqual({ since: day('2026-11-03') + 60_000, prevDate: '2026-11-03' }); // 提出のあとの状態更新を、新しい作業と数えないための余裕つき
     expect(sinceOf([], 'A1', TODAY).prevDate).toBeNull();
     expect(sinceOf([], 'A1', TODAY).since).toBe(Date.parse('2026-11-03T00:00:00+09:00'));
     expect(sinceOf([daily('2026-11-03')], 'A2', TODAY).prevDate).toBeNull(); // 他の人の日報は見ない
   });
 
+  test('日報の提出のあとに更新された (提出で完了にした) タスクは、次の日報で新しい作業と数えない', () => {
+    const d = daily('2026-11-03');
+    const { since } = sinceOf([d], 'A1', TODAY);
+    const justAfter = T('fin', { status: 'done', updatedBy: 'A1', updatedAt: (d.submittedAt as number) + 2000 });
+    expect(initialItems(undefined, [justAfter], 'A1', TODAY, since).find((i) => i.id === 'fin')?.result ?? null).toBeNull();
+  });
+
   test('initialItems: 前回の日報のあとに自分が更新したタスクが、先に選ばれる (前日でも)', () => {
-    const since = day('2026-11-03');
+    const since = day('2026-11-03') + 60_000;
     const ts = [T('mid', { status: 'done', updatedBy: 'A1', updatedAt: day('2026-11-06') }), T('old', { updatedBy: 'A1', updatedAt: day('2026-11-02') }),
       T('other', { updatedBy: 'A2', updatedAt: day('2026-11-06') })];
     const items = initialItems(undefined, ts, 'A1', TODAY, since);

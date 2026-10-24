@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { ProfileOverride } from '../auth/AuthProvider';
 import { sendThanks } from '../data/thanks';
 import { celebrate } from '../lib/celebrate';
 import type { Thank } from '../lib/engagement';
@@ -28,10 +29,11 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   const [err, setErr] = useState('');
   const left = thanksLeft(thanks, sid, today) - sentTo.length; // 送った直後は、購読が追いつくまでの分も引く
   const celebrated = useRef(false);
+  const preview = useContext(ProfileOverride) !== null; // 教員の「学生の画面」では、お祝いも既読の記録もしない
 
   // 新着があれば、1回だけお祝いして、既読にする
   useEffect(() => {
-    if (celebrated.current || fresh.length === 0) return;
+    if (preview || celebrated.current || fresh.length === 0) return;
     celebrated.current = true;
     celebrate(fresh.length === 1 ? `${nameOf(fresh[0].from)}さんから、ありがとうが届きました!` : `ありがとうが${fresh.length}件届きました!`);
     setSeen(sid, Math.max(...fresh.map((t) => t.createdAt)));

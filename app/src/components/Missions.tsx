@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
+import { ProfileOverride } from '../auth/AuthProvider';
 import { Link } from 'react-router-dom';
 import { celebrate } from '../lib/celebrate';
 import type { Mission, WeeklyMission } from '../lib/missions';
@@ -11,11 +12,12 @@ const mark = (k: string) => { try { localStorage.setItem(k, '1'); } catch { /* �
 /** ホームの「今日のミッション」。点数ではなく、やることの一覧。 */
 export function DailyMissions({ sid, today, daily }: { sid: string; today: string; daily: Mission[] }) {
   const base = useBase();
+  const preview = useContext(ProfileOverride) !== null; // 教員の「学生の画面」では、お祝いを出さない
   const doneCount = daily.filter((m) => m.done).length;
   const all = daily.length > 0 && doneCount === daily.length;
   const key = flagKey(sid, today);
   // 全部そろった瞬間に1日1回だけ演出する (開き直しでは出さない)
-  useEffect(() => { if (all && !seen(key)) { mark(key); celebrate('今日のミッション、ぜんぶ達成!'); } }, [all, key]);
+  useEffect(() => { if (!preview && all && !seen(key)) { mark(key); celebrate('今日のミッション、ぜんぶ達成!'); } }, [all, key, preview]);
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
 
   return (
