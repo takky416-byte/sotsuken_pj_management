@@ -678,3 +678,13 @@ table.access tr.detail td { background:var(--bg); }
 .w-status { display:flex; align-items:center; gap:6px; }
 .w-count { color:var(--muted); font-size:12px; white-space:nowrap; }
 .wbs .w-title .badge { font-size:11px; }
+
+/* 日報: 選んでいないタスクは、1行にまとめる。結果を押すと開く。提出のボタンは、画面の下に付いてくる */
+.dcard:not(.on) { display:flex; align-items:center; gap:6px 12px; padding:6px 10px; margin:6px 0; flex-wrap:wrap; }
+.dcard:not(.on) .dcard-head { flex:1 1 180px; margin:0; min-width:0; justify-content:flex-start; gap:10px; }
+.dcard:not(.on) .dcard-head strong { font-size:16px; }
+.dcard:not(.on) .seg { flex:0 1 330px; gap:6px; }
+.dcard:not(.on) .seg-btn { min-height:36px; padding:4px 6px; font-size:15px; }
+.phrases { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.chip-btn.small { padding:3px 10px; font-size:14px; min-height:0; }
+.submit-bar { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; gap:10px 16px; flex-wrap:wrap; margin:14px 0 0; padding:10px 14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 -4px 14px rgba(0,0,0,.08); }

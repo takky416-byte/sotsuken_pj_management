@@ -25,6 +25,23 @@ const KIND_PLACEHOLDER: Record<Exclude<DailyKind, 'task'>, string> = {
   other: '何をした?',
 };
 
+/** 説明に足せる、ひとこと。押すだけで、説明の欄に入る (あとから書き換えられる) */
+const PHRASES: Record<DailyResult, { label: string; text: string }[]> = {
+  progress: [
+    { label: 'まだ始めたばかり', text: 'まだ始めたばかり。' }, { label: '半分くらい', text: '半分くらいまで進んだ。' },
+    { label: '8割くらい', text: '8割くらいまで進んだ。' }, { label: 'ほぼ終わり', text: 'ほぼ終わりまで進んだ。' },
+  ],
+  done: [
+    { label: '動作を確認した', text: '動作を確認した。' }, { label: 'レビューしてもらった', text: 'チームにレビューしてもらった。' },
+    { label: '共有した', text: '成果物をチームに共有した。' },
+  ],
+  stuck: [
+    { label: 'やり方が分からない', text: 'やり方が分からない。' }, { label: '試したが直らない', text: '試したが直らない。' },
+    { label: '誰かの作業待ち', text: '誰かの作業待ち。' }, { label: '時間が足りない', text: '時間が足りない。' },
+  ],
+};
+const addPhrase = (note: string, text: string) => `${note}${note && !/\n$/.test(note) ? '\n' : ''}${text}`;
+
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
 type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
@@ -56,6 +73,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const [extra, setExtra] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
+  const [focusId, setFocusId] = useState<string | null>(null); // 結果を押したら、そのまま説明を書き始められるように
   const [shown, setShown] = useState(false); // 「提出する」を押してから、足りない点を赤く示す
 
   useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next }); }, [items, next, key, prev]);
@@ -71,9 +89,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     ...validateDaily(entries, next, (e) => (e.taskId ? live.find((t) => t.id === e.taskId)?.title ?? adhocTitle(e.taskId) ?? '' : FIXED_KINDS.find((k) => k.kind === e.kind)?.label ?? '')),
   ];
   const patch = (id: string, change: Partial<DraftItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...change } : x)));
-  const pick = (i: DraftItem, r: DailyResult) => patch(i.id, { result: i.result === r ? null : r });
+  const pick = (i: DraftItem, r: DailyResult) => { patch(i.id, { result: i.result === r ? null : r }); if (i.result !== r) setFocusId(i.id); };
   const addKind = (kind: Exclude<DailyKind, 'task'>) => setItems((xs) => (xs.some((x) => x.id === kindItemId(kind)) ? xs : [...xs, { id: kindItemId(kind), kind, result: null, note: '' }]));
-  const addTask = (id: string) => setItems((xs) => (xs.some((x) => x.id === id) ? xs.map((x) => (x.id === id ? { ...x, result: x.result ?? 'progress' } : x)) : [...xs, { id, kind: 'task', taskId: id, result: 'progress', note: '' }]));
+  const addTask = (id: string) => { setFocusId(id); setItems((xs) => (xs.some((x) => x.id === id) ? xs.map((x) => (x.id === id ? { ...x, result: x.result ?? 'progress' } : x)) : [...xs, { id, kind: 'task', taskId: id, result: 'progress', note: '' }])); };
   const addAdhoc = () => setItems((xs) => [...xs, { id: `${ADHOC_PREFIX}${Date.now().toString(36)}`, kind: 'task', result: 'progress', note: '', adhoc: { title: '', parentId: null } }]);
   const removeKind = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
 
@@ -114,6 +132,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     }
   };
 
+  const focusOn = (id: string) => (el: HTMLTextAreaElement | null) => {
+    if (el && focusId === id) { setFocusId(null); setTimeout(() => el.focus({ preventScroll: false }), 0); }
+  };
   const submitted = statusOf(prev) === 'submitted';
   const counter = (n: number, min: number) => (n >= min ? <span className="counter ok">{n}字 ✓</span> : <span className={`counter ${shown ? 'bad' : ''}`}>あと{min - n}字({n}/{min})</span>);
 
@@ -121,7 +142,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     <div className="daily-form">
       <section className="card">
         <h3>① 前回の日報のあとに、やったこと</h3>
-        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}に、授業時間外も含めてやったことを、まとめて書きます。やったタスクの「進んだ・完了した・詰まった」を押して、<strong>何を・どこまでやったか</strong>を書きます({MIN_NOTE_CHARS}字以上)。やっていないタスクは、そのままにします。</p>
+        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます({MIN_NOTE_CHARS}字以上)。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
         {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -142,9 +163,12 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
               {i.result && (
                 <>
                   <textarea
-                    className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
+                    ref={focusOn(i.id)} className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
                     placeholder={PLACEHOLDER[i.result]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })}
                   />
+                  <div className="phrases" aria-label="ひとこと">
+                    {PHRASES[i.result].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text) })}>＋ {ph.label}</button>)}
+                  </div>
                   <div className="counter-row">{counter(n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}</div>
                 </>
               )}
@@ -239,11 +263,15 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
           <ul className="plain">{problems.map((p) => <li key={p.key}>{p.message}</li>)}</ul>
         </div>
       )}
-      <div className="row submit-row">
+      <div className="submit-bar">
         <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '日報を更新する' : '日報を提出する'}</button>
         {state === 'saved' && <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>}
-        {state === 'idle' && submitted && <span className="hint">提出済み({included.length}項目)</span>}
-        {state === 'idle' && !submitted && <span className="hint">入力の途中は、この端末に自動で保存されます</span>}
+        {state !== 'saved' && (
+          <span className={problems.length === 0 ? 'ok' : 'hint'}>
+            {problems.length === 0 ? `提出できます(${included.length}項目)` : `提出まで あと${problems.length}か所`}
+            {!submitted && <> ・ 入力は、この端末に自動で保存されます</>}
+          </span>
+        )}
       </div>
     </div>
   );
