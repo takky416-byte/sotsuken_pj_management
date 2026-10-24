@@ -75,7 +75,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const [showAll, setShowAll] = useState(false);
   const show = (i: number) => showAll || step === i;
 
-  // 作業レポート: 教員と、設定で閲覧が許可されているときはチーム全員分。それ以外は自分の分だけ。
+  // 作業ログ: 教員と、設定で閲覧が許可されているときはチーム全員分。それ以外は自分の分だけ。
   const peer = teacher || (settings?.peerDailyView ?? false);
   const from = dailyWindowFrom(today);
   const all = useTeamDailies(peer ? team.id : null, from);
@@ -179,7 +179,7 @@ function MeetingScreen({ team }: { team: Team }) {
           <ul className="plain touched">
             {members.map((m) => (
               <li key={m.sid}><strong>{m.name}</strong>
-                {'  '}{(touched.get(m.sid) ?? []).join('、') || <span className="hint">作業レポートでタスクに触れていません</span>}
+                {'  '}{(touched.get(m.sid) ?? []).join('、') || <span className="hint">作業ログでタスクに触れていません</span>}
               </li>
             ))}
           </ul>
@@ -192,7 +192,7 @@ function MeetingScreen({ team }: { team: Team }) {
             <span className="hint">{overallProgress(tasks).done}/{overallProgress(tasks).total} 完了</span>
           </div>
           <TaskList label="期限を過ぎている" tasks={delayed} warn />
-          <TaskList label="作業レポートで触れられていない(進行中・予定期間内)" tasks={untouched} />
+          <TaskList label="作業ログで触れられていない(進行中・予定期間内)" tasks={untouched} />
           <TaskList label="担当がいない" tasks={unassigned} />
           <div className="label">これからの予定</div>
           <ul className="plain">
@@ -211,7 +211,7 @@ function MeetingScreen({ team }: { team: Team }) {
         <section className="card">
           <h3>詰まっていること</h3>
           <p className="hint">チームで相談して、解決しましょう。</p>
-          {stuckList.length === 0 ? <p className="hint">「詰まった」の作業レポートはありません。</p> : (
+          {stuckList.length === 0 ? <p className="hint">「詰まった」の作業ログはありません。</p> : (
             <ul className="plain">
               {stuckList.map((c, i) => (
                 <li key={i} className="blocker">

@@ -59,7 +59,7 @@ describe('各CSV', () => {
     expect(lines).toContain('2026-10-28 12:00'); // 日本時間
     expect(lines.indexOf('要件定義')).toBeLessThan(lines.indexOf('SUM')); // 大項目が先
   });
-  test('作業レポート: 1項目1行。タスク名、結果、次にやること、欠席', () => {
+  test('作業ログ: 1項目1行。タスク名、結果、次にやること、欠席', () => {
     const out = dailiesCsv(backup()).replace('﻿', '').split('\r\n');
     expect(out[1]).toBe(`2026-10-28,A,A1,岩田,タスク,"'=SUM(1,2)",,進めた,,FALSE`);
     expect(out[2]).toBe('2026-10-28,A,A1,岩田,調査・勉強,,,調べた,,FALSE');
@@ -76,7 +76,7 @@ describe('各CSV', () => {
 
 describe('バックアップの補助', () => {
   test('件数・チームのサブコレクション・教員専用の除外', () => {
-    expect(counts(backup()).find((c) => c.label === '作業レポート')?.n).toBe(2);
+    expect(counts(backup()).find((c) => c.label === '作業ログ')?.n).toBe(2);
     expect(teamSubcollections(['A', 'B'])).toContain('teams/B/dailyReports');
     const b = withoutTeacherOnly(backup());
     expect(b.collections.teacherNotes).toBeUndefined();

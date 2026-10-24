@@ -9,7 +9,7 @@ export function FactsTable({ facts, today }: { facts: MemberFacts[]; today: stri
       <div className="table-wrap">
         <table className="facts">
           <thead>
-            <tr><th>メンバー</th><th>最後に動いた日</th><th>7日の更新</th><th>7日の完了</th><th>作業レポート</th><th>担当(未完了)</th><th>期限超過</th><th>約束</th></tr>
+            <tr><th>メンバー</th><th>最後に動いた日</th><th>7日の更新</th><th>7日の完了</th><th>作業ログ</th><th>担当(未完了)</th><th>期限超過</th><th>約束</th></tr>
           </thead>
           <tbody>
             {facts.map((f) => (
@@ -36,7 +36,7 @@ export function FactsTable({ facts, today }: { facts: MemberFacts[]; today: stri
           ))}
         </ul>
       ) : <p className="hint">事実として気になる点はありません。</p>}
-      <p className="hint">「最後に動いた日」は、タスクの更新と作業レポートの提出のうち新しいほうです。他の人が後から同じタスクを更新すると、先の更新者の記録は上書きされます。数字は、記録されたデータだけから求めています。</p>
+      <p className="hint">「最後に動いた日」は、タスクの更新と作業ログの提出のうち新しいほうです。他の人が後から同じタスクを更新すると、先の更新者の記録は上書きされます。数字は、記録されたデータだけから求めています。</p>
     </div>
   );
 }

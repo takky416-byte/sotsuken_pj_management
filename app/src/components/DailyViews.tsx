@@ -30,7 +30,7 @@ export function DailyMatrix({ members, dates, dailies }: { members: Member[]; da
   );
 }
 
-/** 作業レポートの内容を、新しい日付順に並べる。 */
+/** 作業ログの内容を、新しい日付順に並べる。 */
 export function DailyFeed({ dailies, members, tasks, emptyText }: {
   dailies: Daily[];
   members: Member[];
@@ -41,7 +41,7 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
   const title = new Map(tasks.map((t) => [t.id, t.title]));
   const shown = dailies.filter((d) => statusOf(d) === 'submitted')
     .sort((a, b) => b.date.localeCompare(a.date) || a.sid.localeCompare(b.sid, 'en', { numeric: true }));
-  if (shown.length === 0) return <p className="hint">{emptyText ?? 'まだ作業レポートがありません。'}</p>;
+  if (shown.length === 0) return <p className="hint">{emptyText ?? 'まだ作業ログがありません。'}</p>;
   const kindLabel = new Map<string, string>(FIXED_KINDS.map((k) => [k.kind, k.label]));
   return (
     <div className="feed">

@@ -1,5 +1,5 @@
-// 作業レポートの入力画面の下ごしらえ (画面に依存しない)。
-// 「今日やったこと」は、タスクごとのカード。結果 (進んだ/完了した/詰まった) を押すと、そのカードが作業レポートに入る。
+// 作業ログの入力画面の下ごしらえ (画面に依存しない)。
+// 「今日やったこと」は、タスクごとのカード。結果 (進んだ/完了した/詰まった) を押すと、そのカードが作業ログに入る。
 import type { Task } from '../types';
 import type { Daily, DailyEntry, DailyKind, DailyResult } from './daily';
 import { addDays } from './dates';
@@ -10,7 +10,7 @@ export type DraftItem = {
   id: string;
   kind: DailyKind;
   taskId?: string;
-  /** null: 今日は、やっていない (作業レポートに入れない)。タスク以外 (調査・勉強など) は、常に入る */
+  /** null: 今日は、やっていない (作業ログに入れない)。タスク以外 (調査・勉強など) は、常に入る */
   result: DailyResult | null;
   note: string;
   /** WBSにない作業。提出のときにタスクとして作る (それまでは taskId なし) */
@@ -22,7 +22,7 @@ export const isAdhocItem = (i: DraftItem) => !!i.adhoc;
 
 export const kindItemId = (kind: DailyKind) => `kind:${kind}`;
 
-/** 作業レポートの候補にするタスク: 自分が担当の、子のないタスク。完了・保留は除く。急ぎのものから (期限超過 → 進行中 → 予定の期間内 → ほか)。 */
+/** 作業ログの候補にするタスク: 自分が担当の、子のないタスク。完了・保留は除く。急ぎのものから (期限超過 → 進行中 → 予定の期間内 → ほか)。 */
 export function candidateTasks(tasks: Task[], sid: string, today: string): Task[] {
   const live = tasks.filter((t) => !t.deleted);
   const rank = (t: Task) => (t.endDate && t.endDate < today ? 0 : t.status === 'doing' ? 1 : t.startDate && t.startDate <= today ? 2 : 3);
@@ -33,8 +33,8 @@ export function candidateTasks(tasks: Task[], sid: string, today: string): Task[
 
 /**
  * 入力画面の最初の状態。
- * - すでに今日の作業レポートがあれば、その内容 (編集)
- * - なければ、前回の作業レポートのあと (since 以降) に自分が更新したタスクを、「進んだ」(完了していれば「完了した」) で先に入れておく
+ * - すでに今日の作業ログがあれば、その内容 (編集)
+ * - なければ、前回の作業ログのあと (since 以降) に自分が更新したタスクを、「進んだ」(完了していれば「完了した」) で先に入れておく
  * どちらの場合も、候補のタスクは、結果が未選択のカードとして並べる。
  */
 export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string, today: string, since?: number): DraftItem[] {
@@ -59,11 +59,11 @@ export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string
   for (const t of candidateTasks(tasks, sid, today)) {
     if (!has(t.id)) items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
   }
-  // 作業レポートに入っているタスクが、削除されている場合も、そのまま残す (内容を失わない)
+  // 作業ログに入っているタスクが、削除されている場合も、そのまま残す (内容を失わない)
   return items.filter((i) => i.kind !== 'task' || byId.has(i.taskId ?? '') || i.result !== null);
 }
 
-/** 作業レポートに入れる項目 (タスクは結果を選んだもの。調査・勉強などは、追加したもの)。 */
+/** 作業ログに入れる項目 (タスクは結果を選んだもの。調査・勉強などは、追加したもの)。 */
 export function itemsToEntries(items: DraftItem[]): DailyEntry[] {
   return items
     .filter((i) => i.kind !== 'task' || i.result !== null)
@@ -79,7 +79,7 @@ export function nextCandidates(tasks: Task[], sid: string, today: string, items:
   return candidateTasks(tasks, sid, today).filter((t) => !done.has(t.id)).slice(0, n);
 }
 
-/** 作業レポートの提出に合わせて、タスクの状態を更新する (完了した → 完了、進んだ → 未着手なら進行中)。 */
+/** 作業ログの提出に合わせて、タスクの状態を更新する (完了した → 完了、進んだ → 未着手なら進行中)。 */
 export function statusChanges(items: DraftItem[], tasks: Task[]): { taskId: string; status: Task['status'] }[] {
   const out: { taskId: string; status: Task['status'] }[] = [];
   for (const i of items) {
@@ -92,9 +92,9 @@ export function statusChanges(items: DraftItem[], tasks: Task[]): { taskId: stri
 }
 
 /**
- * 作業レポートがカバーする期間の始まり (ミリ秒)。前回の作業レポートを出した時刻。
- * 作業レポートは授業のときにだけ書き、作業は授業時間外にもするので、作業レポートには、前回の作業レポートのあとの作業をまとめて書く。
- * 前回の作業レポートがなければ、7日前の0時 (日本時間) から。
+ * 作業ログがカバーする期間の始まり (ミリ秒)。前回の作業ログを出した時刻。
+ * 作業ログは授業のときにだけ書き、作業は授業時間外にもするので、作業ログには、前回の作業ログのあとの作業をまとめて書く。
+ * 前回の作業ログがなければ、7日前の0時 (日本時間) から。
  */
 export const SUBMIT_GRACE_MS = 60_000;
 
@@ -104,7 +104,7 @@ export function sinceOf(dailies: Daily[], sid: string, today: string): { since: 
     .sort((a, b) => b.date.localeCompare(a.date))[0];
   if (prev) {
     const at = Math.max(Number.isFinite(prev.submittedAt) ? (prev.submittedAt as number) : 0, Number.isFinite(prev.updatedAt) ? (prev.updatedAt as number) : 0);
-    // 提出のあとに、タスクの状態が更新される (完了した→完了など)。その更新を、次の作業レポートで「新しい作業」と数えないよう、少し余裕を見る
+    // 提出のあとに、タスクの状態が更新される (完了した→完了など)。その更新を、次の作業ログで「新しい作業」と数えないよう、少し余裕を見る
     return { since: at > 0 ? at + SUBMIT_GRACE_MS : Date.parse(`${prev.date}T23:59:59+09:00`), prevDate: prev.date };
   }
   return { since: Date.parse(`${addDays(today, -7)}T00:00:00+09:00`), prevDate: null };

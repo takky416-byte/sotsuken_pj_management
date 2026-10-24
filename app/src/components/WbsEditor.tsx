@@ -159,7 +159,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 readOnly={!canEdit}
               />
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
-              {t.source === 'adhoc' && <span className="badge adhoc" title="作業レポートで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
+              {t.source === 'adhoc' && <span className="badge adhoc" title="作業ログで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
             <div className="w-status">
               {hasChildren ? (
@@ -169,8 +169,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                   {(() => { const pg = progressOf(tasks, t.id); return <small className="w-count" title={`${pg.done}/${pg.total} 完了`}>{pg.done}/{pg.total}</small>; })()}
                 </>
               ) : !canEdit ? (
-                // 閲覧モードでは、見るだけ。状態は、作業レポートで更新するのが基本 (間違いは、編集モードで直せる)
-                <span className={`status-ro st-${t.status}`} title="状態は、作業レポートを出すと更新されます" aria-label="状態(閲覧モード)">{STATUS_LABEL[t.status]}</span>
+                // 閲覧モードでは、見るだけ。状態は、作業ログで更新するのが基本 (間違いは、編集モードで直せる)
+                <span className={`status-ro st-${t.status}`} title="状態は、作業ログを出すと更新されます" aria-label="状態(閲覧モード)">{STATUS_LABEL[t.status]}</span>
               ) : (
                 <select
                   className={`status st-${t.status}`}

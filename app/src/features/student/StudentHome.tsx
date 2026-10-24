@@ -118,7 +118,7 @@ export function StudentHome() {
                   <span className={`reason-badge r-${reason}`}>{REASON[reason]}</span> {periodLabel(t.startDate, t.endDate)}
                 </div>
               </div>
-              <Link to={`${base}/daily`} className="btn ghost-btn">作業レポートに書く</Link>
+              <Link to={`${base}/daily`} className="btn ghost-btn">作業ログに書く</Link>
             </li>
           ))}
           {promises.map((p) => (
@@ -131,14 +131,14 @@ export function StudentHome() {
             </li>
           ))}
         </ul>
-        <p className="hint">着手・完了は、作業レポートで「進んだ・完了した」を選んで知らせます。授業時間外の作業も、次の授業の作業レポートにまとめて書きます。</p>
+        <p className="hint">着手・完了は、作業ログで「進んだ・完了した」を選んで知らせます。授業時間外の作業も、次の授業の作業ログにまとめて書きます。</p>
       </section>
 
       <section className="card">
         <h3><Em e="➡️" />次にやること</h3>
         {lastNext && (
           <blockquote className="next-quote">
-            <div className="hint">前回の作業レポートで決めたこと({formatDate(lastNext.date)})</div>
+            <div className="hint">前回の作業ログで決めたこと({formatDate(lastNext.date)})</div>
             {lastNext.text}
           </blockquote>
         )}
@@ -163,7 +163,7 @@ export function StudentHome() {
             </ul>
           </>
         )}
-        {!lastNext && soon.length === 0 && free.length === 0 && <p className="hint">次にやることは、作業レポートの「つぎにやること」に書くと、ここに出ます。</p>}
+        {!lastNext && soon.length === 0 && free.length === 0 && <p className="hint">次にやることは、作業ログの「つぎにやること」に書くと、ここに出ます。</p>}
       </section>
 
         </div>
@@ -210,15 +210,15 @@ function DailyCta({ status, base, isClassDay, started }: { status: 'submitted' |
   if (status === 'submitted') {
     return (
       <div className="cta cta-done">
-        <span><Em e="✅" />今日の作業レポートは提出済みです</span>
+        <span><Em e="✅" />今日の作業ログは提出済みです</span>
         <Link to={`${base}/daily`} className="btn ghost-btn">見直す・直す</Link>
       </div>
     );
   }
   return (
     <div className={`cta ${status === 'missing' ? 'cta-todo' : ''}`}>
-      <span>{status === 'missing' ? '今日の作業レポートが、まだ出ていません' : !started ? '作業レポートは、運用開始日から始まります(それまでは、試しに書けます)' : isClassDay ? '' : '作業レポートは、授業日に書きます(書きたいときは、いつでも)'}</span>
-      <Link to={`${base}/daily`} className="btn big-btn">作業レポートを書く</Link>
+      <span>{status === 'missing' ? '今日の作業ログが、まだ出ていません' : !started ? '作業ログは、運用開始日から始まります(それまでは、試しに書けます)' : isClassDay ? '' : '作業ログは、授業日に書きます(書きたいときは、いつでも)'}</span>
+      <Link to={`${base}/daily`} className="btn big-btn">作業ログを書く</Link>
     </div>
   );
 }

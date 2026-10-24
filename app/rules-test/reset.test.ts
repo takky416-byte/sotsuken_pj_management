@@ -44,7 +44,7 @@ describe('試運転データの削除', () => {
     expect(await count('teams/A/tasks')).toBe(2);
   });
 
-  test('指定したチームのタスク・作業レポート・記録・コメントだけを消す', async () => {
+  test('指定したチームのタスク・作業ログ・記録・コメントだけを消す', async () => {
     await resetTeams({ db, teams: ['A'], dryRun: false, log: quiet });
     for (const sub of ['tasks', 'dailyReports', 'meetings', 'comments']) expect(await count(`teams/A/${sub}`)).toBe(0);
     // ほかのチーム、名簿、設定、マイルストーン、教員メモには触れない

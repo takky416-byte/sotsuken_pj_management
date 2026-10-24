@@ -47,7 +47,7 @@ function TeamDetail({ team }: { team: Team }) {
         <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガントチャート</button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>報告書</button>
         <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>関与</button>
-        <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>作業レポート</button>
+        <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>作業ログ</button>
         <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録</button>
         <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
@@ -74,7 +74,7 @@ function TeamDaily({ team }: { team: Team }) {
     <>
       <h3>提出状況(○ 提出 / × 未提出 / 欠 欠席)</h3>
       <DailyMatrix members={team.members} dates={dates} dailies={dailies} />
-      <h3>作業レポートの内容</h3>
+      <h3>作業ログの内容</h3>
       <DailyFeed dailies={dailies} members={team.members} tasks={tasks} />
     </>
   );

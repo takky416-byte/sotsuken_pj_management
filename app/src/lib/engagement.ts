@@ -1,4 +1,4 @@
-// 関与の集計 (学生ごと)。直近の期間 (作業レポートの読み込み期間) だけが対象。
+// 関与の集計 (学生ごと)。直近の期間 (作業ログの読み込み期間) だけが対象。
 // 目安であり、点数や成績には換算しない。「数字を稼ぐ」行動を誘発しないよう、順位や合計点は出さない。
 import type { ClassDay, Member, Task } from '../types';
 import { classDatesBetween, fromDailyStart, statusOf, type Daily, type DayStatus } from './daily';
@@ -10,9 +10,9 @@ export type Thank = { id: string; from: string; to: string; note: string; date: 
 export type MemberStat = {
   sid: string;
   name: string;
-  /** 作業レポートを読めないとき (チーム内の閲覧がオフで、他の人の分) は null */
+  /** 作業ログを読めないとき (チーム内の閲覧がオフで、他の人の分) は null */
   daily: { submitted: number; days: number; streak: number } | null;
-  /** 作業レポートで触れたタスクの数 (種類) */
+  /** 作業ログで触れたタスクの数 (種類) */
   touched: number | null;
   /** 担当しているタスク (保留を除く) */
   assigned: number;
@@ -20,14 +20,14 @@ export type MemberStat = {
   overdue: number;
   promises: { done: number; total: number };
   thanks: { received: number; sent: number };
-  /** 作業レポートで「WBSにない作業」として追加した作業の数 */
+  /** 作業ログで「WBSにない作業」として追加した作業の数 */
   adhoc: number;
 };
 
 export type EngagementInput = {
   members: Member[];
   tasks: Task[];
-  /** null: 作業レポートを読めない */
+  /** null: 作業ログを読めない */
   dailies: Daily[] | null;
   meetings: Meeting[];
   thanks: Thank[];
@@ -92,7 +92,7 @@ export function engagement(input: EngagementInput): MemberStat[] {
 /** 教員向けの注意 (目安)。学生には出さない。 */
 export function attention(s: MemberStat): string[] {
   const out: string[] = [];
-  if (s.daily && s.daily.days >= 2 && s.daily.submitted / s.daily.days < 0.5) out.push('作業レポートの提出が半分未満');
+  if (s.daily && s.daily.days >= 2 && s.daily.submitted / s.daily.days < 0.5) out.push('作業ログの提出が半分未満');
   if (s.assigned === 0) out.push('担当タスクがない');
   if (s.overdue > 0) out.push(`期限超過 ${s.overdue}件`);
   if (s.assigned > 0 && s.done === 0 && s.daily && s.daily.days >= 3) out.push('担当は あるが完了がない');
@@ -100,7 +100,7 @@ export function attention(s: MemberStat): string[] {
   return out;
 }
 
-/** 今日の作業レポートを提出したとして、自分の連続提出日数 (提出した直後のお祝い用)。 */
+/** 今日の作業ログを提出したとして、自分の連続提出日数 (提出した直後のお祝い用)。 */
 export function streakIfSubmitted(
   mine: Daily[], sid: string, classDays: ClassDay[], dailyStart: string, windowFrom: string, today: string,
 ): number {

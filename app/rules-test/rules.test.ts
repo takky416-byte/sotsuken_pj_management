@@ -170,7 +170,7 @@ describe('タスク', () => {
   });
 });
 
-describe('作業レポート', () => {
+describe('作業ログ', () => {
   test('自分の今日の分を作成・編集できる', async () => {
     const ref = doc(as(A1), `teams/A/dailyReports/${jstDate()}_A1`);
     await assertSucceeds(setDoc(ref, daily('A1')));
@@ -180,7 +180,7 @@ describe('作業レポート', () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
       daily('A1', { date: '2026-01-01', dayKey: 20260101 })));
   });
-  test('dayKey だけ今日にして、過去の日付の作業レポートを後出しすることはできない', async () => {
+  test('dayKey だけ今日にして、過去の日付の作業ログを後出しすることはできない', async () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
       daily('A1', { date: '2026-01-01', dayKey: jstDayKey() })));
   });
@@ -213,7 +213,7 @@ describe('作業レポート', () => {
     await assertSucceeds(getDoc(doc(as(A2), path)));
     await assertSucceeds(getDoc(doc(as(TEACHER), path)));
   });
-  test('他チームの作業レポートは読めない', async () => {
+  test('他チームの作業ログは読めない', async () => {
     await assertFails(getDoc(doc(as(B1), `teams/A/dailyReports/${jstDate()}_A2`)));
   });
 });
@@ -316,7 +316,7 @@ describe('アクセス履歴', () => {
 describe('アプリの書き込みの形', () => {
   const nt = (id: string, over = {}) => ({ id, parentId: null, depth: 1 as const, title: 'タスク', detail: '', order: 1024, ...over });
 
-  test('学生: 作業レポートの「WBSにない作業」を、後追いのタスクとして作れる (完了済み・自分が担当)', async () => {
+  test('学生: 作業ログの「WBSにない作業」を、後追いのタスクとして作れる (完了済み・自分が担当)', async () => {
     const db = as(A1);
     await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/adhoc-root'), taskDoc(nt('adhoc-root', { title: 'WBS外の作業(あとから追加)' }), 'A1', 'adhoc')));
     await assertSucceeds(setDoc(doc(db, 'teams/A/tasks/ad1'),
@@ -362,7 +362,7 @@ describe('アプリの書き込みの形', () => {
   });
 });
 
-describe('作業レポート: アプリの書き込みの形', () => {
+describe('作業ログ: アプリの書き込みの形', () => {
   const d = jstDate();
   test('学生: 提出 → 当日中の更新。教員: 欠席にする・取り消す', async () => {
     const mk = (sid: string, over: object = {}) =>
@@ -377,7 +377,7 @@ describe('作業レポート: アプリの書き込みの形', () => {
     await assertSucceeds(setDoc(t, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false }, { submittedAt: 1 })));
     await assertSucceeds(setDoc(ref, mk('A1')));
   });
-  test('学生: 自分の作業レポートを読むクエリと、設定ONのときのチーム全体のクエリ', async () => {
+  test('学生: 自分の作業ログを読むクエリと、設定ONのときのチーム全体のクエリ', async () => {
     const db = as(A1);
     await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('sid', '==', 'A1'), where('date', '>=', '2026-10-01'))));
     await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
@@ -438,7 +438,7 @@ describe('タスクの変更履歴 (taskLogs)', () => {
   test('チームの学生は、自分の名前で追加できる。他人の名前では追加できない', async () => {
     await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l1'), log('A1')));
     await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l2'), log('A2')));
-    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l3'), log('A1', { via: '作業レポート' })));
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l3'), log('A1', { via: '作業ログ' })));
   });
   test('書き換え・削除はできない (教員も削除できない)。形が違うものも追加できない', async () => {
     await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l4'), log('A1')));

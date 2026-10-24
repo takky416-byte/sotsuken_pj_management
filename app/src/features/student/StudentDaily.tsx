@@ -30,7 +30,7 @@ export function StudentDaily() {
 
   if (!me.teamId || !me.sid) return <p>チームが設定されていません。先生に連絡してください。</p>;
   if (team === undefined || !tasks || !dailies || !classDays || !settings) return <p>読み込み中…</p>;
-  if (team === null || team.status === 'planning') return <p className="card">企画検討中です。キックオフ後に作業レポートを書けるようになります。</p>;
+  if (team === null || team.status === 'planning') return <p className="card">企画検討中です。キックオフ後に作業ログを書けるようになります。</p>;
 
   const isClassDay = classDays.some((d) => d.date === today);
   const started = today >= settings.dailyStartDate;
@@ -38,12 +38,12 @@ export function StudentDaily() {
   const { since, prevDate } = sinceOf(dailies, me.sid, today);
   return (
     <>
-      <h2>作業レポート</h2>
+      <h2>作業ログ</h2>
       <p className="hint">
-        今日({formatDate(today)})の授業で書きます。<strong>{prevDate ? `前回の作業レポート(${formatDate(prevDate)})のあと` : 'これまで'}</strong>にやったことを、授業時間外の作業も含めて、まとめて書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
+        今日({formatDate(today)})の授業で書きます。<strong>{prevDate ? `前回の作業ログ(${formatDate(prevDate)})のあと` : 'これまで'}</strong>にやったことを、授業時間外の作業も含めて、まとめて書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
       </p>
       <DailyNudge nudge={nudgeOf(dailies, me.sid, today, classDays, settings.dailyStartDate, from)} isClassDay={isClassDay} link={false} />
-      {!started && <p className="card">作業レポートは {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
+      {!started && <p className="card">作業ログは {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
       <div className="home-grid">
         <div className="col">
@@ -57,12 +57,12 @@ export function StudentDaily() {
 
         </div>
         <div className="col">
-      <h3>{peer ? 'チームの作業レポート' : '自分の作業レポート'}</h3>
+      <h3>{peer ? 'チームの作業ログ' : '自分の作業ログ'}</h3>
       <DailyFeed
         dailies={dailies.filter((d) => d.date <= today)}
         members={team.members}
         tasks={tasks}
-        emptyText="まだ作業レポートがありません。"
+        emptyText="まだ作業ログがありません。"
       />
         </div>
       </div>

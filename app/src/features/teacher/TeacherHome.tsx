@@ -38,7 +38,7 @@ function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; mile
       <td>
         {flags && (flags.missing.length > 0 || flags.unassignedOverdue > 0) ? (
           <span className="warn">
-            {flags.missing.length > 0 && `作業レポートが続けて未提出: ${flags.missing.join('・')}`}
+            {flags.missing.length > 0 && `作業ログが続けて未提出: ${flags.missing.join('・')}`}
             {flags.missing.length > 0 && flags.unassignedOverdue > 0 && ' ／ '}
             {flags.unassignedOverdue > 0 && `担当なしの期限超過 ${flags.unassignedOverdue}件`}
           </span>
@@ -66,14 +66,14 @@ export function TeacherHome() {
           <thead>
             <tr>
               <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th>
-              <th>作業レポート(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
+              <th>作業ログ(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
             </tr>
           </thead>
           <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} />)}</tbody>
         </StackTable>
       </div>
       <p className="hint">
-        「要確認」は目安です。授業日に2回続けて作業レポートが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
+        「要確認」は目安です。授業日に2回続けて作業ログが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
         評価や単位認定には使いません。
       </p>
     </>

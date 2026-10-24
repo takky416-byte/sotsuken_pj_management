@@ -4,7 +4,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 
 ## 10/27 (火)
 - [ ] **本番の動作確認** (`docs/production-check.md` の A〜E を、学生の試験アカウントと教員で一通り)。Apps Script の `Code.js` を最新に反映し、`backupDaily` を1回実行 (アクセス履歴も入る)
-- [ ] 試運転(Dチーム)を終える → Actions の **reset-pilot**(teams=D, reset_team=true, **restore_calendar=true**)を、まず dry_run=true で、次に false で実行。試運転データ(pilot-data)で足した過去の授業日(備考「ダミー(試運転)」)を消し、作業レポートの運用開始日を 10/28 に戻す。実行後、カレンダーと設定で確認する
+- [ ] 試運転(Dチーム)を終える → Actions の **reset-pilot**(teams=D, reset_team=true, **restore_calendar=true**)を、まず dry_run=true で、次に false で実行。試運転データ(pilot-data)で足した過去の授業日(備考「ダミー(試運転)」)を消し、作業ログの運用開始日を 10/28 に戻す。実行後、カレンダーと設定で確認する
 - [ ] FIXER 発表後、企画発表資料(PPTX/PDF)を夕方までに Claude へ渡す(氏名入りの資料はリポジトリにコミットしない)
 - [ ] Claude が16企画の大項目・タスク案を作成 → 内容を確認(10/27夜〜10/28朝)
 - [ ] Apps Script の `setupBackup` を実行 (毎日のバックアップ。apps-script/README.md の手順)
@@ -15,7 +15,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 ## 10/28 (水) 企画決定・運用開始
 朝
 - [ ] 教員画面でログインできる。Apps Script の `MODE` と `DATE_OVERRIDE`(残っていれば削除)を確認
-- [ ] 設定: 作業レポートの運用開始日 = 2026-10-28、チーム内閲覧(peerDailyView)の方針を確認
+- [ ] 設定: 作業ログの運用開始日 = 2026-10-28、チーム内閲覧(peerDailyView)の方針を確認
 
 3〜4限(企画決定)
 - [ ] 各チームの企画決定 → 教員画面「キックオフ」で企画名を入れてキックオフ(雛形と叩き台が作られる。再実行しても増えない)
@@ -26,7 +26,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 - [ ] Apps Script で `dryRunAfternoon` を実行 → 自分宛の予定メールを確認
 - [ ] `goLive` を実行 → 16:30 に届く
 - [ ] 16:30以降: 自分宛の要約メールが届いた。学生1名に実際に届いた
-- [ ] 作業レポート(一言必須)を、学生が書けることを1名分確認
+- [ ] 作業ログ(一言必須)を、学生が書けることを1名分確認
 
 ## 10/29 (木) 初回ミーティング (2限 11:15〜12:45)
 - [ ] 10:45 ごろ リマインドが届く
@@ -41,7 +41,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 | 学生が「権限がありません」 | 名簿のチームを確認(教員画面 → 名簿) |
 | リマインドが届かない | Apps Script の「実行数」で失敗を確認。`MODE` が live か。トリガーが2つあるか |
 | 学生に誤って送りたくない | `goTest` に戻す / トリガーを削除 |
-| 作業レポートを入れ忘れた(当日) | 学生は当日のみ編集可。過ぎたら教員が欠席入力 |
+| 作業ログを入れ忘れた(当日) | 学生は当日のみ編集可。過ぎたら教員が欠席入力 |
 | 画面が古い | リロード。サイトを更新したいときは Actions の Deploy |
 | 利用量が心配 | Firebase コンソール → Firestore → 使用状況 (無料枠 読み取り5万/日。想定2万/日) |
 

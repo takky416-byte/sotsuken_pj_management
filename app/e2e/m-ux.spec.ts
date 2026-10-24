@@ -11,7 +11,7 @@ const task = (title: string, o: Record<string, unknown> = {}) => ({
 });
 
 test.describe.serial('ホーム (今日・次にやること) と WBS の操作', () => {
-  test('ホーム: 今日やること・次にやること・作業レポートの状況が出て、担当を1タップで決められる (着手・完了は作業レポートで)', async ({ page }) => {
+  test('ホーム: 今日やること・次にやること・作業ログの状況が出て、担当を1タップで決められる (着手・完了は作業ログで)', async ({ page }) => {
     const d = db();
     await d.doc('teams/A/tasks/ux-overdue').set(task('期限を過ぎたUXタスク', { assignees: ['A1'], endDate: addDays(today(), -3), order: 99001 }));
     await d.doc('teams/A/tasks/ux-doing').set(task('進行中のUXタスク', { assignees: ['A1'], status: 'doing', order: 99002 }));
@@ -28,18 +28,18 @@ test.describe.serial('ホーム (今日・次にやること) と WBS の操作'
     await expect(item('進行中のUXタスク')).toContainText('進行中');
     await expect(page.getByText('もうすぐ始まるUXタスク')).toBeVisible(); // 次にやること
 
-    // 状態は、ホームでは変えない。作業レポートに書きに行くボタンだけがある
+    // 状態は、ホームでは変えない。作業ログに書きに行くボタンだけがある
     await expect(page.getByRole('button', { name: '着手する' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '完了にする' })).toHaveCount(0);
-    await expect(item('期限を過ぎたUXタスク').getByRole('link', { name: '作業レポートに書く' })).toBeVisible();
+    await expect(item('期限を過ぎたUXタスク').getByRole('link', { name: '作業ログに書く' })).toBeVisible();
 
     // 担当がいないタスクを、担当する
     await item('担当がいないUXタスク').getByRole('button', { name: '担当する' }).click();
     await expect.poll(async () => (await d.doc('teams/A/tasks/ux-free').get()).data()?.assignees).toEqual(['A1']);
 
-    // 作業レポート: まだ。書くボタン
-    await expect(page.locator('.hero .cta')).toBeVisible(); // 作業レポートの状況 (運用開始前・授業日でない日・未提出で、文言が変わる)
-    await expect(page.getByRole('link', { name: '作業レポートを書く' })).toBeVisible();
+    // 作業ログ: まだ。書くボタン
+    await expect(page.locator('.hero .cta')).toBeVisible(); // 作業ログの状況 (運用開始前・授業日でない日・未提出で、文言が変わる)
+    await expect(page.getByRole('link', { name: '作業ログを書く' })).toBeVisible();
   });
 
   test('WBS: 「@名前 〜期限」で追加でき、担当・期間を行の中で1タップで変えられる', async ({ page }) => {

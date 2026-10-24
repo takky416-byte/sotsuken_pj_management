@@ -1,9 +1,9 @@
 // 試運転用のデータづくり。指定したチーム (既定 D) を、キックオフ済みで、プロジェクトが4週間ほど進んだ状態にする。
 // GitHub Actions (pilot-data ワークフロー) から実行する。dry_run が true (初期値) のときは、件数を表示するだけ。
 //
-//  - 過去4週間の授業日 (火・水 3-4限、木 1-2限) を、授業日に「ダミー(試運転)」の備考つきで足し、作業レポートの運用開始日を、その初日にする
+//  - 過去4週間の授業日 (火・水 3-4限、木 1-2限) を、授業日に「ダミー(試運転)」の備考つきで足し、作業ログの運用開始日を、その初日にする
 //    (reset-pilot の「カレンダーも元に戻す」で、元に戻る)
-//  - タスク (進行中・完了・期限超過・担当なし・保留)、作業レポート、ミーティング記録 (木曜4回)、先生のコメント、ありがとう
+//  - タスク (進行中・完了・期限超過・担当なし・保留)、作業ログ、ミーティング記録 (木曜4回)、先生のコメント、ありがとう
 //  - メンバーの苗字は、チームのメンバー表から読む。内容は架空 (名前以外の個人情報は含まない)
 //  - 同じ ID のものは上書きする。何度実行しても増えない。タスクは、同じ親の同じ題名がすでにあれば、作らない
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
@@ -45,7 +45,7 @@ function taskPlan(S, T) {
     ] },
     { big: '要件定義', items: [
       { t: 'ヒアリング項目を作る', st: 'done', p: [1], s: S(9), e: S(14) },
-      { t: '利用者にヒアリングする', st: 'done', p: [0, 1], s: S(12), e: S(19), d: '3人以上に聞く。聞いた内容は、作業レポートかチームの共有フォルダに残す。' },
+      { t: '利用者にヒアリングする', st: 'done', p: [0, 1], s: S(12), e: S(19), d: '3人以上に聞く。聞いた内容は、作業ログかチームの共有フォルダに残す。' },
       { t: '機能一覧を作る', st: 'done', p: [0], s: S(14), e: S(21), kids: [
         { t: '必須の機能と、余裕があればやる機能に分ける', st: 'done', p: [1], s: S(18), e: S(21) },
       ] },
@@ -80,7 +80,7 @@ function taskPlan(S, T) {
   ];
 }
 
-// 作業レポートの一言。タスクの題名に関わらず使える言い回しを、人ごとの「積極さ」に合わせて選ぶ。
+// 作業ログの一言。タスクの題名に関わらず使える言い回しを、人ごとの「積極さ」に合わせて選ぶ。
 const NOTES = {
   0: ['調べた内容を整理して、チームに共有した', '資料を作り進めた。あと少しで形になる', '前回の指摘を直して、見せられる形にした', '手順を確認しながら進めた。思ったより早く終わった', '分からない点を洗い出して、メンバーに相談した'],
   1: ['担当の部分を進めて、内容を確認した', '先週の続きをやった。半分くらい終わった', '資料を読んで、自分の担当の範囲を確認した', 'チームで話した内容を、メモにまとめた'],
@@ -116,7 +116,7 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
 
   // ---- タスク ----
   const tasks = [];
-  const idOf = new Map(); // 題名 → タスクID (作業レポートで使う)
+  const idOf = new Map(); // 題名 → タスクID (作業ログで使う)
   const lastOrder = new Map();
   const nextOrder = (parentId) => {
     const base = lastOrder.get(parentId) ?? Math.max(0, ...live.filter((t) => t.parentId === parentId).map((t) => t.order));
@@ -158,11 +158,11 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
     }
   }
 
-  // WBSにない作業 (作業レポートで「WBSにない作業をした」と書かれて、あとから追加された想定)。大項目「WBS外の作業」の下に、後追いの印つきで
+  // WBSにない作業 (作業ログで「WBSにない作業をした」と書かれて、あとから追加された想定)。大項目「WBS外の作業」の下に、後追いの印つきで
   if (!live.some((t) => t.id === 'adhoc-root')) {
     mk('adhoc-root', null, 1, { t: 'WBS外の作業(あとから追加)', st: 'doing', p: [0] });
     tasks.at(-1).data.source = 'adhoc';
-    tasks.at(-1).data.detail = '作業レポートで「WBSにない作業をした」と書かれた作業が、ここに入ります。担当やチームで整理して、WBSの正しい場所に移してください。';
+    tasks.at(-1).data.detail = '作業ログで「WBSにない作業をした」と書かれた作業が、ここに入ります。担当やチームで整理して、WBSの正しい場所に移してください。';
   }
   mk('pilot-adhoc1', 'adhoc-root', 2, { t: '取引先への確認メールを書いて送る', st: 'done', p: [0], s: T(-3), e: T(-3) });
   mk('pilot-adhoc2', 'adhoc-root', 2, { t: 'ヒアリング会場の下見', st: 'done', p: [1], s: T(-5), e: T(-5) });
@@ -187,7 +187,7 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
     t.data.status = rollup(t.id);
   }
 
-  // ---- 作業レポート ----
+  // ---- 作業ログ ----
   const dailies = [];
   const plans = members.map((_, i) => submitPlan(persona(i), days.length));
   const taskByOwner = (sid) => tasks.filter((t) => t.data.assignees.includes(sid) && t.data.status !== 'hold');
@@ -291,8 +291,8 @@ export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), 
   const existingDays = classDaysDoc.exists ? classDaysDoc.data().days ?? [] : [];
 
   const p = buildPilot({ teamId, members: t.members ?? [], today: jstToday(now), existingTasks, existingClassDays: existingDays, projectName: t.projectName, personas });
-  log(`チーム ${teamId} (メンバー ${t.members.length}人、状態 ${t.status}、タスク ${existingTasks.length}件、作業レポート ${(await teamRef.collection('dailyReports').count().get()).data().count}件)`);
-  log(`作る: タスク ${p.tasks.length} / 作業レポート ${p.dailies.length} / ミーティング記録 ${p.meetings.length} / コメント ${p.comments.length} / ありがとう ${p.thanks.length} / アクセス履歴 ${p.accessLogs.length} / 授業日 ${p.newClassDays.length}日 (${p.start}〜)`);
+  log(`チーム ${teamId} (メンバー ${t.members.length}人、状態 ${t.status}、タスク ${existingTasks.length}件、作業ログ ${(await teamRef.collection('dailyReports').count().get()).data().count}件)`);
+  log(`作る: タスク ${p.tasks.length} / 作業ログ ${p.dailies.length} / ミーティング記録 ${p.meetings.length} / コメント ${p.comments.length} / ありがとう ${p.thanks.length} / アクセス履歴 ${p.accessLogs.length} / 授業日 ${p.newClassDays.length}日 (${p.start}〜)`);
   if (dryRun) { log('--- ドライラン: 何も書き込んでいません ---'); return p; }
 
   const writes = [
@@ -317,7 +317,7 @@ export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), 
   const cur = settings.exists ? settings.data().dailyStartDate : undefined;
   if (!cur || cur > p.start) {
     await db.doc('config/settings').set({ dailyStartDate: p.start }, { merge: true });
-    log(`作業レポートの運用開始日を ${cur ?? '(未設定)'} → ${p.start} にしました (reset-pilot の「カレンダーも元に戻す」で ${DEFAULT_DAILY_START} に戻ります)`);
+    log(`作業ログの運用開始日を ${cur ?? '(未設定)'} → ${p.start} にしました (reset-pilot の「カレンダーも元に戻す」で ${DEFAULT_DAILY_START} に戻ります)`);
   }
   log('--- 書き込みました ---');
   return p;

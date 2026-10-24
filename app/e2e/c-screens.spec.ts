@@ -23,7 +23,7 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'teacher-calendar');
     await page.goto('/teacher/roster'); await page.getByRole('heading', { name: '名簿の登録' }).waitFor(); await page.waitForTimeout(500);
     await shot(page, 'teacher-roster');
-    await page.goto('/teacher/team/A'); await page.getByRole('button', { name: '作業レポート' }).click(); await page.waitForTimeout(800);
+    await page.goto('/teacher/team/A'); await page.getByRole('button', { name: '作業ログ' }).click(); await page.waitForTimeout(800);
     await shot(page, 'teacher-team-daily');
   });
 
@@ -33,7 +33,7 @@ test.describe.serial('画面の見た目', () => {
     await page.waitForTimeout(800);
     await shot(page, 'student-home-pc');
     expect((await page.locator('header').boundingBox())!.height).toBeLessThan(80);
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click(); await page.waitForTimeout(800);
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-pc');
     await page.getByLabel('トーン').selectOption('simple');
     await page.getByRole('link', { name: 'ホーム' }).click(); await page.waitForTimeout(500);
@@ -53,7 +53,7 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'student-home-mobile');
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-wbs-mobile');
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click(); await page.waitForTimeout(800);
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-mobile');
     await page.goto('/meeting/A'); await page.getByLabel('ぜんぶ表示').check(); await page.getByText('今日決めること').first().waitFor(); await page.waitForTimeout(800);
     await shot(page, 'student-meeting-mobile');

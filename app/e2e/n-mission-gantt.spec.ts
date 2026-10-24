@@ -64,7 +64,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await page.mouse.up();
     await expect.poll(async () => (await row.locator('.gantt-bar').boundingBox())!.x).toBeGreaterThan(before.x + 20);
 
-    // ドラッグしたタスクは、そのまま選ばれる。学生には、状態を変えるボタンは出ない (作業レポートで更新する)
+    // ドラッグしたタスクは、そのまま選ばれる。学生には、状態を変えるボタンは出ない (作業ログで更新する)
     await expect(page.getByLabel('追加するタスクの名前')).toBeVisible();
     await expect(page.getByRole('group', { name: '状態' })).toHaveCount(0);
 
@@ -74,9 +74,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャートから追加したタスク' })).toBeVisible();
   });
 
-  test('作業レポート: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {
+  test('作業ログ: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
     await page.getByRole('button', { name: '＋ WBSにない作業をした' }).click();
     await page.getByLabel('WBSにない作業の名前').fill('取引先へのAPI仕様の確認メール');
     await page.getByRole('group', { name: 'WBSにない作業の結果' }).getByRole('button', { name: '完了した' }).click();
@@ -85,7 +85,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     const preselected = page.locator('.dcard.on:not(.adhoc-card):not(.r-kind) .seg-btn.on');
     while (await preselected.count() > 0) await preselected.first().click();
     await page.getByLabel('次にやること', { exact: true }).fill('取引先の回答を待って、API仕様書を更新する。');
-    const submit = page.getByRole('button', { name: /作業レポートを(提出|更新)する/ });
+    const submit = page.getByRole('button', { name: /作業ログを(入れる|更新する)/ });
     await submit.click();
     await expect(page.getByText(/提出しました|更新しました/).first()).toBeVisible({ timeout: 15000 });
 
@@ -176,16 +176,16 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
     await expect(dialog).toHaveCount(0);
 
-    // 作業レポートの画面で開くと、作業レポートの説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
+    // 作業ログの画面で開くと、作業ログの説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
     await page.getByRole('button', { name: /ガイド/ }).first().click();
-    await expect(dialog).toContainText('作業レポート: 何を・どこまでやったかを書く');
+    await expect(dialog).toContainText('作業ログ: 何を・どこまでやったかを書く');
     await dialog.getByRole('tab', { name: 'こんなとき' }).click();
     await dialog.getByRole('button', { name: 'WBSにない作業をしたとき' }).click();
     await expect(dialog).toContainText('WBSにタスクとして追加されます');
-    await dialog.getByRole('button', { name: '作業レポートを開く' }).click();
+    await dialog.getByRole('button', { name: '作業ログを開く' }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '作業レポート', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
     await page.close();
   });
 

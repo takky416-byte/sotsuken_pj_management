@@ -92,7 +92,7 @@ async function seed(periods = '3-4') {
   await db.doc(`teams/A/dailyReports/${today}_A3`).set(daily('A3', { entries: [], absent: true })); // 欠席
 }
 
-describe('作業レポートリマインド (Apps Script) × Firestore エミュレータ', () => {
+describe('作業ログリマインド (Apps Script) × Firestore エミュレータ', () => {
   beforeEach(() => seed());
 
   test('予行演習: 誰に送るかをログに出すだけで、メールは送らない', async () => {
@@ -119,7 +119,7 @@ describe('作業レポートリマインド (Apps Script) × Firestore エミュ
     const s = loadScript({ ...baseProps, MODE: 'live' });
     s.call('remindAfternoon');
     expect(s.sent.map((m) => m.to)).toEqual(['a2@trident.ac.jp', 'teacher@trident.ac.jp']);
-    expect(s.sent[0].subject).toContain('今日の作業レポートをお願いします');
+    expect(s.sent[0].subject).toContain('今日の作業ログをお願いします');
     expect(s.sent[0].body).toContain('近内 さん');
     expect(s.sent[1].subject).toContain('送信しました');
     s.call('remindAfternoon'); // もう一度 (トリガーの再実行など)

@@ -35,7 +35,7 @@ test.describe.serial('ガントチャートの日付入力とバックアップ�
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'バックアップ(JSON)をダウンロード' }).click()]);
     const file = await dl.path();
 
-    // 作業レポートも、復元で元に戻る (教員が作業レポートを書き込めるルールの確認)
+    // 作業ログも、復元で元に戻る (教員が作業ログを書き込めるルールの確認)
     const dailyRef = (await db().collection('teams/A/dailyReports').limit(1).get()).docs[0].ref;
     const originalBlocker = (await dailyRef.get()).data()!.blocker;
     await dailyRef.update({ blocker: 'いたずらで書き換えた' });

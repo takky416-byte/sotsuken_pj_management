@@ -12,7 +12,7 @@ test('データの書き出し: バックアップ(JSON)と CSV', async ({ page 
   await page.getByRole('button', { name: 'データを読み込む' }).click();
   await expect(page.getByText('読み込んだデータ')).toBeVisible();
   await expect(page.locator('.counts')).toContainText('名簿');
-  await expect(page.locator('.counts li', { hasText: '作業レポート' })).toContainText('件');
+  await expect(page.locator('.counts li', { hasText: '作業ログ' })).toContainText('件');
 
   // JSON (教員専用のデータを含む)
   const [d1] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'バックアップ(JSON)をダウンロード' }).click()]);
@@ -40,7 +40,7 @@ test('データの書き出し: バックアップ(JSON)と CSV', async ({ page 
   expect(tasks).toContain('要件定義');
   expect(tasks).toContain('叩き台');
 
-  const [d4] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '作業レポート', exact: true }).click()]);
+  const [d4] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '作業ログ', exact: true }).click()]);
   const dailies = readFileSync((await d4.path())!, 'utf8');
   expect(dailies).toContain('画面の下書きを3枚作り、レビューした');
   expect(dailies).toContain('下書きをレビューして、清書する'); // 次にやること

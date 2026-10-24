@@ -44,7 +44,7 @@ export async function createTasks(teamId: string, actor: Actor, plan: NewTask[],
   const now = Date.now();
   const ops: ((b: Batch) => void)[] = plan.map((n) => (b) => b.set(doc(col(teamId), n.id), taskDoc(n, actor, source)));
   if (plan.length > MANY) ops.push((b) => addLog(b, teamId, { taskId: '', title: `${plan.length}件のタスクをまとめて追加`, by: actor, at: now, kind: 'create', changes: [] }));
-  else plan.forEach((n) => ops.push((b) => addLog(b, teamId, { taskId: n.id, title: n.title, by: actor, at: now, kind: 'create', changes: [], ...(source === 'adhoc' ? { via: '作業レポート(WBSにない作業)' } : {}) })));
+  else plan.forEach((n) => ops.push((b) => addLog(b, teamId, { taskId: n.id, title: n.title, by: actor, at: now, kind: 'create', changes: [], ...(source === 'adhoc' ? { via: '作業ログ(WBSにない作業)' } : {}) })));
   await commitAll(ops);
 }
 

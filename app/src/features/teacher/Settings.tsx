@@ -39,15 +39,15 @@ export function Settings() {
       <div className="card form">
         <label className="check">
           <input type="checkbox" checked={settings.peerDailyView} onChange={(e) => run(() => setSetting('peerDailyView', e.target.checked))} />
-          同じチームの作業レポートを、チームのメンバーどうしで見られるようにする
+          同じチームの作業ログを、チームのメンバーどうしで見られるようにする
         </label>
-        <p className="hint">オフにすると、学生は自分の作業レポートだけが見えます。教員はどちらでも全員分を見られます。</p>
+        <p className="hint">オフにすると、学生は自分の作業ログだけが見えます。教員はどちらでも全員分を見られます。</p>
       </div>
       <div className="card form">
-        <label>作業レポートの運用開始日
+        <label>作業ログの運用開始日
           <input type="date" value={settings.dailyStartDate} onChange={(e) => e.target.value && run(() => setSetting('dailyStartDate', e.target.value))} />
         </label>
-        <p className="hint">これより前の授業日は、作業レポートが未提出でも数えません(要確認・提出状況・欠席の入力の対象外)。</p>
+        <p className="hint">これより前の授業日は、作業ログが未提出でも数えません(要確認・提出状況・欠席の入力の対象外)。</p>
       </div>
       <div className="card form">
         <label className="check">

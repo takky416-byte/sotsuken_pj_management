@@ -28,7 +28,7 @@ export const FIXED_KINDS: { kind: Exclude<DailyKind, 'task'>; label: string }[] 
   { kind: 'other', label: 'その他' },
 ];
 
-/** 作業レポートの運用を始める日 (設定で変えられる)。これより前の授業日は、未提出の判定などの対象にしない。 */
+/** 作業ログの運用を始める日 (設定で変えられる)。これより前の授業日は、未提出の判定などの対象にしない。 */
 export const DEFAULT_DAILY_START = '2026-10-28';
 
 export const fromDailyStart = (days: ClassDay[], start: string): ClassDay[] => days.filter((d) => d.date >= start);
@@ -41,8 +41,8 @@ export type DayStatus = 'submitted' | 'absent' | 'missing';
 export const hasNote = (e: DailyEntry) => e.note.trim() !== '';
 
 /**
- * 作業レポートの記述の最低文字数。「やった」だけで済ませず、何をどこまでやったかを書かせるための目安 (文字数は空白を除く)。
- * 提出の判定 (statusOf) は、これまでの作業レポートとの互換のため、一言があれば成立とする。新しく提出するときの画面だけが、この長さを求める。
+ * 作業ログの記述の最低文字数。「やった」だけで済ませず、何をどこまでやったかを書かせるための目安 (文字数は空白を除く)。
+ * 提出の判定 (statusOf) は、これまでの作業ログとの互換のため、一言があれば成立とする。新しく提出するときの画面だけが、この長さを求める。
  */
 export const MIN_NOTE_CHARS = 10;
 export const MIN_NEXT_CHARS = 10;
@@ -51,7 +51,7 @@ export const charCount = (s: string) => s.replace(/\s/g, '').length;
 export type DailyProblem = { key: string; message: string };
 
 /**
- * 新しく提出する作業レポートの検査。問題がなければ空の配列。
+ * 新しく提出する作業ログの検査。問題がなければ空の配列。
  * - 取り組みが1つ以上ある
  * - 各項目の説明が MIN_NOTE_CHARS 字以上 (何を・どこまで)
  * - 次にやることが MIN_NEXT_CHARS 字以上
@@ -60,7 +60,7 @@ export function validateDaily(
   entries: DailyEntry[], next: string, titleOf: (e: DailyEntry) => string = () => '',
 ): DailyProblem[] {
   const out: DailyProblem[] = [];
-  if (entries.length === 0) out.push({ key: 'entries', message: '前回の作業レポートのあとにやったことを、1つ以上選んでください' });
+  if (entries.length === 0) out.push({ key: 'entries', message: '前回の作業ログのあとにやったことを、1つ以上選んでください' });
   entries.forEach((e, i) => {
     const n = charCount(e.note);
     if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、もう少し具体的に書いてください(何を、どこまでやったか)` });

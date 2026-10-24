@@ -51,7 +51,7 @@ describe('plan', () => {
     i.dailiesByTeam.A.push({ sid: 'A2', date: '2026-10-28', entries: [], blocker: '相談したい', absent: false });
     expect(Reminder.plan(i).recipients.map((r: { name: string }) => r.name)).toEqual(['竹中']);
   });
-  test('今日の作業レポートだけを見る (昨日の分は数えない)', () => {
+  test('今日の作業ログだけを見る (昨日の分は数えない)', () => {
     const i = base();
     i.dailiesByTeam.A = [{ sid: 'A2', date: '2026-10-27', entries: [{ kind: 'study', note: 'x' }], blocker: '', absent: false }];
     expect(Reminder.plan(i).recipients.map((r: { name: string }) => r.name)).toEqual(['岩田', '近内', '森', '竹中']);
@@ -72,7 +72,7 @@ describe('plan', () => {
   });
   test('メールの文面', () => {
     const m = Reminder.studentMail('岩田', '2026-10-28');
-    expect(m.subject).toBe('【卒研】今日の作業レポートをお願いします (10/28)');
+    expect(m.subject).toBe('【卒研】今日の作業ログをお願いします (10/28)');
     expect(m.body).toContain('岩田 さん');
     expect(m.body).toContain('https://sotsuken-pj.web.app/daily');
     const t = Reminder.teacherTestMail(Reminder.plan(base()));

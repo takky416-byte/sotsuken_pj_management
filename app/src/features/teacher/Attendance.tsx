@@ -56,7 +56,7 @@ export function Attendance() {
   return (
     <>
       <h2>欠席の入力</h2>
-      <p className="hint">欠席の日は、作業レポートが未提出として数えられません。欠席にできるのは教員だけです。</p>
+      <p className="hint">欠席の日は、作業ログが未提出として数えられません。欠席にできるのは教員だけです。</p>
       {date ? (
         <label className="inline">授業日
           <select value={date} onChange={(e) => setPicked(e.target.value)}>

@@ -12,7 +12,7 @@ export type TaskLog = {
   at: number;
   kind: 'create' | 'update' | 'delete' | 'restore';
   changes: LogChange[];
-  /** 作業レポートの提出で更新されたときなど */
+  /** 作業ログの提出で更新されたときなど */
   via?: string;
 };
 

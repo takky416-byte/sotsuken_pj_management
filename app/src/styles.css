@@ -347,7 +347,7 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .result-badge.r-stuck { background:color-mix(in srgb, var(--danger) 14%, var(--card)); color:var(--danger); }
 .next-plan { margin-top:4px; color:var(--accent); font-weight:500; }
 
-/* 作業レポートの入力 */
+/* 作業ログの入力 */
 .daily-form h3 { margin-top:0; }
 .dcard { border:2px solid var(--line); border-radius:var(--radius); padding:12px; margin:10px 0; background:var(--card); }
 .dcard.on { border-color:var(--accent); background:color-mix(in srgb, var(--accent-soft) 45%, var(--card)); }
@@ -578,7 +578,7 @@ table.access tr.detail td { background:var(--bg); }
 /* 使い方: PCでは2段組 (開閉しても、左右の高さがそろわなくてよいように、段組みにする) */
 @media (min-width:1000px) { .help-cols { column-count:2; column-gap:16px; } .help-cols > details { break-inside:avoid; margin-top:0; margin-bottom:12px; } }
 
-/* 作業レポートのやさしい促し */
+/* 作業ログのやさしい促し */
 .nudge { display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#fff8e1; border:2px solid #ffe08a; }
 .nudge { padding:8px 14px; }
 .nudge p { margin:4px 0 0; }
@@ -649,7 +649,7 @@ table.access tr.detail td { background:var(--bg); }
 .fold[open] > summary::after { content:'▲ 閉じる'; }
 .plan-project { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; display:flex; flex-direction:column; gap:6px; }
 
-/* ホームの上の段: 広い画面では、あいさつと作業レポートのお知らせを左右に並べる (お気に入りは、その下に全幅) */
+/* ホームの上の段: 広い画面では、あいさつと作業ログのお知らせを左右に並べる (お気に入りは、その下に全幅) */
 .home-top { display:flex; flex-wrap:wrap; gap:0 14px; align-items:stretch; }
 .home-top > .hero, .home-top > .nudge { flex:1 1 440px; min-width:0; margin:2px 0 12px; }
 .home-top > .bookmark { flex:1 1 100%; }
@@ -679,7 +679,7 @@ table.access tr.detail td { background:var(--bg); }
 .w-count { color:var(--muted); font-size:12px; white-space:nowrap; }
 .wbs .w-title .badge { font-size:11px; }
 
-/* 作業レポート: 選んでいないタスクは、1行にまとめる。結果を押すと開く。提出のボタンは、画面の下に付いてくる */
+/* 作業ログ: 選んでいないタスクは、1行にまとめる。結果を押すと開く。提出のボタンは、画面の下に付いてくる */
 .dcard:not(.on) { display:flex; align-items:center; gap:6px 12px; padding:6px 10px; margin:6px 0; flex-wrap:wrap; }
 .dcard:not(.on) .dcard-head { flex:1 1 180px; margin:0; min-width:0; justify-content:flex-start; gap:10px; }
 .dcard:not(.on) .dcard-head strong { font-size:16px; }
@@ -693,7 +693,7 @@ table.access tr.detail td { background:var(--bg); }
 .home-team { margin-top:14px; }
 .home-team > h3 { margin:6px 0 8px; }
 
-/* 学生のWBSの状態は、見るだけ (作業レポートで更新する) */
+/* 学生のWBSの状態は、見るだけ (作業ログで更新する) */
 .status-ro { display:inline-block; font-size:13px; padding:2px 10px; border-radius:999px; background:var(--accent-soft); color:var(--accent); white-space:nowrap; }
 .status-ro.st-done { background:color-mix(in srgb, var(--ok) 14%, var(--bg)); color:var(--ok); }
 .status-ro.st-todo, .status-ro.st-hold { background:var(--bg); color:var(--muted); border:1px solid var(--line); }

@@ -31,7 +31,7 @@ describe('teamFlags', () => {
     expect(teamFlags(team(null), [], [], days, '2026-11-05', '2026-10-28').missing).toEqual([]);
     expect(teamFlags(team(Date.parse('2026-11-04T03:00:00Z')), [], [], days, '2026-11-05', '2026-10-28').missing).toEqual([]); // 対象は 11/4 の1日だけ
   });
-  test('作業レポートの運用開始日より前の授業日は数えない', () => {
+  test('作業ログの運用開始日より前の授業日は数えない', () => {
     // 10/28 が運用開始前なら、対象は 10/29 と 11/4 の2日。A2 は両方未提出 → フラグ。A1 は 10/29 だけ提出 → 11/4 の1回だけなのでフラグなし
     const dailies = [sub('A1', '2026-10-29')];
     expect(teamFlags(team(), [], dailies, days, '2026-11-05', '2026-10-29').missing).toEqual(['近内']);

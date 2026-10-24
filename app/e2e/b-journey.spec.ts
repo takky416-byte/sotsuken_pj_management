@@ -8,13 +8,13 @@ const A2 = 'a2@trident.ac.jp';
 
 // 運用の流れに沿って、前のテストの結果を引き継ぐ (同じエミュレータのデータを使う)
 test.describe.serial('運用の流れ', () => {
-  test('キックオフ前: 学生は「企画検討中」と表示され、WBS・作業レポートは使えない', async ({ page }) => {
+  test('キックオフ前: 学生は「企画検討中」と表示され、WBS・作業ログは使えない', async ({ page }) => {
     await login(page, A1);
     await expect(page.getByText('企画検討中です。キックオフをお待ちください。')).toBeVisible();
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await expect(page.getByText('企画検討中です')).toBeVisible();
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(page.getByText('キックオフ後に作業レポートを書けるようになります')).toBeVisible();
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(page.getByText('キックオフ後に作業ログを書けるようになります')).toBeVisible();
   });
 
   test('教員がキックオフすると、雛形と叩き台ができる。再実行しても増えない', async ({ page }) => {
@@ -110,13 +110,13 @@ test.describe.serial('運用の流れ', () => {
     await expect(page.getByRole('checkbox', { name: '岩田' })).toBeChecked();
   });
 
-  test('学生: 作業レポートは、結果と説明 (10字以上) と次にやることがないと提出できない。提出後も、今日は直せる。タスクの状態も更新される', async ({ page }) => {
+  test('学生: 作業ログは、結果と説明 (10字以上) と次にやることがないと提出できない。提出後も、今日は直せる。タスクの状態も更新される', async ({ page }) => {
     await login(page, A1);
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(page.getByRole('heading', { name: '作業レポート', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
 
     // 今日自分が更新したタスク (この流れで作ったもの) は、「進んだ」で先に入っている。説明がまだなので、足りない点が出る
-    const submit = page.getByRole('button', { name: '作業レポートを提出する' });
+    const submit = page.getByRole('button', { name: '作業ログを入れる' });
     const card = page.locator('.dcard', { hasText: '画面遷移図を描く' });
     await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true');
     await submit.click();
@@ -138,9 +138,9 @@ test.describe.serial('運用の流れ', () => {
     await submit.click();
     await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
 
-    // 再読み込み → 「作業レポートを更新する」になり、内容も残る。直して更新できる
+    // 再読み込み → 「作業ログを更新する」になり、内容も残る。直して更新できる
     await page.reload();
-    const update = page.getByRole('button', { name: '作業レポートを更新する' });
+    const update = page.getByRole('button', { name: '作業ログを更新する' });
     await expect(update).toBeVisible();
     await expect(page.getByLabel('画面遷移図を描くの説明')).toHaveValue('画面の下書きを3枚作った');
     await expect(page.getByLabel('次にやること', { exact: true })).toHaveValue('下書きをレビューして、清書する');
@@ -155,10 +155,10 @@ test.describe.serial('運用の流れ', () => {
     await expect(row(page, '画面遷移図を描く').getByLabel('状態(閲覧モード)')).toContainText('完了'); // 提出で、状態が更新される
   });
 
-  test('学生: 同じチームの作業レポートは見える。他のチームのミーティング画面には入れない', async ({ page }) => {
+  test('学生: 同じチームの作業ログは見える。他のチームのミーティング画面には入れない', async ({ page }) => {
     await login(page, A2);
-    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(page.locator('.feed').getByText('画面の下書きを3枚作り、レビューした')).toBeVisible(); // 岩田さんの作業レポート
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(page.locator('.feed').getByText('画面の下書きを3枚作り、レビューした')).toBeVisible(); // 岩田さんの作業ログ
 
     await page.goto('/meeting/B');
     await expect(page).toHaveURL(/\/meeting\/A$/);
@@ -261,28 +261,28 @@ test.describe.serial('運用の流れ', () => {
     await expect(page.locator('.preview-frame')).toContainText('岩田');
     await page.locator('.preview-head').getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await expect(page.getByRole('button', { name: '編集モードにする' })).toBeDisabled(); // 教員のプレビューでは、編集モードにもできない
-    await page.locator('.preview-head').getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(page.getByRole('button', { name: /作業レポートを(提出|更新)する/ })).toBeDisabled();
+    await page.locator('.preview-head').getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(page.getByRole('button', { name: /作業ログを(入れる|更新する)/ })).toBeDisabled();
   });
 
-  test('設定: 作業レポートのチーム内閲覧をオフにすると、学生は自分の分だけが見える', async ({ browser }) => {
+  test('設定: 作業ログのチーム内閲覧をオフにすると、学生は自分の分だけが見える', async ({ browser }) => {
     const t = await (await browser.newContext()).newPage();
     await login(t, TEACHER);
     await t.getByRole('link', { name: '設定' }).click();
-    await t.getByLabel('同じチームの作業レポートを、チームのメンバーどうしで見られるようにする').click();
-    await expect(t.getByLabel('同じチームの作業レポートを、チームのメンバーどうしで見られるようにする')).not.toBeChecked();
+    await t.getByLabel('同じチームの作業ログを、チームのメンバーどうしで見られるようにする').click();
+    await expect(t.getByLabel('同じチームの作業ログを、チームのメンバーどうしで見られるようにする')).not.toBeChecked();
 
     const s = await (await browser.newContext()).newPage();
-    await login(s, A2); // 近内さんは今日は欠席で、作業レポートなし。岩田さんの作業レポートは見えない
-    await s.getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(s.getByText('自分の作業レポート')).toBeVisible();
+    await login(s, A2); // 近内さんは今日は欠席で、作業ログなし。岩田さんの作業ログは見えない
+    await s.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(s.getByText('自分の作業ログ')).toBeVisible();
     await expect(s.getByText('画面の下書きを3枚作り、レビューした')).toHaveCount(0);
   });
 
-  test('作業レポートの運用開始日の設定: 開始前の学生には「作業レポートは〜から始まります」と出る', async ({ page }) => {
+  test('作業ログの運用開始日の設定: 開始前の学生には「作業ログは〜から始まります」と出る', async ({ page }) => {
     await login(page, TEACHER);
     await page.getByRole('link', { name: '設定' }).click();
-    const d = page.getByLabel('作業レポートの運用開始日');
+    const d = page.getByLabel('作業ログの運用開始日');
     await expect(d).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
     // 運用開始日を明日にすると、学生には「始まります」の案内が出る
     const tomorrow = new Date(Date.parse(`${today()}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
@@ -290,11 +290,11 @@ test.describe.serial('運用の流れ', () => {
     await expect(d).toHaveValue(tomorrow);
     await page.waitForTimeout(1000); // サーバーへの保存を待つ (すぐに再読み込みすると、書き込みが中断される)
     await page.reload();
-    await expect(page.getByLabel('作業レポートの運用開始日')).toHaveValue(tomorrow);
+    await expect(page.getByLabel('作業ログの運用開始日')).toHaveValue(tomorrow);
 
     const s = await (await page.context().browser()!.newContext()).newPage();
     await login(s, A1);
-    await s.getByRole('link', { name: '作業レポート', exact: true }).click();
-    await expect(s.getByText(/作業レポートは .* から始まります/)).toBeVisible();
+    await s.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(s.getByText(/作業ログは .* から始まります/)).toBeVisible();
   });
 });
