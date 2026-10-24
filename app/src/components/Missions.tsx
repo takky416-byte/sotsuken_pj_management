@@ -1,10 +1,11 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ProfileOverride } from '../auth/AuthProvider';
 import { Link } from 'react-router-dom';
 import { celebrate } from '../lib/celebrate';
 import type { Mission, WeeklyMission } from '../lib/missions';
 import { useBase } from './Base';
 
+const WEEKLY_OPEN_KEY = 'weekly-missions-open';
 const flagKey = (sid: string, today: string) => `mission-done:${sid}:${today}`;
 const seen = (k: string) => { try { return localStorage.getItem(k) === '1'; } catch { return false; } };
 const mark = (k: string) => { try { localStorage.setItem(k, '1'); } catch { /* 保存できなくても動く */ } };
@@ -46,26 +47,27 @@ export function WeeklyMissions({ weekly }: { weekly: WeeklyMission[] }) {
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
   const weeklyDone = weekly.filter((m) => m.done).length;
   if (weekly.length === 0) return null;
+  // ホームを縦に長くしないよう、既定では閉じておく (見出しと、達成の数は見える)。開き方は、この端末に覚えておく
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(WEEKLY_OPEN_KEY) === '1'; } catch { return false; } });
+  const toggle = (v: boolean) => { setOpen(v); try { localStorage.setItem(WEEKLY_OPEN_KEY, v ? '1' : '0'); } catch { /* 保存できなくても動く */ } };
   return (
-    <>
-      {weekly.length > 0 && (
-        <section className="card missions">
-          <h3>🏁 チームの今週のミッション <span className="mission-count">{weeklyDone}/{weekly.length}</span></h3>
-          <p className="hint">メンバー全員で達成します。</p>
-          <ul className="plain mission-list">
-            {weekly.map((m) => (
-              <li key={m.id} className={`mission ${m.done ? 'done' : ''}`}>
-                <span className="mission-check" aria-hidden="true">{m.done ? '✔' : ''}</span>
-                <div className="mission-main">
-                  <strong>{m.label}</strong>
-                  <div className="hint">{m.detail}{!m.done && ` ／ ${m.hint}`}</div>
-                </div>
-                {!m.done && <Link to={href(m.to)} className="btn ghost-btn">開く</Link>}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </>
+    <details className="card missions weekly" open={open} onToggle={(e) => toggle((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>
+        <h3>🏁 チームの今週のミッション <span className="mission-count">{weeklyDone}/{weekly.length}</span></h3>
+      </summary>
+      <p className="hint">メンバー全員で達成します。</p>
+      <ul className="plain mission-list">
+        {weekly.map((m) => (
+          <li key={m.id} className={`mission ${m.done ? 'done' : ''}`}>
+            <span className="mission-check" aria-hidden="true">{m.done ? '✔' : ''}</span>
+            <div className="mission-main">
+              <strong>{m.label}</strong>
+              <div className="hint">{m.detail}{!m.done && ` ／ ${m.hint}`}</div>
+            </div>
+            {!m.done && <Link to={href(m.to)} className="btn ghost-btn">開く</Link>}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }

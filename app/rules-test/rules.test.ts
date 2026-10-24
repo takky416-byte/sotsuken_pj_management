@@ -306,7 +306,9 @@ describe('アクセス履歴', () => {
     await assertFails(setDoc(doc(as(A1), 'accessLogs', id('A2')), log('A2')));
     await assertFails(setDoc(doc(as(A1), 'accessLogs', '2020-01-01_A1'), log('A1', { date: '2020-01-01' })));
     await assertFails(setDoc(doc(as(A1), 'accessLogs', 'x_A1'), log('A1')));
-    await assertFails(setDoc(doc(as(TEACHER), 'accessLogs', id('A1')), log('A1')));
+    // 教員は、復元のために書ける。ただし、形が正しいものだけ
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'accessLogs', id('A1')), log('A1', { visits: 5, views: 9 })));
+    await assertFails(setDoc(doc(as(TEACHER), 'accessLogs', id('A1')), log('A1', { visits: -1 })));
     await assertFails(deleteDoc(doc(as(A1), 'accessLogs', id('A1'))));
   });
 });

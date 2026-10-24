@@ -580,3 +580,7 @@ table.access tr.detail td { background:var(--bg); }
 .nudge { display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#fff8e1; border:2px solid #ffe08a; }
 .nudge p { margin:4px 0 0; }
 .nudge-main { flex:1; min-width:240px; }
+.missions.weekly > summary { cursor:pointer; list-style:none; } .missions.weekly > summary::-webkit-details-marker { display:none; }
+.missions.weekly > summary h3 { display:inline-flex; margin:0; }
+.missions.weekly > summary::after { content:'▼ 開く'; float:right; color:var(--muted); font-size:14px; }
+.missions.weekly[open] > summary::after { content:'▲ 閉じる'; }

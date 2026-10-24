@@ -16,6 +16,13 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await login(page, 'a1@trident.ac.jp');
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /チームの今週のミッション/ })).toBeVisible();
+    // 既定では閉じている。開くと中身が見え、開き方は覚えている
+    await expect(page.getByText('全員が、今週WBSを更新する')).toBeHidden();
+    await page.getByRole('heading', { name: /チームの今週のミッション/ }).click();
+    await expect(page.getByText('全員が、今週WBSを更新する')).toBeVisible();
+    await page.reload();
+    await expect(page.getByText('全員が、今週WBSを更新する')).toBeVisible();
+    await page.getByRole('heading', { name: /チームの今週のミッション/ }).click(); // 閉じて戻す
     await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeVisible();
   });
 

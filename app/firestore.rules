@@ -165,6 +165,8 @@ service cloud.firestore {
     }
     match /accessLogs/{logId} {
       allow read: if isTeacher();
+      // 教員は、バックアップの復元で書ける (学生が使っている最中に復元すると、記録の数が食い違うため)
+      allow create, update: if isTeacher() && validAccess(request.resource.data);
       allow create: if isStudent() && validAccess(request.resource.data)
         && request.resource.data.sid == me().sid && request.resource.data.teamId == me().teamId
         && logId == request.resource.data.date + '_' + me().sid
