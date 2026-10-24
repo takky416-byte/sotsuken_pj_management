@@ -41,6 +41,14 @@ async function seedScale() {
         await set(`teams/${team}/dailyReports/${date}_${m.sid}`, { sid: m.sid, date, dayKey: 0, entries: [{ kind: 'study', note: '調べた' }], blocker: '', absent: false });
       }
     }
+    // アクセス履歴: 過去 20 日のうち 15 日 × メンバー (最悪に近い規模)
+    for (const m of members) {
+      for (let d = 0; d < 20; d++) {
+        if (d % 4 === 3) continue;
+        const date = addDays(t, -d);
+        await set(`accessLogs/${date}_${m.sid}`, { sid: m.sid, teamId: team, date, firstAt: 1, lastAt: 2, visits: 2, views: 20, screens: { home: 8, wbs: 6, daily: 4, gantt: 2 } });
+      }
+    }
     for (let k = 1; k <= 8; k++) await set(`teams/${team}/meetings/scale-${k}`, { date: addDays(t, -7 * k), decided: '決定', actions: [], note: '' });
   }
   await writer.commit();
@@ -68,12 +76,14 @@ test.describe.serial('読み取り回数', () => {
     const daily = await measure(page, '教員: Cチーム 日報タブ', async () => { await page.getByRole('button', { name: '日報' }).click(); await page.getByText('提出状況').waitFor(); });
     await measure(page, '教員: ミーティング画面 (最初のチーム)', async () => { await page.getByRole('link', { name: 'ミーティング', exact: true }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
     await measure(page, '教員: 次のチームのミーティング', async () => { await page.getByRole('link', { name: /^[A-H] →$/ }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
+    const access = await measure(page, '教員: アクセス履歴', async () => { await page.getByRole('link', { name: 'アクセス', exact: true }).click(); await page.getByRole('heading', { name: 'アクセス履歴' }).waitFor(); });
     const back = await measure(page, '教員: ダッシュボードに戻る', async () => { await page.getByRole('link', { name: 'チーム', exact: true }).click(); await page.getByRole('heading', { name: 'チーム一覧' }).waitFor(); });
     console.log('教員 ラベル別 (合計):', JSON.stringify((await reads(page)).byLabel));
     // 上限 (回帰の防止): 初回は規模に比例する。画面を移っても、同じデータを読み直さない
     expect(first).toBeLessThan(1000);
     expect(detail).toBeLessThan(30);
     expect(daily).toBeLessThan(30);
+    expect(access).toBeLessThan(700); // 28名 × 直近21日ぶんまで。開くたびではなく、5分間は共有される
     expect(back).toBeLessThan(150); // 最初のチーム以外のデータを、新しく購読する分
   });
 
