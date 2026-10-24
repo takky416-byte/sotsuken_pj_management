@@ -8,6 +8,7 @@ import { mdLabel, wbsRows } from '../lib/report';
 import type { Team } from '../types';
 import { AnalysisView } from './AnalysisView';
 import { GanttChart } from './GanttChart';
+import { STALE_MESSAGE, isStaleChunkError, mayReloadForUpdate } from '../lib/staleChunk';
 
 /**
  * 報告書: プロジェクトの概況・分析・ガントチャート・WBS。企業への中間報告で提出できるよう、Excel と PDF(印刷)で出力する。
@@ -32,7 +33,12 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
       const { buildReportWorkbook } = await import('../lib/reportExcel');
       const blob = await buildReportWorkbook({ teamId: team.id, projectName: team.projectName, members: team.members, tasks, milestones, analysis: a, today });
       downloadBlob(`sotsuken-${team.id}-report-${today}.xlsx`, blob);
-    } catch (e) { setErr(`Excelを作れませんでした: ${(e as Error).message}`); }
+    } catch (e) {
+      if (isStaleChunkError(e)) {
+        if (mayReloadForUpdate()) { window.location.reload(); return; }
+        setErr(STALE_MESSAGE);
+      } else setErr(`Excelを作れませんでした: ${(e as Error).message}`);
+    }
     finally { setBusy(false); }
   };
 
