@@ -105,7 +105,7 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
       </div>
       {target && stamps(target)}
       {err && <p className="error">{err}</p>}
-      <p className="hint">スタンプ1つで送れます。言葉を添えたいときは「チーム」の画面からどうぞ。</p>
+      <p className="hint">スタンプ1つで送れます。言葉を添えたいときは、下の「チームのようす」からどうぞ。</p>
     </details>
   );
 }

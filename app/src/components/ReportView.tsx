@@ -10,7 +10,7 @@ import { AnalysisView } from './AnalysisView';
 import { GanttChart } from './GanttChart';
 
 /**
- * 報告書: プロジェクトの概況・分析・ガント・WBS。企業への中間報告で提出できるよう、Excel と PDF(印刷)で出力する。
+ * 報告書: プロジェクトの概況・分析・ガントチャート・WBS。企業への中間報告で提出できるよう、Excel と PDF(印刷)で出力する。
  * 教員専用のデータは含まれない。
  */
 export function ReportView({ team, actor }: { team: Team; actor: string }) {
@@ -41,7 +41,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
       <div className="report-actions no-print">
         <button type="button" onClick={excel} disabled={busy}>{busy ? '作成中…' : 'Excelで保存(.xlsx)'}</button>
         <button type="button" className="ghost" onClick={() => window.print()}>PDFで保存(印刷)</button>
-        <span className="hint">PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。Excelには、概況・WBS・ガントの3シートが入ります。</span>
+        <span className="hint">PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。Excelには、概況・WBS・ガントチャートの3シートが入ります。</span>
       </div>
       {err && <p className="error no-print">{err}</p>}
 
@@ -57,7 +57,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
       <section className="card"><h3>概況と分析</h3><AnalysisView a={a} detail /></section>
 
       <section className="card report-gantt">
-        <h3>ガント</h3>
+        <h3>ガントチャート</h3>
         <GanttChart teamId={team.id} actor={actor} members={team.members} report />
       </section>
 

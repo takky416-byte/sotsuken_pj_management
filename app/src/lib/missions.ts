@@ -83,7 +83,7 @@ export function weeklyMissions(tasks: Task[], members: { sid: string; name: stri
     },
     {
       id: 'dated', to: 'gantt', done: undated.length === 0,
-      label: '未完了のタスクすべてに、期間を入れる', hint: 'ガントで、バーをなぞって期間を入れられます',
+      label: '未完了のタスクすべてに、期間を入れる', hint: 'ガントチャートで、バーをなぞって期間を入れられます',
       detail: undated.length === 0 ? 'すべて入っています' : `あと${undated.length}件`,
     },
     {

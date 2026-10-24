@@ -688,3 +688,7 @@ table.access tr.detail td { background:var(--bg); }
 .phrases { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
 .chip-btn.small { padding:3px 10px; font-size:14px; min-height:0; }
 .submit-bar { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; gap:10px 16px; flex-wrap:wrap; margin:14px 0 0; padding:10px 14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 -4px 14px rgba(0,0,0,.08); }
+
+/* ホームの下の、チームのようす */
+.home-team { margin-top:14px; }
+.home-team > h3 { margin:6px 0 8px; }

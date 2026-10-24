@@ -20,7 +20,7 @@ export type AccessLog = {
 export const accessLogId = (date: string, sid: string) => `${date}_${sid}`;
 
 export const SCREEN_LABEL: Record<string, string> = {
-  home: 'ホーム', wbs: 'WBS', gantt: 'ガント', team: 'チーム', report: '報告書', daily: '日報', meeting: 'ミーティング', help: '使い方', other: 'その他',
+  home: 'ホーム', wbs: 'WBS', gantt: 'ガントチャート', team: 'チーム', report: '報告書', daily: '日報', meeting: 'ミーティング', help: '使い方', other: 'その他',
 };
 
 /** パスから画面の種類。'/' → home、'/wbs' → wbs。知らない画面は other。 */

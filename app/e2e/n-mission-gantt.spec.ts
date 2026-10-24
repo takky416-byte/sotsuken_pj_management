@@ -4,7 +4,7 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { login } from './helpers';
 
-test.describe.serial('ミッション・WBS外の作業・ガントで編集', () => {
+test.describe.serial('ミッション・WBS外の作業・ガントチャートで編集', () => {
   test.beforeAll(async () => {
     const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
     await db.doc('teams/A/tasks/mg-1').set({
@@ -34,11 +34,11 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeVisible();
   });
 
-  test('ガント: 空の行をなぞって期間が入る。バーをタップして状態を変える。タスクを追加できる', async ({ page }) => {
+  test('ガントチャート: 空の行をなぞって期間が入る。バーをタップして状態を変える。タスクを追加できる', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
-    await page.getByRole('button', { name: /ガントを大きく/ }).click();
-    await page.getByLabel('ガントで編集する').check();
+    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    await page.getByRole('button', { name: /ガントチャートを大きく/ }).click();
+    await page.getByLabel('ガントチャートで編集する').check();
     const row = page.locator('.gantt-row', { hasText: 'なぞって期間を入れるタスク' });
     await expect(row.locator('.gantt-bar')).toHaveCount(0);
     // 横にスクロールされていても、見えている範囲をなぞる
@@ -71,9 +71,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(row.locator('.gantt-bar.doing')).toHaveCount(1);
 
     // タスクの追加
-    await page.getByLabel('追加するタスクの名前').fill('ガントから追加したタスク');
+    await page.getByLabel('追加するタスクの名前').fill('ガントチャートから追加したタスク');
     await page.getByRole('button', { name: '追加', exact: true }).click();
-    await expect(page.locator('.gantt-row', { hasText: 'ガントから追加したタスク' })).toBeVisible();
+    await expect(page.locator('.gantt-row', { hasText: 'ガントチャートから追加したタスク' })).toBeVisible();
   });
 
   test('日報: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {
@@ -83,7 +83,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await page.getByLabel('WBSにない作業の名前').fill('取引先へのAPI仕様の確認メール');
     await page.getByRole('group', { name: 'WBSにない作業の結果' }).getByRole('button', { name: '完了した' }).click();
     await page.getByLabel('WBSにない作業の説明').fill('API仕様の不明点を3つ整理して、先方へメールを送った。');
-    // ガントで更新したタスクは、先に選ばれている。説明を書かないものは、選びを外す
+    // ガントチャートで更新したタスクは、先に選ばれている。説明を書かないものは、選びを外す
     const preselected = page.locator('.dcard.on:not(.adhoc-card):not(.r-kind) .seg-btn.on');
     while (await preselected.count() > 0) await preselected.first().click();
     await page.getByLabel('次にやること', { exact: true }).fill('取引先の回答を待って、API仕様書を更新する。');
@@ -91,13 +91,13 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await submit.click();
     await expect(page.getByText(/提出しました|更新しました/).first()).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await expect(page.locator('input.title-input[value="WBS外の作業(あとから追加)"]')).toBeVisible();
     await expect(page.locator('input.title-input[value="取引先へのAPI仕様の確認メール"]')).toBeVisible();
     await expect(page.locator('.badge.adhoc').first()).toBeVisible();
   });
 
-  test('報告書: 概況・ガント・WBSが出て、Excelをダウンロードできる。ミーティング画面にも分析が出る', async ({ page }) => {
+  test('報告書: 概況・ガントチャート・WBSが出て、Excelをダウンロードできる。ミーティング画面にも分析が出る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
     await page.getByRole('link', { name: '報告書', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
@@ -145,7 +145,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     // 学生が画面を開く (開いた直後に、記録が書かれる)
     const sp = await browser.newPage();
     await login(sp, 'a1@trident.ac.jp');
-    await sp.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    await sp.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await sp.waitForTimeout(1500);
     // 学生には、アクセス履歴の画面が出ない (ナビにも出ない)
     await expect(sp.getByRole('link', { name: 'アクセス', exact: true })).toHaveCount(0);

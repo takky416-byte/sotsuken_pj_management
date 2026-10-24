@@ -1,5 +1,5 @@
 // 「WBSにない作業」を、日報の提出と同時に WBS のタスクにする。
-// 学生が WBS にないことをやっても、誰が何をやったかが記録に残り、ガントや進捗にも反映される。
+// 学生が WBS にないことをやっても、誰が何をやったかが記録に残り、ガントチャートや進捗にも反映される。
 import type { Task, TaskStatus } from '../types';
 import type { DailyResult } from './daily';
 import type { NewTask } from './importPlan';

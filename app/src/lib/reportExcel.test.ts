@@ -10,7 +10,7 @@ const task = (o: Partial<Task>): Task => ({
 });
 
 describe('buildReportWorkbook', () => {
-  it('概況・WBS・ガントの3シートができ、数式にならない(文字のまま)', async () => {
+  it('概況・WBS・ガントチャートの3シートができ、数式にならない(文字のまま)', async () => {
     const tasks = [
       task({ id: 'p', title: '=HYPERLINK("x")' }),
       task({ id: 'a', title: 'ER図', parentId: 'p', depth: 2, status: 'doing', assignees: ['s1'], startDate: '2026-11-02', endDate: '2026-11-13' }),
@@ -20,11 +20,11 @@ describe('buildReportWorkbook', () => {
     const blob = await buildReportWorkbook({ teamId: 'A', projectName: '企画', members, tasks, milestones: ms, analysis: analyze(tasks, ms, members, '2026-11-10'), today: '2026-11-10' });
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(await blob.arrayBuffer());
-    expect(wb.worksheets.map((w) => w.name)).toEqual(['概況', 'WBS', 'ガント']);
+    expect(wb.worksheets.map((w) => w.name)).toEqual(['概況', 'WBS', 'ガントチャート']);
     const wbs = wb.getWorksheet('WBS')!;
     expect(wbs.getRow(2).getCell(2).value).toBe('=HYPERLINK("x")');
     expect(wbs.getRow(3).getCell(3).value).toBe('甲');
-    const gantt = wb.getWorksheet('ガント')!;
+    const gantt = wb.getWorksheet('ガントチャート')!;
     expect(gantt.getRow(4).getCell(2).value).toBe('=HYPERLINK("x")');
   });
 });

@@ -55,7 +55,7 @@ export function wbsRows(tasks: Task[], nameOf: (sid: string) => string): WbsRow[
   return out;
 }
 
-/** ガントの列 (週。月曜の日付)。期間が空なら空配列。 */
+/** ガントチャートの列 (週。月曜の日付)。期間が空なら空配列。 */
 export function weekColumns(rows: { start: string | null; end: string | null }[], milestones: Milestone[], today: string): string[] {
   const dates = [today, ...rows.flatMap((r) => [r.start, r.end]), ...milestones.map((m) => m.date)].filter((d): d is string => !!d).sort();
   if (dates.length === 0) return [];

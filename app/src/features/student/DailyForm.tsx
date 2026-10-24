@@ -109,7 +109,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     setState('saving'); setErr('');
     try {
       const first = statusOf(prev) !== 'submitted';
-      // WBSにない作業は、先にタスクとして作る (WBSとガントに載り、日報とひも付く)
+      // WBSにない作業は、先にタスクとして作る (WBSとガントチャートに載り、日報とひも付く)
       const idOf = new Map<string, string>();
       if (adhocItems.length > 0) {
         const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId, date: i.adhoc!.date || undefined })), () => newTaskId(teamId));

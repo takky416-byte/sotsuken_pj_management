@@ -72,9 +72,9 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   }
   s2.autoFilter = { from: 'A1', to: 'H1' };
 
-  // ── ガント
+  // ── ガントチャート
   const weeks = weekColumns(rows, input.milestones, input.today);
-  const s3 = wb.addWorksheet('ガント', { views: [{ state: 'frozen', xSplit: 3, ySplit: 2 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  const s3 = wb.addWorksheet('ガントチャート', { views: [{ state: 'frozen', xSplit: 3, ySplit: 2 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   s3.getColumn(1).width = 7; s3.getColumn(2).width = 36; s3.getColumn(3).width = 14;
   weeks.forEach((_, i) => { s3.getColumn(4 + i).width = 4.2; });
   const h1 = s3.getRow(1); const h2 = s3.getRow(2);

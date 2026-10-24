@@ -10,8 +10,8 @@ export function StudentWbs({ initial = 'list' }: { initial?: 'list' | 'gantt' })
   if (team === null || team.status === 'planning') return <p className="card">企画検討中です。キックオフをお待ちください。</p>;
   return (
     <>
-      <h2>WBS・ガント</h2>
-      <p className="hint">タスクはチームの誰でも追加・変更できます。担当は空欄のままでもかまいません。階層は3つまでです(大項目 → 中項目 → 小項目)。担当と状態は、いちばん下のタスクに付けます。右の棒が、予定の期間(ガント)です。</p>
+      <h2>WBS・ガントチャート</h2>
+      <p className="hint">タスクはチームの誰でも追加・変更できます。担当は空欄のままでもかまいません。階層は3つまでです(大項目 → 中項目 → 小項目)。担当と状態は、いちばん下のタスクに付けます。右の棒が、予定の期間(ガントチャート)です。</p>
       <WbsGantt teamId={me.teamId} actor={me.sid} members={team.members} initial={initial} />
     </>
   );

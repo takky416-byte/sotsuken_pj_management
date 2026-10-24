@@ -44,7 +44,7 @@ function TeamDetail({ team }: { team: Team }) {
         </div>
       </div>
       <div className="tabs">
-        <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガント</button>
+        <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガントチャート</button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>報告書</button>
         <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>関与</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>日報</button>

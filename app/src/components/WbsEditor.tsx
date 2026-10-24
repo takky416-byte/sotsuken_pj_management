@@ -20,7 +20,7 @@ import type { TaskLink } from '../types';
 import { useEditableText } from './useEditableText';
 import { Toast, type ToastState } from './Toast';
 
-type Props = { teamId: string; actor: string; members: Member[]; /** 各行の右に、期間の棒 (ガント) を並べる */ timeline?: boolean };
+type Props = { teamId: string; actor: string; members: Member[]; /** 各行の右に、期間の棒 (ガントチャート) を並べる */ timeline?: boolean };
 
 export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const { data: tasks, error } = useTasks(teamId);

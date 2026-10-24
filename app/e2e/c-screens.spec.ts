@@ -51,7 +51,7 @@ test.describe.serial('画面の見た目', () => {
     await login(page, 'a1@trident.ac.jp');
     await page.waitForTimeout(800);
     await shot(page, 'student-home-mobile');
-    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click(); await page.waitForTimeout(800);
+    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-wbs-mobile');
     await page.getByRole('link', { name: '日報', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-mobile');

@@ -6,16 +6,16 @@ import { login } from './helpers';
 
 const db = () => getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
 
-test.describe.serial('ガントの日付入力とバックアップの復元', () => {
-  test('ガント: 日付を入力すると棒が出る。開始日だけなら同じ日にそろう', async ({ page }) => {
+test.describe.serial('ガントチャートの日付入力とバックアップの復元', () => {
+  test('ガントチャート: 日付を入力すると棒が出る。開始日だけなら同じ日にそろう', async ({ page }) => {
     await db().doc('teams/A/tasks/gantt-3').set({
       title: '日付入力の確認用', detail: '', parentId: null, depth: 1, order: 99997, status: 'todo', assignees: [],
       startDate: null, endDate: null, links: [], source: 'user', createdBy: 'teacher', updatedBy: 'teacher',
       createdAt: 1, updatedAt: 1, deleted: false, deletedAt: null,
     });
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
-    await page.getByRole('button', { name: /ガントを大きく/ }).click();
+    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    await page.getByRole('button', { name: /ガントチャートを大きく/ }).click();
     const row = page.locator('.gantt-row', { hasText: '日付入力の確認用' });
     await expect(row.locator('.gantt-bar')).toHaveCount(0);
     await page.getByLabel('日付を入力する').click();

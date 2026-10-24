@@ -15,7 +15,7 @@ type Drag = { id: string; kind: DragKind; orig: { start: string; end: string }; 
 const STATUSES: TaskStatus[] = ['todo', 'doing', 'done', 'hold'];
 
 const LANE_PX = 22;
-const ROW_PX = 30; // ガントの1行の高さ (稲妻線の位置合わせのため、固定)
+const ROW_PX = 30; // ガントチャートの1行の高さ (稲妻線の位置合わせのため、固定)
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
 export function GanttChart({ teamId, actor, members, report = false }: { teamId: string; actor: string; members: Member[]; report?: boolean }) {
@@ -25,7 +25,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const [edit, setEdit] = useState(false);
   const [bolt, setBolt] = useState(true);
   const [err, setErr] = useState('');
-  const [direct, setDirect] = useState(false); // ガント上で、バーをなぞって編集する
+  const [direct, setDirect] = useState(false); // ガントチャート上で、バーをなぞって編集する
   const [sel, setSel] = useState<string | null>(null);
   const [drag, setDragState] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null); // 速い操作でも取りこぼさないよう、描画を待たずに参照する
@@ -56,7 +56,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const points = lightning(g, today, deep ? 3 : 2, (id) => parents.has(id));
   const todayX = pct(g, today);
   const H = g.rows.length * ROW_PX;
-  const msH = Math.max(ROW_PX, ms.lanes * LANE_PX + 2); // マイルストーンの行 (ガントの一番上、目盛りの下)
+  const msH = Math.max(ROW_PX, ms.lanes * LANE_PX + 2); // マイルストーンの行 (ガントチャートの一番上、目盛りの下)
   const behind = points.filter((p) => p.days < -1).length;
 
   const live = tasks.filter((t) => !t.deleted);
@@ -134,7 +134,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
       <div className="row no-print" hidden={report}>
         <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
         <label className="check"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する</label>
-        <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントで編集する</label>
+        <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントチャートで編集する</label>
         <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>
       </div>
       {direct && !report && <p className="hint">バーを<strong>ドラッグ</strong>で移動、両端で期間を変更。<strong>空の行をなぞる</strong>と期間が入ります。バーや行を<strong>タップ</strong>すると、状態の変更・タスクの追加ができます。</p>}

@@ -27,7 +27,7 @@ describe('wbsRows', () => {
   });
 });
 
-describe('ガントの列', () => {
+describe('ガントチャートの列', () => {
   const ms: Milestone[] = [{ id: 'm', title: '中間報告', date: '2026-11-25', teamId: null }];
   it('週(月曜)の列を作る', () => {
     const w = weekColumns([{ start: '2026-11-04', end: '2026-11-12' }], ms, '2026-11-10');

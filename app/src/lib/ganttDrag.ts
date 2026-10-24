@@ -1,4 +1,4 @@
-// ガント上のドラッグ操作で決まる日付 (画面に依存しない)。
+// ガントチャート上のドラッグ操作で決まる日付 (画面に依存しない)。
 import { addDays } from './dates';
 
 export type DragKind = 'move' | 'start' | 'end' | 'new';

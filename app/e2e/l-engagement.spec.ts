@@ -9,7 +9,8 @@ const db = () => getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-s
 test.describe.serial('チームのようす・ありがとう・約束・演出', () => {
   test('学生: チームのようすの表に、メンバーが並び、ありがとうを送れる', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'チーム', exact: true }).click();
+    // チームのようすは、ホームの下に出る (「チーム」のメニューはない)
+    await expect(page.getByRole('link', { name: 'チーム', exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'チームのようす' })).toBeVisible();
     const rows = page.locator('table.board tbody tr');
     await expect(rows.filter({ hasText: 'A1' })).toBeVisible();
@@ -43,7 +44,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
 
     const b = await (await browser.newContext()).newPage();
     await login(b, 'b1@trident.ac.jp');
-    await b.goto('/team');
+    await b.goto('/');
     await expect(b.locator('table.board')).toHaveCount(0); // B チームは企画検討中。A の表は見えない
     await expect(b.getByText('近内')).toHaveCount(0);
   });
@@ -90,7 +91,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
 
   test('タスクを完了にすると、演出が出る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     const select = page.locator('select.status').filter({ has: page.locator('option[value="todo"]:checked') }).first(); // 未着手のタスク
     await select.selectOption('done');
     await expect(page.locator('.celebrate-msg')).toContainText('完了しました');
@@ -148,7 +149,6 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await d.doc('config/settings').set({ peerDailyView: false }, { merge: true });
     try {
       await login(page, 'a1@trident.ac.jp');
-      await page.getByRole('link', { name: 'チーム', exact: true }).click();
       const rows = page.locator('table.board tbody tr');
       await expect(rows.filter({ hasText: 'A1' })).toBeVisible();
       await expect(rows.filter({ hasText: 'A1' })).not.toContainText('—日'); // 自分の日報は出る
@@ -161,7 +161,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
 
   test('教員の「学生の画面」プレビューでも、チームのようすが開く', async ({ page }) => {
     await login(page, 'teacher@trident.ac.jp');
-    await page.goto('/teacher/preview/A1/team');
+    await page.goto('/teacher/preview/A1');
     await expect(page.getByRole('heading', { name: 'チームのようす' })).toBeVisible();
     await expect(page.locator('table.board tbody tr').filter({ hasText: 'A2' })).toBeVisible();
     await expect(page.getByRole('button', { name: /A2.*にありがとう/ })).toBeDisabled(); // 閲覧のみ

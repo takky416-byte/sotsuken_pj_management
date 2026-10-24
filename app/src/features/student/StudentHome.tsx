@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
 import { BookmarkPrompt } from '../../components/BookmarkPrompt';
+import { TeamBoard } from '../../components/TeamBoard';
 import { Em } from '../../components/Em';
 import { say } from '../../lib/tone';
 import { DailyNudge } from '../../components/DailyNudge';
@@ -205,6 +206,11 @@ export function StudentHome() {
       </section>
         </div>
       </div>
+
+      <section className="home-team">
+        <h3><Em e="👥" />チームのようす</h3>
+        <TeamBoard team={team} viewer={sid} />
+      </section>
     </>
   );
 }

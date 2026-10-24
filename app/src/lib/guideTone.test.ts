@@ -29,7 +29,7 @@ describe('トーンごとの利用ガイド', () => {
     }
     for (const id of TONES.map((t) => t.id)) {
       const text = [...tourFor(id).flatMap((s) => s.points), ...scenesFor(id).flatMap((s) => s.steps)].join('\\n');
-      for (const label of ['＋ WBSにない作業をした', 'ガントで編集する', '手待ちの人と、タスクの振り分け', '詰まっていること']) expect(text, `${id}:${label}`).toContain(label);
+      for (const label of ['＋ WBSにない作業をした', 'ガントチャートで編集する', '手待ちの人と、タスクの振り分け', '詰まっていること']) expect(text, `${id}:${label}`).toContain(label);
     }
   });
 });
