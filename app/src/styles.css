@@ -625,3 +625,18 @@ table.access tr.detail td { background:var(--bg); }
 :root[data-tone="simple"] h1, :root[data-tone="simple"] h2, :root[data-tone="simple"] h3, :root[data-tone="simple"] button, :root[data-tone="simple"] .btn, :root[data-tone="simple"] nav a { font-weight:600; }
 :root[data-tone="simple"] .meter-actual { background:var(--accent); }
 :root[data-tone="simple"] .phase-bar span { background:var(--accent); }
+
+/* ホームを、すっきりと: 小さなヘッダー、情報カードは控えめに */
+.hero { display:flex; justify-content:space-between; align-items:center; gap:10px 16px; flex-wrap:wrap; padding:10px 16px; margin:2px 0 12px; }
+.hero-text { display:flex; align-items:baseline; gap:4px 14px; flex-wrap:wrap; min-width:0; }
+.hero-date { font-size:14px; } .hero-hello { font-size:18px !important; margin:0; } .hero-hello::after { display:none !important; }
+.hero-sub { margin:0; font-size:14px; }
+.hero .cta { margin-left:auto; padding:6px 12px; font-size:15px; }
+.hero .cta .btn { padding:5px 14px; }
+.missions .mission { padding:6px 10px; gap:10px; } .mission-check { width:22px; height:22px; font-size:13px; }
+.mission-list { gap:6px; } .missions .hint { font-size:13px; }
+.fold > summary { cursor:pointer; list-style:none; } .fold > summary::-webkit-details-marker { display:none; }
+.fold > summary h3 { display:inline-flex; align-items:center; gap:8px; margin:0; }
+.fold > summary::after { content:'▼ 開く'; float:right; color:var(--muted); font-size:14px; }
+.fold[open] > summary::after { content:'▲ 閉じる'; }
+.plan-project { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; display:flex; flex-direction:column; gap:6px; }

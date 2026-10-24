@@ -72,7 +72,7 @@ test.describe.serial('ホーム (今日・次にやること) と WBS の操作'
     await expect(r.getByRole('button', { name: /期間を変える/ })).toContainText('〜');
     await expect.poll(async () => {
       const s = (await d.collection('teams/A/tasks').where('title', '==', 'クイック入力のタスク').get()).docs[0]?.data();
-      return s && s.endDate === addDays(s.startDate, 6);
+      return !!s && !!s.startDate && s.endDate === addDays(s.startDate, 6); // 保存の途中は、日付がまだ入っていない
     }).toBe(true);
   });
 });

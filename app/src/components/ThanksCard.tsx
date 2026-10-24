@@ -47,6 +47,10 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   const ideas: ThanksSuggestion[] = suggestThanks(tasks, members, thanks, sid, today).filter((s) => !sentTo.includes(s.to));
   const others = members.filter((m) => m.sid !== sid);
   const received = thanks.filter((t) => t.to === sid).slice(0, 4);
+  // 新着や、伝えるきっかけがあるときだけ、開いておく。それ以外は閉じておく (開閉は、この端末に覚える)
+  const [pref, setPref] = useState<boolean | null>(() => { try { const v = localStorage.getItem('thanks-open'); return v === null ? null : v === '1'; } catch { return null; } });
+  const open = pref ?? (fresh.length > 0 || ideas.length > 0);
+  useEffect(() => { if (pref !== null) { try { localStorage.setItem('thanks-open', pref ? '1' : '0'); } catch { /* 保存できなくても動く */ } } }, [pref]);
 
   const send = async (to: string, note: string) => {
     if (left <= 0) return;
@@ -61,8 +65,10 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   );
 
   return (
-    <section className="card thanks-card">
-      <h3><Em e="🙏" />ありがとう <span className="mission-count">{left > 0 ? `今日あと${left}回` : `今日は${THANKS_PER_DAY}回送りました`}</span></h3>
+    <details className="card thanks-card fold" open={open} onToggle={(e) => { const v = (e.currentTarget as HTMLDetailsElement).open; if (v !== open) setPref(v); }}>
+      <summary>
+        <h3><Em e="🙏" />ありがとう <span className="mission-count">{left > 0 ? `今日あと${left}回` : `今日は${THANKS_PER_DAY}回送りました`}</span>{fresh.length > 0 && <span className="badge new">NEW</span>}</h3>
+      </summary>
 
       {received.length > 0 && (
         <ul className="plain received">
@@ -100,7 +106,7 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
       {target && stamps(target)}
       {err && <p className="error">{err}</p>}
       <p className="hint">スタンプ1つで送れます。言葉を添えたいときは「チーム」の画面からどうぞ。</p>
-    </section>
+    </details>
   );
 }
 

@@ -119,6 +119,8 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await login(page, 'a2@trident.ac.jp');
     const card = page.locator('.thanks-card');
     await expect(card).toBeVisible();
+    // 新着や、伝えるきっかけがなければ、閉じている。開いてから使う
+    if (!(await card.evaluate((el) => (el as HTMLDetailsElement).open))) await card.locator('summary').click();
     await card.locator('.chips .chip-btn').first().click();
     await card.locator('.chips + .stamps').getByRole('button', { name: /助かりました/ }).click();
     await expect(card.locator('.chips .chip-btn', { hasText: '✓' })).toHaveCount(1);

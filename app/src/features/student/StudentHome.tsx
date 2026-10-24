@@ -92,12 +92,14 @@ export function StudentHome() {
   return (
     <>
       <section className="hero">
-        <div className="hero-date">{d.getUTCMonth() + 1}月{d.getUTCDate()}日({WEEK[d.getUTCDay()]})</div>
-        <h2 className="hero-hello">こんにちは、{me.name}さん</h2>
-        <p className="hero-sub">
-          {info.isClassDay ? <>今日は<strong>授業日</strong>です({info.periods ? periodsLabel(info.periods) : ''})。</>
-            : info.next ? <>次の授業日は <strong>{formatDate(info.next.date)}</strong> です。</> : '授業日の予定は、まだありません。'}
-        </p>
+        <div className="hero-text">
+          <div className="hero-date">{d.getUTCMonth() + 1}月{d.getUTCDate()}日({WEEK[d.getUTCDay()]})</div>
+          <h2 className="hero-hello">こんにちは、{me.name}さん</h2>
+          <p className="hero-sub">
+            {info.isClassDay ? <>今日は<strong>授業日</strong>です({info.periods ? periodsLabel(info.periods) : ''})。</>
+              : info.next ? <>次の授業日は <strong>{formatDate(info.next.date)}</strong> です。</> : '授業日の予定は、まだありません。'}
+          </p>
+        </div>
         <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
       </section>
       {err && <p className="error">{err}</p>}
@@ -107,7 +109,6 @@ export function StudentHome() {
 
       <div className="home-grid">
         <div className="col">
-      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 
       <section className="card">
         <h3><Em e="🎯" />今日やること</h3>
@@ -138,7 +139,7 @@ export function StudentHome() {
             </li>
           ))}
         </ul>
-        <p className="hint">終わったら「完了にする」を押すと、WBSにも反映されます。授業時間外の作業も、次の授業の日報にまとめて書きます。</p>
+        <p className="hint">終わったら「完了にする」。授業時間外の作業も、次の授業の日報にまとめて書きます。</p>
       </section>
 
       <section className="card">
@@ -175,32 +176,31 @@ export function StudentHome() {
 
         </div>
         <div className="col">
+      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
+
       <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />
 
       <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
 
-      <section className="card">
-        <h3><Em e="🗓" />予定</h3>
+      <section className="card plan-card">
+        <h3><Em e="🗓" />予定・企画</h3>
         {upMs.length === 0 && <p className="hint">予定はありません。</p>}
         <ul className="plain">
           {upMs.map((m) => (
             <li key={m.id}><strong>{formatDate(m.date)}{m.endDate && m.endDate !== m.date ? `〜${formatDate(m.endDate)}` : ''}</strong> {m.title}{m.teamId && <span className="badge">チーム</span>}</li>
           ))}
         </ul>
-      </section>
-
-      <section className="card">
-        <div className="label">企画</div>
-        <strong className="big">{team.projectName}</strong>
-        <div className="row">
-          <Link to={`${base}/wbs`} className="btn">WBSを開く</Link>
-          {team.driveUrl && isHttpUrl(team.driveUrl) && (
-            <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダを開く</a>
-          )}
-          <Progress {...overallProgress(tasks)} />
+        <div className="plan-project">
+          <div><span className="label">企画</span> <strong>{team.projectName}</strong></div>
+          <div className="hint">{team.members.map((m) => m.name).join('・') || '—'}</div>
+          <div className="row">
+            <Link to={`${base}/wbs`} className="btn ghost-btn">WBSを開く</Link>
+            {team.driveUrl && isHttpUrl(team.driveUrl) && (
+              <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダ</a>
+            )}
+            <Progress {...overallProgress(tasks)} />
+          </div>
         </div>
-        <div className="label">メンバー</div>
-        <div>{team.members.map((m) => m.name).join('・') || '—'}</div>
       </section>
         </div>
       </div>
