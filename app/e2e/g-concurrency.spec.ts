@@ -12,7 +12,7 @@ async function open(browser: Browser, email: string): Promise<User> {
   const ctx = await browser.newContext();
   const p = await ctx.newPage();
   await login(p, email);
-  await p.getByRole('link', { name: 'WBS', exact: true }).click();
+  await p.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
   await row(p, '要件定義').waitFor();
   return { ctx, p };
 }

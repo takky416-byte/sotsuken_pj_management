@@ -7,12 +7,13 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
 import { jstDate } from '../lib/dates';
-import { nextDates } from '../lib/gantt';
+import { buildGantt, nextDates, pct, weekTicks } from '../lib/gantt';
+import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
 import type { TaskLink } from '../types';
@@ -20,10 +21,11 @@ import { Progress } from './Progress';
 import { useEditableText } from './useEditableText';
 import { Toast, type ToastState } from './Toast';
 
-type Props = { teamId: string; actor: string; members: Member[] };
+type Props = { teamId: string; actor: string; members: Member[]; /** 各行の右に、期間の棒 (ガント) を並べる */ timeline?: boolean };
 
-export function WbsEditor({ teamId, actor, members }: Props) {
+export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const { data: tasks, error } = useTasks(teamId);
+  const milestones = useMilestones(teamId);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -48,6 +50,9 @@ export function WbsEditor({ teamId, actor, members }: Props) {
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!tasks) return <p>読み込み中…</p>;
   const eff = effectiveStatuses(tasks);
+  const today = jstDate();
+  const g = timeline ? buildGantt(tasks, milestones ?? [], today, 3) : null;
+  const ticks = g ? weekTicks(g) : [];
 
   const rows = flatten(tasks, collapsed);
   const byId = new Map(tasks.map((t) => [t.id, t]));
@@ -97,7 +102,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
   const orphans = orphansOf(tasks);
 
   return (
-    <div className="wbs">
+    <div className={`wbs${g ? ' with-timeline' : ''}`}>
       {err && <p className="error">{err}</p>}
       {orphans.length > 0 && (
         <div className="card orphan" role="alert">
@@ -118,7 +123,7 @@ export function WbsEditor({ teamId, actor, members }: Props) {
       {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.length > 0 && (
-        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>進捗</div><div>状態</div><div>担当</div><div>期間</div><div /></div>
+        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>進捗</div><div>状態</div><div>担当</div><div>期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
       )}
       {rows.map(({ task: t, hasChildren }) => {
         const status = eff.get(t.id) ?? t.status;
@@ -217,6 +222,24 @@ export function WbsEditor({ teamId, actor, members }: Props) {
                 </PopCell>
               )}
             </div>
+            {g && (() => {
+              const pr = periodOf(tasks, t);
+              const a = pr.start ?? pr.end, b = pr.end ?? pr.start;
+              const overdue = !!b && b < today && status !== 'done' && status !== 'hold';
+              return (
+                <div className="w-bar" aria-hidden="true">
+                  {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
+                  <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
+                  {a && b && (
+                    <span
+                      className={`gantt-bar ${status}${pr.derived ? ' derived' : ''}${overdue ? ' overdue' : ''}`}
+                      style={{ left: `${pct(g, a)}%`, width: `max(6px, ${pct(g, addDays(b, 1)) - pct(g, a)}%)` }}
+                      title={`${t.title}: ${periodLabel(a, b)} / ${STATUS_LABEL[status]}${overdue ? ' / 期限超過' : ''}`}
+                    />
+                  )}
+                </div>
+              );
+            })()}
             <div className="w-acts">
               {t.depth < 3 && (
                 <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>

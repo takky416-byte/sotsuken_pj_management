@@ -4,9 +4,8 @@ import { MeetingRecords } from './MeetingRecords';
 import { TeacherNotes } from './TeacherNotes';
 import { DailyFeed, DailyMatrix } from '../../components/DailyViews';
 import { TeamBoard } from '../../components/TeamBoard';
-import { GanttChart } from '../../components/GanttChart';
 import { ReportView } from '../../components/ReportView';
-import { WbsEditor } from '../../components/WbsEditor';
+import { WbsGantt } from '../../components/WbsGantt';
 import { useClassDays } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
@@ -26,7 +25,7 @@ export function TeacherTeam() {
 }
 
 function TeamDetail({ team }: { team: Team }) {
-  const [tab, setTab] = useState<'wbs' | 'gantt' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
+  const [tab, setTab] = useState<'wbs' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
   return (
     <>
       <Link to="/teacher">← チーム一覧</Link>
@@ -45,16 +44,14 @@ function TeamDetail({ team }: { team: Team }) {
         </div>
       </div>
       <div className="tabs">
-        <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・タスク</button>
-        <button className={tab === 'gantt' ? 'active' : ''} onClick={() => setTab('gantt')}>ガント</button>
+        <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガント</button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>報告書</button>
         <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>関与</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>日報</button>
         <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録</button>
         <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
-      {tab === 'wbs' && <WbsEditor teamId={team.id} actor="teacher" members={team.members} />}
-      {tab === 'gantt' && <GanttChart teamId={team.id} actor="teacher" members={team.members} />}
+      {tab === 'wbs' && <WbsGantt teamId={team.id} actor="teacher" members={team.members} />}
       {tab === 'report' && <ReportView team={team} actor="teacher" />}
       {tab === 'board' && <TeamBoard team={team} viewer="teacher" />}
       {tab === 'daily' && <TeamDaily team={team} />}

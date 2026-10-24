@@ -14,7 +14,8 @@ test.describe.serial('ガントの日付入力とバックアップの復元', (
       createdAt: 1, updatedAt: 1, deleted: false, deletedAt: null,
     });
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'ガント', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    await page.getByRole('button', { name: /ガントを大きく/ }).click();
     const row = page.locator('.gantt-row', { hasText: '日付入力の確認用' });
     await expect(row.locator('.gantt-bar')).toHaveCount(0);
     await page.getByLabel('日付を入力する').click();

@@ -18,7 +18,7 @@ test.describe.serial('ガントと使い方', () => {
   test('教員: チーム詳細のガントに棒が出て、日付なしは別に一覧される', async ({ page }) => {
     await login(page, 'teacher@trident.ac.jp');
     await page.goto('/teacher/team/A');
-    await page.getByRole('button', { name: 'ガント', exact: true }).click();
+    await page.getByRole('button', { name: /ガントを大きく/ }).click();
     await expect(page.locator('.gantt-row', { hasText: 'ガント確認用の大項目' }).locator('.gantt-bar')).toHaveCount(1);
     await expect(page.locator('.gantt-row', { hasText: 'ガント確認用の日付なし' }).locator('.gantt-bar')).toHaveCount(0);
     // 稲妻線は、既定で出る。チェックで消せる
@@ -33,7 +33,12 @@ test.describe.serial('ガントと使い方', () => {
 
   test('学生: ガントと使い方が見える', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'ガント', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    // WBSの一覧の右に、期間の棒が並ぶ (期間のない行には出ない)
+    await expect(page.locator('.wbs-row', { has: page.locator('input[value="ガント確認用の大項目"]') }).locator('.w-bar .gantt-bar')).toHaveCount(1);
+    await expect(page.locator('.wbs-row', { has: page.locator('input[value="ガント確認用の日付なし"]') }).locator('.w-bar .gantt-bar')).toHaveCount(0);
+    await page.screenshot({ path: 'e2e-shots/student-wbs-pc.png', fullPage: true });
+    await page.getByRole('button', { name: /ガントを大きく/ }).click();
     await expect(page.locator('.gantt-row', { hasText: 'ガント確認用の大項目' }).locator('.gantt-bar')).toHaveCount(1);
     await page.getByRole('link', { name: '使い方', exact: true }).click();
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible();

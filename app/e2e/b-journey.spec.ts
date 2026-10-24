@@ -11,7 +11,7 @@ test.describe.serial('運用の流れ', () => {
   test('キックオフ前: 学生は「企画検討中」と表示され、WBS・日報は使えない', async ({ page }) => {
     await login(page, A1);
     await expect(page.getByText('企画検討中です。キックオフをお待ちください。')).toBeVisible();
-    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     await expect(page.getByText('企画検討中です')).toBeVisible();
     await page.getByRole('link', { name: '日報', exact: true }).click();
     await expect(page.getByText('キックオフ後に日報を書けるようになります')).toBeVisible();
@@ -42,7 +42,7 @@ test.describe.serial('運用の流れ', () => {
   test('学生: WBS でタスクを追加・階層変更・状態・担当・削除と元に戻す', async ({ page }) => {
     await login(page, A1);
     await expect(page.getByText('テスト企画')).toBeVisible();
-    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
 
     // 追加 (Enter)
     const add = page.getByPlaceholder(/^タスクを追加/);
@@ -137,7 +137,7 @@ test.describe.serial('運用の流れ', () => {
     await expect(page.locator('.feed').getByText('次にやること: 下書きをレビューして、清書する')).toBeVisible();
 
     // タスクが完了になっている (WBS)
-    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     await expect(row(page, '画面遷移図を描く').getByLabel('状態', { exact: true })).toHaveValue('done');
   });
 
@@ -245,7 +245,7 @@ test.describe.serial('運用の流れ', () => {
     await page.getByRole('link', { name: '学生の画面' }).click();
     await page.getByLabel('学生を選ぶ').selectOption('A1');
     await expect(page.locator('.preview-frame')).toContainText('岩田');
-    await page.locator('.preview-head').getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.locator('.preview-head').getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     await expect(page.getByPlaceholder(/^タスクを追加/)).toBeDisabled();
     await page.locator('.preview-head').getByRole('link', { name: '日報', exact: true }).click();
     await expect(page.getByRole('button', { name: /日報を(提出|更新)する/ })).toBeDisabled();

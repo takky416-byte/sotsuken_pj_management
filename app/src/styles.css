@@ -655,3 +655,16 @@ table.access tr.detail td { background:var(--bg); }
 .home-top > .bookmark { flex:1 1 100%; }
 .home-top .nudge { align-self:stretch; }
 @media (min-width: 900px) { .home-top .nudge-main { display:block; } .home-top .nudge-main p { margin:4px 0 0; } }
+
+/* WBSとガントの統合: 行の右に、期間の棒を並べる (広い画面だけ。狭い画面では「ガントを大きく」で見る) */
+.view-switch { margin:4px 0 10px; }
+.w-bar { display:none; }
+@media (min-width: 1100px) {
+  .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 96px 92px 104px 100px minmax(260px,1.2fr) 76px; }
+  .wbs.with-timeline .w-bar { display:block; position:relative; height:26px; overflow:hidden; border-left:1px solid var(--line); }
+  .wbs.with-timeline .w-bar .gantt-bar { top:7px; height:12px; }
+  .wbs.with-timeline .w-bar .gantt-grid { position:absolute; top:0; bottom:0; width:1px; background:var(--line); opacity:.6; }
+  .wbs.with-timeline .tl-today { position:absolute; top:0; bottom:0; width:2px; background:var(--danger); opacity:.7; }
+  .wbs.with-timeline .tl-head { height:20px; font-size:12px; font-weight:400; color:var(--muted); }
+  .wbs.with-timeline .tl-head span { position:absolute; top:2px; transform:translateX(-50%); white-space:nowrap; }
+}

@@ -90,7 +90,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
 
   test('タスクを完了にすると、演出が出る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     const select = page.locator('select.status').filter({ has: page.locator('option[value="todo"]:checked') }).first(); // 未着手のタスク
     await select.selectOption('done');
     await expect(page.locator('.celebrate-msg')).toContainText('完了しました');

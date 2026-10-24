@@ -8,6 +8,7 @@ import type { Mission, WeeklyMission } from '../lib/missions';
 import { useBase } from './Base';
 
 const WEEKLY_OPEN_KEY = 'weekly-missions-open';
+const DAILY_OPEN_KEY = 'daily-missions-open';
 const flagKey = (sid: string, today: string) => `mission-done:${sid}:${today}`;
 const seen = (k: string) => { try { return localStorage.getItem(k) === '1'; } catch { return false; } };
 const mark = (k: string) => { try { localStorage.setItem(k, '1'); } catch { /* 保存できなくても動く */ } };
@@ -23,10 +24,15 @@ export function DailyMissions({ sid, today, daily }: { sid: string; today: strin
   // 全部そろった瞬間に1日1回だけ演出する (開き直しでは出さない)
   useEffect(() => { if (!preview && all && !seen(key)) { mark(key); celebrate(say.missionsAll()); } }, [all, key, preview]);
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
+  // 開き方は、この端末に覚えておく (既定は開く)
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(DAILY_OPEN_KEY) !== '0'; } catch { return true; } });
+  const toggle = (v: boolean) => { setOpen(v); try { localStorage.setItem(DAILY_OPEN_KEY, v ? '1' : '0'); } catch { /* 保存できなくても動く */ } };
 
   return (
-      <section className={`card missions ${all ? 'all-done' : ''}`}>
-        <h3><Em e="🚩" />今日のミッション <span className="mission-count">{doneCount}/{daily.length}</span></h3>
+      <details className={`card missions weekly ${all ? 'all-done' : ''}`} open={open} onToggle={(e) => toggle((e.currentTarget as HTMLDetailsElement).open)}>
+        <summary>
+          <h3><Em e="🚩" />今日のミッション <span className="mission-count">{doneCount}/{daily.length}</span></h3>
+        </summary>
         <ul className="plain mission-list">
           {daily.map((m) => (
             <li key={m.id} className={`mission ${m.done ? 'done' : ''}`}>
@@ -40,7 +46,7 @@ export function DailyMissions({ sid, today, daily }: { sid: string; today: strin
           ))}
         </ul>
         {all && <p className="mission-clear">{say.missionsClear()}</p>}
-      </section>
+      </details>
   );
 }
 

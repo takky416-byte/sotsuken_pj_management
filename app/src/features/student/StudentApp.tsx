@@ -3,7 +3,6 @@ import { useBase } from '../../components/Base';
 import { Help } from '../Help';
 import { MeetingIndex, MeetingPage } from '../meeting/MeetingPage';
 import { StudentDaily } from './StudentDaily';
-import { StudentGantt } from './StudentGantt';
 import { StudentHome } from './StudentHome';
 import { StudentReport } from './StudentReport';
 import { StudentTeam } from './StudentTeam';
@@ -14,8 +13,7 @@ export function StudentNav({ teamId }: { teamId: string | null }) {
   return (
     <nav>
       <NavLink to={`${base}/`} end>ホーム</NavLink>
-      <NavLink to={`${base}/wbs`}>WBS</NavLink>
-      <NavLink to={`${base}/gantt`}>ガント</NavLink>
+      <NavLink to={`${base}/wbs`}>WBS・ガント</NavLink>
       <NavLink to={`${base}/team`}>チーム</NavLink>
       <NavLink to={`${base}/report`}>報告書</NavLink>
       <NavLink to={`${base}/daily`}>日報</NavLink>
@@ -32,7 +30,7 @@ export function StudentApp() {
     <Routes>
       <Route index element={<StudentHome />} />
       <Route path="wbs" element={<StudentWbs />} />
-      <Route path="gantt" element={<StudentGantt />} />
+      <Route path="gantt" element={<StudentWbs initial="gantt" />} />
       <Route path="team" element={<StudentTeam />} />
       <Route path="report" element={<StudentReport />} />
       <Route path="daily" element={<StudentDaily />} />

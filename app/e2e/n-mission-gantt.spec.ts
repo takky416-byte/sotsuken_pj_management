@@ -25,11 +25,19 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(page.getByText('全員が、今週WBSを更新する')).toBeVisible();
     await page.getByRole('heading', { name: /チームの今週のミッション/ }).click(); // 閉じて戻す
     await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeVisible();
+    // 今日のミッションも、見出しを押して閉じられる。開き方は覚えている
+    await page.getByRole('heading', { name: /今日のミッション/ }).click();
+    await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeHidden();
+    await page.reload();
+    await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeHidden();
+    await page.getByRole('heading', { name: /今日のミッション/ }).click();
+    await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeVisible();
   });
 
   test('ガント: 空の行をなぞって期間が入る。バーをタップして状態を変える。タスクを追加できる', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'ガント', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
+    await page.getByRole('button', { name: /ガントを大きく/ }).click();
     await page.getByLabel('ガントで編集する').check();
     const row = page.locator('.gantt-row', { hasText: 'なぞって期間を入れるタスク' });
     await expect(row.locator('.gantt-bar')).toHaveCount(0);
@@ -83,7 +91,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await submit.click();
     await expect(page.getByText(/提出しました|更新しました/).first()).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole('link', { name: 'WBS', exact: true }).click();
+    await page.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     await expect(page.locator('input.title-input[value="WBS外の作業(あとから追加)"]')).toBeVisible();
     await expect(page.locator('input.title-input[value="取引先へのAPI仕様の確認メール"]')).toBeVisible();
     await expect(page.locator('.badge.adhoc').first()).toBeVisible();
@@ -137,7 +145,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     // 学生が画面を開く (開いた直後に、記録が書かれる)
     const sp = await browser.newPage();
     await login(sp, 'a1@trident.ac.jp');
-    await sp.getByRole('link', { name: 'WBS', exact: true }).click();
+    await sp.getByRole('link', { name: 'WBS・ガント', exact: true }).click();
     await sp.waitForTimeout(1500);
     // 学生には、アクセス履歴の画面が出ない (ナビにも出ない)
     await expect(sp.getByRole('link', { name: 'アクセス', exact: true })).toHaveCount(0);
