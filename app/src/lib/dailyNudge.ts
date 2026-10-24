@@ -4,6 +4,7 @@ import { statusOf, type Daily } from './daily';
 import { sinceOf } from './dailyDraft';
 import { addDays } from './dates';
 import { daysBetween } from './gantt';
+import type { ToneId } from './tone';
 
 export type Nudge = {
   /** 0: 出さない / 1: 少し間があいている / 2: しばらく出ていない */
@@ -32,10 +33,22 @@ export function nudgeOf(
   return { level, daysSince: prevDate ? daysBetween(prevDate, today) : null, missed, prevDate };
 }
 
-export function nudgeMessage(n: Nudge, isClassDay: boolean): { title: string; body: string } | null {
+export function nudgeMessage(n: Nudge, isClassDay: boolean, tone: ToneId = 'standard'): { title: string; body: string } | null {
   if (n.level === 0) return null;
-  const when = n.prevDate ? `前回の日報(${Number(n.prevDate.slice(5, 7))}/${Number(n.prevDate.slice(8, 10))})から、${n.daysSince}日たちました。` : 'まだ日報が出ていません。';
+  const md = n.prevDate ? `${Number(n.prevDate.slice(5, 7))}/${Number(n.prevDate.slice(8, 10))}` : '';
+  if (tone === 'simple') {
+    return {
+      title: n.level === 1 ? '日報の提出間隔' : '日報が未提出です',
+      body: `${n.prevDate ? `前回: ${md}(${n.daysSince}日前)。` : '提出なし。'}未提出の授業日: ${n.missed}回。${isClassDay ? '今日' : '次の授業日'}に、前回以降の作業をまとめて提出してください。`,
+    };
+  }
+  const when = n.prevDate ? `前回の日報(${md})から、${n.daysSince}日たちました。` : 'まだ日報が出ていません。';
   const go = isClassDay ? '今日の授業で、' : '次の授業日に、';
+  if (tone === 'casual') {
+    return n.level === 1
+      ? { title: '日報の間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書きましょう。` }
+      : { title: '日報を、そろそろ書いてみませんか', body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてみましょう。書きにくいことは、チームのメンバーに相談してみてください。` };
+  }
   if (n.level === 1) {
     return { title: '日報の間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書いてください。` };
   }

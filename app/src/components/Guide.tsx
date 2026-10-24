@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Em } from './Em';
-import { GUIDE_SEEN_KEY, SCENES, TOUR, stepForPath } from '../lib/guide';
+import { GUIDE_SEEN_KEY, stepForPath, type Scene } from '../lib/guide';
+import { scenesFor, tourFor } from '../lib/guideTone';
+import { useTone } from '../lib/tone';
 
 type Ctx = { open: (opts?: { tab?: 'tour' | 'scenes'; step?: number }) => void } | null;
 const GuideContext = createContext<Ctx>(null);
@@ -56,6 +58,9 @@ function GuideModal({ state, setState, onClose }: {
   onClose: () => void;
 }) {
   const nav = useNavigate();
+  const tone = useTone();
+  const TOUR = tourFor(tone);
+  const SCENES = scenesFor(tone);
   const ref = useRef<HTMLDivElement>(null);
   const [openScene, setOpenScene] = useState<string | null>(null);
   useEffect(() => {
@@ -115,7 +120,7 @@ function GuideModal({ state, setState, onClose }: {
   );
 }
 
-function SceneItem({ scene, open, onToggle, go }: { scene: (typeof SCENES)[number]; open: boolean; onToggle: () => void; go: (to: string | undefined) => void }) {
+function SceneItem({ scene, open, onToggle, go }: { scene: Scene; open: boolean; onToggle: () => void; go: (to: string | undefined) => void }) {
   return (
     <div className={`scene ${open ? 'open' : ''}`}>
       <button type="button" className="scene-title" aria-expanded={open} onClick={onToggle}>{scene.title}</button>

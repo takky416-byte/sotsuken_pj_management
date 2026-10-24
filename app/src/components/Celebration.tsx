@@ -7,7 +7,7 @@ const PIECES = Array.from({ length: 28 }, (_, i) => ({
   left: (i * 37) % 100, delay: (i % 7) * 0.05, color: COLORS[i % COLORS.length], rot: (i * 53) % 360,
 }));
 
-/** 達成の知らせ。画面の上に、ひとことだけ短く出す。「親しみやすい」トーンのときだけ、紙吹雪も出す (動きを減らす設定では出さない)。 */
+/** 達成の知らせ。画面の上に、ひとことだけ短く出す。「カジュアル」トーンのときだけ、紙吹雪も出す (動きを減らす設定では出さない)。 */
 export function Celebration() {
   const tone = useTone();
   const [msg, setMsg] = useState<{ text: string; key: number } | null>(null);
@@ -20,12 +20,12 @@ export function Celebration() {
   if (!msg) return null;
   return (
     <div className="celebrate" key={msg.key} role="status" aria-live="polite">
-      {tone === 'friendly' && (
+      {tone === 'casual' && (
         <div className="confetti" aria-hidden="true">
           {PIECES.map((p, i) => <i key={i} style={{ left: `${p.left}%`, animationDelay: `${p.delay}s`, background: p.color, transform: `rotate(${p.rot}deg)` }} />)}
         </div>
       )}
-      <div className="celebrate-msg"><span aria-hidden="true">✓ </span>{msg.text}</div>
+      <div className="celebrate-msg">{tone !== 'simple' && <span aria-hidden="true">✓ </span>}{msg.text}</div>
     </div>
   );
 }

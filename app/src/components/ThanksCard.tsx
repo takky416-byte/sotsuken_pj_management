@@ -56,7 +56,7 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   };
   const stamps = (to: string) => (
     <div className="stamps" role="group" aria-label={`${nameOf(to)}さんに送るスタンプ`}>
-      {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" disabled={left <= 0} onClick={() => send(to, stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
+      {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" disabled={left <= 0} onClick={() => send(to, stampNote(s))}>{s.emoji && <span aria-hidden="true">{s.emoji}</span>}{s.label}</button>)}
     </div>
   );
 

@@ -587,22 +587,41 @@ table.access tr.detail td { background:var(--bg); }
 
 /* ---- トーン: 落ち着き (標準)。「親しみやすい」(data-tone="friendly") のときは、上のままの、丸みのある見た目 ---- */
 .em { display:none; } .plain-only { display:inline; }
-:root[data-tone="friendly"] .em { display:inline; } :root[data-tone="friendly"] .plain-only { display:none; }
-:root:not([data-tone="friendly"]) button, :root:not([data-tone="friendly"]) .btn { border-radius:8px; padding:7px 16px; font-weight:600; box-shadow:none; transition:background-color .12s, border-color .12s; }
-:root:not([data-tone="friendly"]) button:hover:not(:disabled), :root:not([data-tone="friendly"]) .btn:hover { filter:brightness(1.06); }
-:root:not([data-tone="friendly"]) button.icon { box-shadow:none; }
-:root:not([data-tone="friendly"]) header nav a { border-radius:8px; }
-:root:not([data-tone="friendly"]) .stamp, :root:not([data-tone="friendly"]) .chip-btn { border-radius:8px; }
-:root:not([data-tone="friendly"]) .stamp:hover:not(:disabled) { transform:none; }
-:root:not([data-tone="friendly"]) .mission-count, :root:not([data-tone="friendly"]) .pill { border-radius:6px; }
-:root:not([data-tone="friendly"]) .step, :root:not([data-tone="friendly"]) .scene, :root:not([data-tone="friendly"]) .mission, :root:not([data-tone="friendly"]) .dcard, :root:not([data-tone="friendly"]) .idle-person, :root:not([data-tone="friendly"]) .finding { border-radius:10px; }
-:root:not([data-tone="friendly"]) .celebrate-msg { border-radius:10px; padding:8px 18px; border-width:1px; animation:none; }
-:root:not([data-tone="friendly"]) .bookmark { border-style:solid; border-width:1px; border-color:var(--line); }
-:root:not([data-tone="friendly"]) .gdot.on { transform:none; }
-:root:not([data-tone="friendly"]) h2::after { height:3px; width:36px; border-radius:2px; background:var(--accent); }
-:root:not([data-tone="friendly"]) .hero-hello { font-size:24px; }
+:root[data-tone="casual"] .em { display:inline; } :root[data-tone="casual"] .plain-only { display:none; }
+:root:not([data-tone="casual"]) button, :root:not([data-tone="casual"]) .btn { border-radius:8px; padding:7px 16px; font-weight:600; box-shadow:none; transition:background-color .12s, border-color .12s; }
+:root:not([data-tone="casual"]) button:hover:not(:disabled), :root:not([data-tone="casual"]) .btn:hover { filter:brightness(1.06); }
+:root:not([data-tone="casual"]) button.icon { box-shadow:none; }
+:root:not([data-tone="casual"]) header nav a { border-radius:8px; }
+:root:not([data-tone="casual"]) .stamp, :root:not([data-tone="casual"]) .chip-btn { border-radius:8px; }
+:root:not([data-tone="casual"]) .stamp:hover:not(:disabled) { transform:none; }
+:root:not([data-tone="casual"]) .mission-count, :root:not([data-tone="casual"]) .pill { border-radius:6px; }
+:root:not([data-tone="casual"]) .step, :root:not([data-tone="casual"]) .scene, :root:not([data-tone="casual"]) .mission, :root:not([data-tone="casual"]) .dcard, :root:not([data-tone="casual"]) .idle-person, :root:not([data-tone="casual"]) .finding { border-radius:10px; }
+:root:not([data-tone="casual"]) .celebrate-msg { border-radius:10px; padding:8px 18px; border-width:1px; animation:none; }
+:root:not([data-tone="casual"]) .bookmark { border-style:solid; border-width:1px; border-color:var(--line); }
+:root:not([data-tone="casual"]) .gdot.on { transform:none; }
+:root:not([data-tone="casual"]) h2::after { height:3px; width:36px; border-radius:2px; background:var(--accent); }
+:root:not([data-tone="casual"]) .hero-hello { font-size:24px; }
 .finding .mark { color:var(--accent); } .finding.warn .mark { color:var(--warn); } .finding.good .mark { color:var(--ok); }
 /* 配色とトーンの2つの選択欄を並べても、ヘッダーが2行にならないように、少し小さくする */
 .theme-picker { margin-left:4px; }
-@media (min-width:641px) and (max-width:1400px) { header select.theme-picker { max-width:88px; padding:4px 4px; font-size:14px; } header .guide-btn { padding:6px 10px; } }
+@media (min-width:641px) and (max-width:1400px) { header select.theme-picker { max-width:92px; padding:4px 0 4px 4px; font-size:14px; } header .guide-btn { padding:6px 10px; } }
 @media (min-width:641px) and (max-width:1400px) { header > button.ghost { padding:6px 10px; font-size:14px; } header nav { margin-left:6px; gap:2px; } header nav a { padding:6px 8px; } header { gap:8px; } }
+
+/* シンプル: 飾りをなくした、平らな見た目 */
+:root[data-tone="simple"] { --radius:4px; --shadow:none; --header-bg:var(--card); --header-fg:var(--fg); --page-bg:none; }
+:root[data-tone="simple"] header { border-bottom:1px solid var(--line); box-shadow:none; }
+:root[data-tone="simple"] header nav a { color:var(--muted); opacity:1; border-radius:4px; }
+:root[data-tone="simple"] header nav a:hover { background:var(--accent-soft); }
+:root[data-tone="simple"] header nav a.active { background:var(--accent-soft); color:var(--accent); }
+:root[data-tone="simple"] .hero { background:var(--accent-soft); color:var(--fg); box-shadow:none; border:1px solid var(--line); }
+:root[data-tone="simple"] .hero .cta { background:var(--card); }
+:root[data-tone="simple"] .card, :root[data-tone="simple"] .gantt { box-shadow:none; border:1px solid var(--line); }
+:root[data-tone="simple"] button, :root[data-tone="simple"] .btn { border-radius:4px; font-weight:500; }
+:root[data-tone="simple"] .stamp, :root[data-tone="simple"] .chip-btn, :root[data-tone="simple"] .pill, :root[data-tone="simple"] .mission-count { border-radius:4px; }
+:root[data-tone="simple"] .step, :root[data-tone="simple"] .scene, :root[data-tone="simple"] .mission, :root[data-tone="simple"] .dcard, :root[data-tone="simple"] .idle-person, :root[data-tone="simple"] .finding { border-radius:4px; }
+:root[data-tone="simple"] .celebrate-msg { border-radius:4px; font-weight:500; }
+:root[data-tone="simple"] h2::after { display:none; }
+:root[data-tone="simple"] .hero-hello { font-size:20px; }
+:root[data-tone="simple"] h1, :root[data-tone="simple"] h2, :root[data-tone="simple"] h3, :root[data-tone="simple"] button, :root[data-tone="simple"] .btn, :root[data-tone="simple"] nav a { font-weight:600; }
+:root[data-tone="simple"] .meter-actual { background:var(--accent); }
+:root[data-tone="simple"] .phase-bar span { background:var(--accent); }

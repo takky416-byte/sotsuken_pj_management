@@ -37,3 +37,16 @@ describe('nudgeMessage', () => {
     expect(nudgeMessage({ level: 0, daysSince: null, missed: 0, prevDate: null }, true)).toBeNull();
   });
 });
+
+describe('トーンごとの文言', () => {
+  const n = { level: 2 as const, daysSince: 15, missed: 4, prevDate: '2026-10-28' };
+  it('シンプルは短く、カジュアルはやわらかく。どれも強い言葉は使わない', () => {
+    for (const tone of ['standard', 'casual', 'simple'] as const) {
+      const m = nudgeMessage(n, true, tone)!;
+      expect(m.body, tone).not.toMatch(/警告|必ず|しなければ/);
+      expect(m.body.length).toBeGreaterThan(10);
+    }
+    expect(nudgeMessage(n, true, 'simple')!.body.length).toBeLessThan(nudgeMessage(n, true, 'casual')!.body.length);
+    expect(nudgeMessage(n, true, 'casual')!.title).toContain('そろそろ');
+  });
+});

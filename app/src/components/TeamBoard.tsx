@@ -105,7 +105,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
         <div className="card form">
           <div className="label">{nameOf(to)}さんに、ありがとう{!teacher && <span className="hint">(今日はあと{left}回)</span>}</div>
           <div className="stamps" role="group" aria-label="スタンプ(押すとそのまま送れます)">
-            {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" onClick={() => send(stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
+            {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" onClick={() => send(stampNote(s))}>{s.emoji && <span aria-hidden="true">{s.emoji}</span>}{s.label}</button>)}
           </div>
           <input aria-label="ありがとうの一言" placeholder="一言(任意。例: レビューしてくれて助かった)" maxLength={100} value={note}
             onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) send(); }} />

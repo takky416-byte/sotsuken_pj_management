@@ -107,19 +107,30 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await page.getByLabel('配色').selectOption('ocean');
   });
 
-  test('トーンを選べる。既定は落ち着き (絵文字なし)。親しみやすいでは見出しに絵文字が出る。選んだトーンは残る', async ({ page }) => {
+  test('トーンを選べる。既定は標準 (絵文字なし)。カジュアルでは見出しに絵文字が出る。シンプルは装飾なし。選んだトーンは残る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
     const html = page.locator('html');
-    await expect(html).toHaveAttribute('data-tone', 'calm');
+    await expect(html).toHaveAttribute('data-tone', 'standard');
     const em = page.locator('.em').first();
     await expect(em).toBeHidden();
-    await page.getByLabel('トーン').selectOption('friendly');
-    await expect(html).toHaveAttribute('data-tone', 'friendly');
+    await page.getByLabel('トーン').selectOption('casual');
+    await expect(html).toHaveAttribute('data-tone', 'casual');
     await expect(em).toBeVisible();
+    // 利用ガイドも、トーンに合わせた言い方になる
+    const dialog = page.getByRole('dialog', { name: '利用ガイド' });
+    await page.getByRole('button', { name: /ガイド/ }).first().click();
+    await expect(dialog).toContainText('まずホームをチェックしましょう');
+    await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
     await page.reload();
-    await expect(html).toHaveAttribute('data-tone', 'friendly');
-    await page.getByLabel('トーン').selectOption('calm');
-    await expect(html).toHaveAttribute('data-tone', 'calm');
+    await expect(html).toHaveAttribute('data-tone', 'casual');
+    await page.getByLabel('トーン').selectOption('simple');
+    await expect(html).toHaveAttribute('data-tone', 'simple');
+    await page.getByRole('button', { name: /ガイド/ }).first().click();
+    await expect(dialog).toContainText('最初にホームを確認します');
+    await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
+    await expect(em).toBeHidden();
+    await page.getByLabel('トーン').selectOption('standard');
+    await expect(html).toHaveAttribute('data-tone', 'standard');
   });
 
   test('日報のチーム内閲覧がオフでも、チームのようすは崩れない (他の人の日報は集計しない)', async ({ page }) => {

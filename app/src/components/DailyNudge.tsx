@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { nudgeMessage, type Nudge } from '../lib/dailyNudge';
+import { useTone } from '../lib/tone';
 import { useBase } from './Base';
 import { Em } from './Em';
 
 /** 日報の間があいているときの、やさしい促し。出し終わると、自然に消える。 */
 export function DailyNudge({ nudge, isClassDay, link = true }: { nudge: Nudge; isClassDay: boolean; link?: boolean }) {
   const base = useBase();
-  const m = nudgeMessage(nudge, isClassDay);
+  const tone = useTone();
+  const m = nudgeMessage(nudge, isClassDay, tone);
   if (!m) return null;
   return (
     <section className="card nudge" role="note" aria-label="日報のお知らせ">

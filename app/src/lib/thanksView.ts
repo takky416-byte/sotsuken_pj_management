@@ -8,7 +8,7 @@ import { isLeaf } from './meetingView';
 export const THANKS_PER_DAY = 5;
 
 /** ワンタップで送れるスタンプは、トーンで変わる (lib/tone.ts の stamps)。押すとそのまま送られる。 */
-export const stampNote = (s: { emoji: string; label: string }) => `${s.emoji} ${s.label}`;
+export const stampNote = (s: { emoji: string; label: string }) => (s.emoji ? `${s.emoji} ${s.label}` : s.label);
 
 export type ThanksSuggestion = { to: string; name: string; reason: string };
 
