@@ -32,6 +32,8 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'student-home-pc');
     await page.getByRole('link', { name: '日報', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-pc');
+    await page.getByRole('link', { name: '使い方', exact: true }).click(); await page.waitForTimeout(500);
+    await shot(page, 'student-help-pc');
   });
 
   test('学生の画面 (スマホ)', async ({ browser }) => {

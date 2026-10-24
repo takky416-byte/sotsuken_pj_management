@@ -572,3 +572,6 @@ table.access tr.detail td { background:var(--bg); }
 .bookmark details { margin-top:4px; font-size:14px; } .bookmark summary { cursor:pointer; color:var(--muted); }
 .bookmark ol { margin:6px 0; padding-left:22px; }
 .bookmark code { background:var(--bg); border-radius:6px; padding:2px 8px; word-break:break-all; }
+
+/* 使い方: PCでは2段組 (開閉しても、左右の高さがそろわなくてよいように、段組みにする) */
+@media (min-width:1000px) { .help-cols { column-count:2; column-gap:16px; } .help-cols > details { break-inside:avoid; margin-top:0; margin-bottom:12px; } }
