@@ -316,7 +316,7 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 @media (max-width:640px) { .gantt { --gantt-name:132px; } }
 
 /* WBS: 進捗・状態・担当・期間は、縦にそろえる (PC)。スマホでは、タイトル→状態など→担当と期間 の順に折り返す */
-.wbs-head, .wbs-row { display:grid; grid-template-columns:minmax(220px,1fr) 150px 112px 150px 120px 88px; align-items:center; column-gap:8px; }
+.wbs-head, .wbs-row { display:grid; grid-template-columns:minmax(220px,1fr) 128px 140px 112px 84px; align-items:center; column-gap:8px; }
 .wbs-head { font-size:14px; font-weight:700; color:var(--accent); padding:4px 0; border-bottom:2px solid var(--accent-soft); }
 .wbs-row { padding:3px 0; border-bottom:1px solid var(--line); --indent:0px; }
 .wbs-row.depth-2 { --indent:22px; } .wbs-row.depth-3 { --indent:44px; }
@@ -660,7 +660,7 @@ table.access tr.detail td { background:var(--bg); }
 .view-switch { margin:4px 0 10px; }
 .w-bar { display:none; }
 @media (min-width: 1100px) {
-  .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 96px 92px 104px 100px minmax(260px,1.2fr) 76px; }
+  .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 124px 104px 100px minmax(260px,1.2fr) 76px; }
   .wbs.with-timeline .w-bar { display:block; position:relative; height:26px; overflow:hidden; border-left:1px solid var(--line); }
   .wbs.with-timeline .w-bar .gantt-bar { top:7px; height:12px; }
   .wbs.with-timeline .w-bar .gantt-grid { position:absolute; top:0; bottom:0; width:1px; background:var(--line); opacity:.6; }
@@ -668,3 +668,13 @@ table.access tr.detail td { background:var(--bg); }
   .wbs.with-timeline .tl-head { height:20px; font-size:12px; font-weight:400; color:var(--muted); }
   .wbs.with-timeline .tl-head span { position:absolute; top:2px; transform:translateX(-50%); white-space:nowrap; }
 }
+
+/* WBSは、文字を小さめに (画面に収まるように)。親の状態には、完了の数を添える */
+.wbs { font-size:14px; }
+.wbs .title-input, .wbs select.status, .wbs .pop-btn, .wbs .w-assign, .wbs .w-period { font-size:14px; }
+.wbs .title-input, .wbs select.status { padding-top:2px; padding-bottom:2px; }
+.wbs .status-auto { font-size:12px; padding:1px 8px; }
+.wbs-head { font-size:13px; }
+.w-status { display:flex; align-items:center; gap:6px; }
+.w-count { color:var(--muted); font-size:12px; white-space:nowrap; }
+.wbs .w-title .badge { font-size:11px; }

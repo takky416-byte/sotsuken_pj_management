@@ -17,7 +17,6 @@ import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
 import type { TaskLink } from '../types';
-import { Progress } from './Progress';
 import { useEditableText } from './useEditableText';
 import { Toast, type ToastState } from './Toast';
 
@@ -123,7 +122,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.length > 0 && (
-        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>進捗</div><div>状態</div><div>担当</div><div>期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
+        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>状態</div><div>担当</div><div>期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
       )}
       {rows.map(({ task: t, hasChildren }) => {
         const status = eff.get(t.id) ?? t.status;
@@ -151,11 +150,13 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
               {t.source === 'adhoc' && <span className="badge adhoc" title="日報で「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
-            <div className="w-prog">{hasChildren && <Progress {...progressOf(tasks, t.id)} />}</div>
             <div className="w-status">
               {hasChildren ? (
                 // 親タスクの状態は、子タスクから自動で決まる (自分では変えられない)
-                <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}</span>
+                <>
+                  <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}</span>
+                  {(() => { const pg = progressOf(tasks, t.id); return <small className="w-count" title={`${pg.done}/${pg.total} 完了`}>{pg.done}/{pg.total}</small>; })()}
+                </>
               ) : (
                 <select
                   className={`status st-${t.status}`}
