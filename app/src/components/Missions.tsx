@@ -55,10 +55,10 @@ export function WeeklyMissions({ weekly }: { weekly: WeeklyMission[] }) {
   const base = useBase();
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
   const weeklyDone = weekly.filter((m) => m.done).length;
-  if (weekly.length === 0) return null;
   // ホームを縦に長くしないよう、既定では閉じておく (見出しと、達成の数は見える)。開き方は、この端末に覚えておく
   const [open, setOpen] = useState(() => { try { return localStorage.getItem(WEEKLY_OPEN_KEY) === '1'; } catch { return false; } });
   const toggle = (v: boolean) => { setOpen(v); try { localStorage.setItem(WEEKLY_OPEN_KEY, v ? '1' : '0'); } catch { /* 保存できなくても動く */ } };
+  if (weekly.length === 0) return null;
   return (
     <details className="card missions weekly" open={open} onToggle={(e) => toggle((e.currentTarget as HTMLDetailsElement).open)}>
       <summary>
