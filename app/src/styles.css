@@ -648,3 +648,10 @@ table.access tr.detail td { background:var(--bg); }
 .fold > summary::after { content:'▼ 開く'; float:right; color:var(--muted); font-size:14px; }
 .fold[open] > summary::after { content:'▲ 閉じる'; }
 .plan-project { border-top:1px solid var(--line); margin-top:10px; padding-top:8px; display:flex; flex-direction:column; gap:6px; }
+
+/* ホームの上の段: 広い画面では、あいさつと日報のお知らせを左右に並べる (お気に入りは、その下に全幅) */
+.home-top { display:flex; flex-wrap:wrap; gap:0 14px; align-items:stretch; }
+.home-top > .hero, .home-top > .nudge { flex:1 1 440px; min-width:0; margin:2px 0 12px; }
+.home-top > .bookmark { flex:1 1 100%; }
+.home-top .nudge { align-self:stretch; }
+@media (min-width: 900px) { .home-top .nudge-main { display:block; } .home-top .nudge-main p { margin:4px 0 0; } }

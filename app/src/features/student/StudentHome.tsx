@@ -91,6 +91,7 @@ export function StudentHome() {
 
   return (
     <>
+      <div className="home-top">
       <section className="hero">
         <div className="hero-text">
           <div className="hero-date">{d.getUTCMonth() + 1}月{d.getUTCDate()}日({WEEK[d.getUTCDay()]})</div>
@@ -102,10 +103,10 @@ export function StudentHome() {
         </div>
         <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
       </section>
-      {err && <p className="error">{err}</p>}
-
       <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
       <BookmarkPrompt email={me.email} />
+      </div>
+      {err && <p className="error">{err}</p>}
 
       <div className="home-grid">
         <div className="col">
