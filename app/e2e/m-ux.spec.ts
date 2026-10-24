@@ -47,6 +47,7 @@ test.describe.serial('ホーム (今日・次にやること) と WBS の操作'
     const me = ((await d.doc('teams/A').get()).data()!.members as { sid: string; name: string }[]).find((m) => m.sid === 'A1')!;
     await login(page, 'a1@trident.ac.jp');
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    await page.getByRole('button', { name: '編集モードにする' }).click();
 
     const add = page.getByPlaceholder(/^タスクを追加/);
     await add.fill(`クイック入力のタスク @${me.name} 〜12/31`);

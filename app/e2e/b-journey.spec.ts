@@ -43,6 +43,9 @@ test.describe.serial('運用の流れ', () => {
     await login(page, A1);
     await expect(page.getByText('テスト企画')).toBeVisible();
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    // ふだんは閲覧モード (追加の欄も、状態を変える欄もない)。「編集モードにする」で編集できる
+    await expect(page.getByPlaceholder(/^タスクを追加/)).toHaveCount(0);
+    await page.getByRole('button', { name: '編集モードにする' }).click();
 
     // 追加 (Enter)
     const add = page.getByPlaceholder(/^タスクを追加/);
@@ -69,9 +72,8 @@ test.describe.serial('運用の流れ', () => {
     await expect(parent.getByLabel('状態', { exact: true })).toHaveCount(0);
     await expect(parent.getByLabel('状態(自動)')).toContainText('未着手');
     const t = row(page, '画面遷移図を描く');
-    // 学生は、WBSで状態を変えられない (作業レポートで更新する)。見るだけの表示になる
-    await expect(t.getByLabel('状態', { exact: true })).toHaveCount(0);
-    await expect(t.getByLabel('状態(作業レポートで更新)')).toContainText('未着手');
+    await t.getByLabel('状態', { exact: true }).selectOption('doing');
+    await expect(parent.getByLabel('状態(自動)')).toContainText('進行中'); // 子が進行中になると、親も進行中
     await parent.getByRole('button', { name: '詳細' }).click();
     await expect(page.getByText('親タスクには、担当を付けません')).toBeVisible();
     await expect(page.getByRole('checkbox', { name: '岩田' })).toHaveCount(0);
@@ -88,13 +90,14 @@ test.describe.serial('運用の流れ', () => {
     // 削除 → 元に戻す
     await page.getByRole('button', { name: '削除', exact: true }).click();
     await expect(row(page, '画面遷移図を描く')).toHaveCount(0);
-    await expect(parent.getByLabel('状態(作業レポートで更新)')).toContainText('未着手'); // 子がなくなると、子のないタスクとして、自分の状態 (見るだけ) に戻る
+    await expect(parent.getByLabel('状態', { exact: true })).toHaveValue('todo'); // 子がなくなると、子のないタスクとして、自分の状態 (選べる) に戻る
     await page.getByRole('button', { name: '元に戻す' }).click();
     await expect(row(page, '画面遷移図を描く')).toBeVisible();
 
     // 再読み込みしても残っている (保存されている)
     await page.reload();
-    await expect(row(page, '画面遷移図を描く').getByLabel('状態(作業レポートで更新)')).toContainText('未着手');
+    await expect(row(page, '画面遷移図を描く').getByLabel('状態(閲覧モード)')).toContainText('進行中'); // 再読み込みすると、閲覧モードに戻る
+    await page.getByRole('button', { name: '編集モードにする' }).click();
     await row(page, '画面遷移図を描く').getByRole('button', { name: '詳細' }).click();
     await expect(page.getByRole('checkbox', { name: '岩田' })).toBeChecked();
   });
@@ -141,7 +144,7 @@ test.describe.serial('運用の流れ', () => {
 
     // タスクが完了になっている (WBS)
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
-    await expect(row(page, '画面遷移図を描く').getByLabel('状態(作業レポートで更新)')).toContainText('完了'); // 提出で、状態が更新される
+    await expect(row(page, '画面遷移図を描く').getByLabel('状態(閲覧モード)')).toContainText('完了'); // 提出で、状態が更新される
   });
 
   test('学生: 同じチームの作業レポートは見える。他のチームのミーティング画面には入れない', async ({ page }) => {
@@ -249,7 +252,7 @@ test.describe.serial('運用の流れ', () => {
     await page.getByLabel('学生を選ぶ').selectOption('A1');
     await expect(page.locator('.preview-frame')).toContainText('岩田');
     await page.locator('.preview-head').getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
-    await expect(page.getByPlaceholder(/^タスクを追加/)).toBeDisabled();
+    await expect(page.getByRole('button', { name: '編集モードにする' })).toBeDisabled(); // 教員のプレビューでは、編集モードにもできない
     await page.locator('.preview-head').getByRole('link', { name: '作業レポート', exact: true }).click();
     await expect(page.getByRole('button', { name: /作業レポートを(提出|更新)する/ })).toBeDisabled();
   });

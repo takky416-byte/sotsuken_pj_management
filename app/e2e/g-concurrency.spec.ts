@@ -13,6 +13,7 @@ async function open(browser: Browser, email: string): Promise<User> {
   const p = await ctx.newPage();
   await login(p, email);
   await p.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+  await p.getByRole('button', { name: '編集モードにする' }).click();
   await row(p, '要件定義').waitFor();
   return { ctx, p };
 }

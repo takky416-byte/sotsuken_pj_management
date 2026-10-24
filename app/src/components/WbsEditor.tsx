@@ -32,6 +32,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const [toast, setToast] = useState<ToastState>(null);
   const [pop, setPop] = useState<{ id: string; kind: 'assign' | 'period' } | null>(null);
   const [showTrash, setShowTrash] = useState(false);
+  const [editMode, setEditMode] = useState(false); // 学生は、ふだんは閲覧モード。「編集モードにする」で編集できる
   const [err, setErr] = useState('');
   const closeToast = useCallback(() => setToast(null), []);
 
@@ -99,11 +100,20 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   };
   const trash = tasks.filter((t) => t.deleted && !(t.parentId && byId.get(t.parentId)?.deleted));
   const orphans = orphansOf(tasks);
+  const canEdit = actor === 'teacher' || editMode;
 
   return (
     <div className={`wbs${g ? ' with-timeline' : ''}`}>
       {err && <p className="error">{err}</p>}
-      {orphans.length > 0 && (
+      {actor !== 'teacher' && (
+        <div className="row wbs-mode">
+          <button type="button" className={editMode ? '' : 'ghost'} aria-pressed={editMode} onClick={() => { setEditMode(!editMode); setPop(null); setOpenId(null); setAddingUnder(null); }}>
+            {editMode ? '編集モードを終える' : '編集モードにする'}
+          </button>
+          <span className="hint">{editMode ? '編集できます。終わったら「編集モードを終える」を押します。' : '閲覧モードです。タスクの追加・担当・期間・状態を変えるときは、「編集モードにする」を押します。'}</span>
+        </div>
+      )}
+      {orphans.length > 0 && canEdit && (
         <div className="card orphan" role="alert">
           <strong>行き場がなくなったタスクがあります</strong>
           <p className="hint">
@@ -146,6 +156,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 onIndent={() => indent(t)}
                 onOutdent={() => patch(planOutdent(tasks, t.id))}
                 onMove={(d) => patch(planMove(tasks, t.id, d))}
+                readOnly={!canEdit}
               />
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
               {t.source === 'adhoc' && <span className="badge adhoc" title="作業レポートで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
@@ -157,9 +168,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                   <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}</span>
                   {(() => { const pg = progressOf(tasks, t.id); return <small className="w-count" title={`${pg.done}/${pg.total} 完了`}>{pg.done}/{pg.total}</small>; })()}
                 </>
-              ) : actor !== 'teacher' ? (
-                // 学生は、状態を直接変えない。作業レポートで「進んだ・完了した」を選ぶと、提出で更新される
-                <span className={`status-ro st-${t.status}`} title="状態は、作業レポートを出すと更新されます" aria-label="状態(作業レポートで更新)">{STATUS_LABEL[t.status]}</span>
+              ) : !canEdit ? (
+                // 閲覧モードでは、見るだけ。状態は、作業レポートで更新するのが基本 (間違いは、編集モードで直せる)
+                <span className={`status-ro st-${t.status}`} title="状態は、作業レポートを出すと更新されます" aria-label="状態(閲覧モード)">{STATUS_LABEL[t.status]}</span>
               ) : (
                 <select
                   className={`status st-${t.status}`}
@@ -183,7 +194,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               )}
             </div>
             <div className="w-assign">
-              {hasChildren ? null : (
+              {hasChildren ? null : !canEdit ? (t.assignees.length > 0 ? t.assignees.map(nameOf).join('・') : '—') : (
                 <PopCell
                   label={t.assignees.length > 0 ? t.assignees.map(nameOf).join('・') : '＋ 担当'} empty={t.assignees.length === 0}
                   ariaLabel={`担当を変える: ${t.title}`} open={pop?.id === t.id && pop.kind === 'assign'}
@@ -202,7 +213,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               )}
             </div>
             <div className={`w-period${periodOf(tasks, t).derived ? ' derived' : ''}`}>
-              {hasChildren ? periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end) : (
+              {hasChildren || !canEdit ? (periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end) || '—') : (
                 <PopCell
                   label={periodLabel(t.startDate, t.endDate) || '＋ 期間'} empty={!t.startDate && !t.endDate}
                   ariaLabel={`期間を変える: ${t.title}`} open={pop?.id === t.id && pop.kind === 'period'}
@@ -245,16 +256,18 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               );
             })()}
             <div className="w-acts">
-              {t.depth < 3 && (
+              {canEdit && t.depth < 3 && (
                 <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
               )}
-              <button className="ghost icon" aria-label="詳細" title="詳細" onClick={() => setOpenId(openId === t.id ? null : t.id)}>
-                {openId === t.id ? '▲' : '⋯'}
-              </button>
+              {canEdit && (
+                <button className="ghost icon" aria-label="詳細" title="詳細" onClick={() => setOpenId(openId === t.id ? null : t.id)}>
+                  {openId === t.id ? '▲' : '⋯'}
+                </button>
+              )}
             </div>
           </div>
 
-          {openId === t.id && (
+          {canEdit && openId === t.id && (
             <Detail
               task={t} members={members} nameOf={nameOf} isParent={hasChildren}
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
@@ -267,7 +280,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
             />
           )}
 
-          {addingUnder === t.id && (
+          {canEdit && addingUnder === t.id && (
             <div className={`wbs-add depth-${Math.min(t.depth + 1, 3)}`}>
               <AddBox
                 autoFocus
@@ -282,15 +295,15 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
         );
       })}
 
-      <div className="wbs-add depth-1">
+      {canEdit && <div className="wbs-add depth-1">
         <AddBox
           placeholder="タスクを追加 (Enterで追加。例: ログイン画面を作る @小林 〜11/30)"
           onAdd={(title) => add(null, title)}
           onPaste={(text) => paste(null, text)}
         />
-      </div>
+      </div>}
 
-      {trash.length > 0 && (
+      {canEdit && trash.length > 0 && (
         <div className="trash">
           <button className="ghost" onClick={() => setShowTrash(!showTrash)}>ゴミ箱 ({trash.length})</button>
           {showTrash && trash.map((t) => (
@@ -368,7 +381,8 @@ function ConflictNotice({ by, what, theirs, onMine, onTheirs }: {
   );
 }
 
-function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent, onOutdent, onMove }: {
+function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent, onOutdent, onMove, readOnly = false }: {
+  readOnly?: boolean;
   task: Task;
   by: string;
   autoFocus: boolean;
@@ -395,7 +409,7 @@ function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent,
   return (
     <>
       <input
-        ref={ref} className="title-input" value={ed.value} maxLength={200} aria-label="タイトル"
+        ref={ref} className="title-input" value={ed.value} maxLength={200} aria-label="タイトル" readOnly={readOnly}
         onChange={(e) => ed.setValue(e.target.value)} onFocus={ed.onFocus} onBlur={ed.commit} onKeyDown={key}
       />
       {ed.conflict !== null && (
