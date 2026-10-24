@@ -10,7 +10,7 @@ export const ADHOC_ROOT_ID = 'adhoc-root';
 export const ADHOC_ROOT_TITLE = 'WBS外の作業(あとから追加)';
 export const MIN_ADHOC_TITLE = 2;
 
-export type AdhocInput = { key: string; title: string; result: DailyResult; parentId: string | null };
+export type AdhocInput = { key: string; title: string; result: DailyResult; parentId: string | null; /** やった日 (前回の日報のあと〜今日)。省略すると今日 */ date?: string };
 
 export type AdhocPlan = {
   /** 「WBS外の作業」の大項目を新しく作る必要があるとき */
@@ -47,7 +47,7 @@ export function planAdhoc(
     const order = appendOrder(pool, parentId);
     const task: NewTask = {
       id: newId(), parentId, depth, title: i.title.trim(), detail: '', order, assignees: [sid],
-      startDate: today, endDate: i.result === 'done' ? today : null, status: adhocStatus(i.result),
+      startDate: i.date && i.date <= today ? i.date : today, endDate: i.result === 'done' ? (i.date && i.date <= today ? i.date : today) : null, status: adhocStatus(i.result),
     };
     out.push({ key: i.key, task });
     // 同じ親に続けて作るとき、順番が重ならないように

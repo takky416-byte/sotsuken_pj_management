@@ -133,7 +133,7 @@ export function StudentHome() {
             </li>
           ))}
         </ul>
-        <p className="hint">終わったら「完了にする」を押すと、WBSにも反映されます。授業の最後に、日報を書きます。</p>
+        <p className="hint">終わったら「完了にする」を押すと、WBSにも反映されます。授業時間外の作業も、次の授業の日報にまとめて書きます。</p>
       </section>
 
       <section className="card">

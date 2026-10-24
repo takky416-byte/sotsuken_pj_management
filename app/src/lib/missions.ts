@@ -44,7 +44,7 @@ export function dailyMissions(
     },
     {
       id: 'update', to: 'wbs', done: touchedToday(live, sid, today) > 0,
-      label: '今日の作業を、WBSに反映する',
+      label: '作業の進み具合を、WBSに反映する',
       hint: 'やったタスクを「着手」「完了」にする。WBSにない作業をしたなら、日報で追加できます',
     },
   ];

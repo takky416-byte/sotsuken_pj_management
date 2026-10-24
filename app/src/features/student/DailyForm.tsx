@@ -9,6 +9,7 @@ import {
   ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, nextCandidates, statusChanges, type DraftItem,
 } from '../../lib/dailyDraft';
 import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
+import { formatDate } from '../../lib/dates';
 import { periodLabel } from '../../lib/wbs';
 import type { Task } from '../../types';
 
@@ -35,14 +36,14 @@ const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catc
  * 説明は、何を・どこまでやったかを、一定の長さ以上で書く。最後に、次にやることも書く。
  * 入力の途中は、この端末に自動で保存する (画面を閉じても消えない)。
  */
-export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
-  teamId: string; sid: string; today: string; prev: Daily | undefined; tasks: Task[];
+export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, onSubmitted }: {
+  teamId: string; sid: string; today: string; prev: Daily | undefined; tasks: Task[]; since: number; prevDate: string | null;
   onSubmitted: (first: boolean) => void;
 }) {
   const key = draftKey(sid, today);
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
   const [items, setItems] = useState<DraftItem[]>(() => {
-    const base = initialItems(prev, tasks, sid, today);
+    const base = initialItems(prev, tasks, sid, today, since);
     const d = prev ? null : loadDraft(key);
     if (!d) return base;
     // 下書きの内容を、いまのタスクの候補に重ねる (消えたタスクは捨てる)
@@ -93,7 +94,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
       // WBSにない作業は、先にタスクとして作る (WBSとガントに載り、日報とひも付く)
       const idOf = new Map<string, string>();
       if (adhocItems.length > 0) {
-        const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId })), () => newTaskId(teamId));
+        const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId, date: i.adhoc!.date || undefined })), () => newTaskId(teamId));
         if (plan.restoreRoot) await setDeleted(teamId, sid, [ADHOC_ROOT_ID], false);
         // 「WBS外の作業」の大項目は、チームに1つ。ほかの人が先に作っていたときは、作れなくても続ける
         if (plan.root) await createTasks(teamId, sid, [plan.root], 'adhoc').catch(() => undefined);
@@ -119,8 +120,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
   return (
     <div className="daily-form">
       <section className="card">
-        <h3>① きょうやったこと</h3>
-        <p className="hint">やったタスクの「進んだ・完了した・詰まった」を押して、<strong>何を・どこまでやったか</strong>を書きます({MIN_NOTE_CHARS}字以上)。やっていないタスクは、そのままにします。</p>
+        <h3>① 前回の日報のあとに、やったこと</h3>
+        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}に、授業時間外も含めてやったことを、まとめて書きます。やったタスクの「進んだ・完了した・詰まった」を押して、<strong>何を・どこまでやったか</strong>を書きます({MIN_NOTE_CHARS}字以上)。やっていないタスクは、そのままにします。</p>
         {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -168,6 +169,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, onSubmitted }: {
                   <option value="">{ADHOC_ROOT_TITLE}</option>
                   {parentChoices.map((t) => <option key={t.id} value={t.id}>{t.depth === 2 ? '　' : ''}{t.title}</option>)}
                 </select>
+              </label>
+              <label className="adhoc-parent">やった日
+                <input type="date" aria-label="やった日" value={i.adhoc!.date ?? today} min={prevDate ?? undefined} max={today} onChange={(e) => set({ date: e.target.value })} />
               </label>
               <div className="seg" role="group" aria-label="WBSにない作業の結果">
                 {RESULTS.map((r) => (

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import type { Daily } from './daily';
 import {
-  candidateTasks, initialItems, itemsToEntries, nextCandidates, statusChanges,
+  candidateTasks, initialItems, itemsToEntries, nextCandidates, sinceOf, statusChanges,
 } from './dailyDraft';
 
 const TODAY = '2026-11-10';
@@ -64,5 +64,29 @@ describe('nextCandidates / statusChanges', () => {
       { id: 'later', kind: 'task' as const, taskId: 'later', result: null, note: '' },
     ];
     expect(statusChanges(items, tasks)).toEqual([{ taskId: 'overdue', status: 'done' }, { taskId: 'inperiod', status: 'doing' }]);
+  });
+});
+
+describe('前回の日報のあと (授業時間外の作業も含む)', () => {
+  const day = (d: string) => Date.parse(`${d}T03:00:00Z`);
+  const daily = (date: string, o: Partial<Daily> = {}): Daily => ({ id: `${date}_A1`, sid: 'A1', date, dayKey: 0, blocker: '', absent: false,
+    entries: [{ kind: 'study', note: '調べた内容を書いた' }], submittedAt: day(date), ...o } as Daily);
+
+  test('sinceOf: 前回の日報を出した時刻。なければ7日前から。今日の分と欠席は数えない', () => {
+    const r = sinceOf([daily('2026-11-03'), daily('2026-11-10'), daily('2026-11-05', { absent: true, entries: [] })], 'A1', TODAY);
+    expect(r).toEqual({ since: day('2026-11-03'), prevDate: '2026-11-03' });
+    expect(sinceOf([], 'A1', TODAY).prevDate).toBeNull();
+    expect(sinceOf([], 'A1', TODAY).since).toBe(Date.parse('2026-11-03T00:00:00+09:00'));
+    expect(sinceOf([daily('2026-11-03')], 'A2', TODAY).prevDate).toBeNull(); // 他の人の日報は見ない
+  });
+
+  test('initialItems: 前回の日報のあとに自分が更新したタスクが、先に選ばれる (前日でも)', () => {
+    const since = day('2026-11-03');
+    const ts = [T('mid', { status: 'done', updatedBy: 'A1', updatedAt: day('2026-11-06') }), T('old', { updatedBy: 'A1', updatedAt: day('2026-11-02') }),
+      T('other', { updatedBy: 'A2', updatedAt: day('2026-11-06') })];
+    const items = initialItems(undefined, ts, 'A1', TODAY, since);
+    expect(items.find((i) => i.id === 'mid')).toMatchObject({ result: 'done' });
+    expect(items.find((i) => i.id === 'old')?.result ?? null).toBeNull();
+    expect(items.find((i) => i.id === 'other')?.result ?? null).toBeNull();
   });
 });

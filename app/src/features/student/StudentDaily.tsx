@@ -9,6 +9,7 @@ import { celebrate } from '../../lib/celebrate';
 import { streakIfSubmitted } from '../../lib/engagement';
 import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
+import { sinceOf } from '../../lib/dailyDraft';
 
 
 export function StudentDaily() {
@@ -31,11 +32,12 @@ export function StudentDaily() {
   const isClassDay = classDays.some((d) => d.date === today);
   const started = today >= settings.dailyStartDate;
   const mineToday = dailies.find((d) => d.id === dailyId(today, me.sid!));
+  const { since, prevDate } = sinceOf(dailies, me.sid, today);
   return (
     <>
       <h2>日報</h2>
       <p className="hint">
-        今日({formatDate(today)})の分を書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
+        今日({formatDate(today)})の授業で書きます。<strong>{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}</strong>にやったことを、授業時間外の作業も含めて、まとめて書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
       </p>
       {!started && <p className="card">日報は {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
       {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
@@ -43,7 +45,7 @@ export function StudentDaily() {
         <div className="col">
       {mineToday?.absent
         ? <p className="card">今日は「欠席」として記録されています。</p>
-        : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} onSubmitted={(first) => {
+        : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} since={since} prevDate={prevDate} onSubmitted={(first) => {
             if (!first) return;
             const n = streakIfSubmitted(dailies, me.sid!, classDays, settings.dailyStartDate, from, today);
             celebrate(n >= 2 ? `提出しました! ${n}日連続` : '提出しました! おつかれさま');

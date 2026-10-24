@@ -2,7 +2,7 @@
 // 「今日やったこと」は、タスクごとのカード。結果 (進んだ/完了した/詰まった) を押すと、そのカードが日報に入る。
 import type { Task } from '../types';
 import type { Daily, DailyEntry, DailyKind, DailyResult } from './daily';
-import { jstDate } from './dates';
+import { addDays } from './dates';
 import { isLeaf } from './meetingView';
 
 export type DraftItem = {
@@ -14,7 +14,7 @@ export type DraftItem = {
   result: DailyResult | null;
   note: string;
   /** WBSにない作業。提出のときにタスクとして作る (それまでは taskId なし) */
-  adhoc?: { title: string; parentId: string | null };
+  adhoc?: { title: string; parentId: string | null; /** やった日 (YYYY-MM-DD)。空なら今日 */ date?: string };
 };
 
 export const ADHOC_PREFIX = 'adhoc:';
@@ -34,10 +34,11 @@ export function candidateTasks(tasks: Task[], sid: string, today: string): Task[
 /**
  * 入力画面の最初の状態。
  * - すでに今日の日報があれば、その内容 (編集)
- * - なければ、今日自分が更新したタスクを、「進んだ」(完了していれば「完了した」) で先に入れておく
+ * - なければ、前回の日報のあと (since 以降) に自分が更新したタスクを、「進んだ」(完了していれば「完了した」) で先に入れておく
  * どちらの場合も、候補のタスクは、結果が未選択のカードとして並べる。
  */
-export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string, today: string): DraftItem[] {
+export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string, today: string, since?: number): DraftItem[] {
+  const from = since ?? Date.parse(`${today}T00:00:00+09:00`);
   const live = tasks.filter((t) => !t.deleted);
   const byId = new Map(live.map((t) => [t.id, t]));
   const items: DraftItem[] = [];
@@ -50,7 +51,7 @@ export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string
     }
   } else {
     for (const t of live) {
-      if (isLeaf(live, t) && t.updatedBy === sid && jstDate(new Date(t.updatedAt)) === today) {
+      if (isLeaf(live, t) && t.updatedBy === sid && Number.isFinite(t.updatedAt) && t.updatedAt > from) {
         items.push({ id: t.id, kind: 'task', taskId: t.id, result: t.status === 'done' ? 'done' : 'progress', note: '' });
       }
     }
@@ -88,4 +89,20 @@ export function statusChanges(items: DraftItem[], tasks: Task[]): { taskId: stri
     else if ((i.result === 'progress' || i.result === 'stuck') && t.status === 'todo') out.push({ taskId: t.id, status: 'doing' });
   }
   return out;
+}
+
+/**
+ * 日報がカバーする期間の始まり (ミリ秒)。前回の日報を出した時刻。
+ * 日報は授業のときにだけ書き、作業は授業時間外にもするので、日報には、前回の日報のあとの作業をまとめて書く。
+ * 前回の日報がなければ、7日前の0時 (日本時間) から。
+ */
+export function sinceOf(dailies: Daily[], sid: string, today: string): { since: number; prevDate: string | null } {
+  const prev = dailies
+    .filter((d) => d.sid === sid && d.date < today && !d.absent && d.entries.some((e) => e.note.trim() !== ''))
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (prev) {
+    const at = Number.isFinite(prev.submittedAt) ? (prev.submittedAt as number) : Date.parse(`${prev.date}T23:59:59+09:00`);
+    return { since: at, prevDate: prev.date };
+  }
+  return { since: Date.parse(`${addDays(today, -7)}T00:00:00+09:00`), prevDate: null };
 }
