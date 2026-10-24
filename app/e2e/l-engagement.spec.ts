@@ -70,31 +70,23 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await d.doc('teams/A/meetings/2026-09-01').delete();
   });
 
-  test('日報: 今日自分が更新したタスクが先に選ばれ、提出するとお祝いが出る', async ({ page }) => {
+  test('作業レポート: 今日自分が更新したタスクが先に選ばれ、提出するとお祝いが出る', async ({ page }) => {
     const d = db();
-    await d.doc(`teams/A/dailyReports/${today()}_A1`).delete(); // 今日の日報を、まだ出していない状態にする
+    await d.doc(`teams/A/dailyReports/${today()}_A1`).delete(); // 今日の作業レポートを、まだ出していない状態にする
     await d.doc('teams/A/tasks/mine-today').set({
       title: '先に選ばれるタスク', detail: '', parentId: null, depth: 1, order: 99990, status: 'doing', assignees: [], links: [],
       startDate: null, endDate: null, source: 'user', createdBy: 'A1', updatedBy: 'A1', createdAt: 1, updatedAt: Date.now(),
       deleted: false, deletedAt: null,
     });
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: '日報', exact: true }).click();
+    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
     const card = page.locator('.dcard', { hasText: '先に選ばれるタスク' });
     await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true'); // 今日更新したので、先に入っている
     for (const c of await page.locator('.dcard.on textarea').all()) await c.fill('調べた内容を整理して、共有した');
     await page.getByLabel('次にやること', { exact: true }).fill('続きを進めて、レビューを受ける');
-    await page.getByRole('button', { name: '日報を提出する' }).click();
+    await page.getByRole('button', { name: '作業レポートを提出する' }).click();
     await expect(page.locator('.celebrate-msg')).toContainText('提出しました');
     await d.doc('teams/A/tasks/mine-today').delete();
-  });
-
-  test('タスクを完了にすると、演出が出る', async ({ page }) => {
-    await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
-    const select = page.locator('select.status').filter({ has: page.locator('option[value="todo"]:checked') }).first(); // 未着手のタスク
-    await select.selectOption('done');
-    await expect(page.locator('.celebrate-msg')).toContainText('完了しました');
   });
 
   test('配色を選べる。選んだ配色は、再読み込みしても残る', async ({ page }) => {
@@ -132,8 +124,8 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(em).toBeHidden();
     // 使い方ページも、トーンに合わせた言い方になる
     await page.getByRole('link', { name: '使い方', exact: true }).click();
-    await page.getByText('日報の書き方').click();
-    await expect(page.getByText('前回の日報以降の作業をまとめて記入します')).toBeVisible();
+    await page.getByText('作業レポートの書き方').click();
+    await expect(page.getByText('前回の作業レポート以降の作業をまとめて記入します')).toBeVisible();
     await page.getByLabel('トーン').selectOption('casual');
     await expect(page.getByText('まとめて書きましょう', { exact: false }).first()).toBeVisible();
     await page.getByLabel('トーン').selectOption('standard');
@@ -144,16 +136,16 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(html).toHaveAttribute('data-tone', 'standard');
   });
 
-  test('日報のチーム内閲覧がオフでも、チームのようすは崩れない (他の人の日報は集計しない)', async ({ page }) => {
+  test('作業レポートのチーム内閲覧がオフでも、チームのようすは崩れない (他の人の作業レポートは集計しない)', async ({ page }) => {
     const d = db();
     await d.doc('config/settings').set({ peerDailyView: false }, { merge: true });
     try {
       await login(page, 'a1@trident.ac.jp');
       const rows = page.locator('table.board tbody tr');
       await expect(rows.filter({ hasText: 'A1' })).toBeVisible();
-      await expect(rows.filter({ hasText: 'A1' })).not.toContainText('—日'); // 自分の日報は出る
+      await expect(rows.filter({ hasText: 'A1' })).not.toContainText('—日'); // 自分の作業レポートは出る
       await expect(rows.filter({ hasText: 'A2' }).locator('td').nth(1)).toHaveText('—'); // 他の人は、読めないので集計しない
-      await expect(page.getByText('日報は、自分の分だけ表示されます')).toBeVisible();
+      await expect(page.getByText('作業レポートは、自分の分だけ表示されます')).toBeVisible();
     } finally {
       await d.doc('config/settings').set({ peerDailyView: true }, { merge: true });
     }

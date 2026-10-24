@@ -29,7 +29,7 @@ export function unassignedTasks(tasks: Task[]): Task[] {
 }
 
 /**
- * 進行中、または予定の期間に入っているのに、期間内の日報で一度も触れられていないタスク。
+ * 進行中、または予定の期間に入っているのに、期間内の作業レポートで一度も触れられていないタスク。
  * 「止まっていないか」を一緒に見るための目安。
  */
 export function untouchedTasks(tasks: Task[], dailies: Daily[], today: string): Task[] {
@@ -41,14 +41,14 @@ export function untouchedTasks(tasks: Task[], dailies: Daily[], today: string): 
 
 export type StuckItem = { date: string; sid: string; taskId?: string; text: string };
 
-/** 日報で「詰まった」を選んだ項目。新しい順。チームで相談して解決する材料として、ミーティングに出す。 */
+/** 作業レポートで「詰まった」を選んだ項目。新しい順。チームで相談して解決する材料として、ミーティングに出す。 */
 export function stuckItems(dailies: Daily[]): StuckItem[] {
   return dailies.filter((d) => statusOf(d) !== 'absent')
     .flatMap((d) => d.entries.filter((e) => e.result === 'stuck').map((e) => ({ date: d.date, sid: d.sid, taskId: e.taskId, text: e.note.trim() })))
     .sort((a, b) => b.date.localeCompare(a.date) || a.sid.localeCompare(b.sid, 'en', { numeric: true }));
 }
 
-/** メンバーごとに、期間内に日報で触れたタスク名 (重複なし)。 */
+/** メンバーごとに、期間内に作業レポートで触れたタスク名 (重複なし)。 */
 export function touchedByMember(tasks: Task[], dailies: Daily[]): Map<string, string[]> {
   const title = new Map(tasks.map((t) => [t.id, t.title]));
   const out = new Map<string, string[]>();

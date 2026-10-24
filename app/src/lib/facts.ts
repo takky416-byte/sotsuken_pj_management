@@ -1,5 +1,5 @@
 // 「事実の確認」: メンバーごとの活動を、記録されたデータだけから示す。
-// 評価や推測はしない。「最後に動いたのはいつか」「日報は出ているか」「約束は果たされたか」を並べ、気づける形にする。
+// 評価や推測はしない。「最後に動いたのはいつか」「作業レポートは出ているか」「約束は果たされたか」を並べ、気づける形にする。
 import type { Task } from '../types';
 import { classDatesBetween, fromDailyStart, statusOf, type Daily, type DayStatus } from './daily';
 import { addDays, jstDate } from './dates';
@@ -11,7 +11,7 @@ import type { ClassDay } from '../types';
 export type MemberFacts = {
   sid: string;
   name: string;
-  /** 最後に、タスクを更新した日・日報を出した日 (どちらか新しいほう)。記録がなければ null */
+  /** 最後に、タスクを更新した日・作業レポートを出した日 (どちらか新しいほう)。記録がなければ null */
   lastActive: string | null;
   /** lastActive から今日まで。記録がなければ null */
   idleDays: number | null;
@@ -19,7 +19,7 @@ export type MemberFacts = {
   updates7: number;
   /** 直近7日に完了にしたタスクの数 */
   done7: number;
-  /** 日報: 提出した授業日 / 数える授業日。読めないとき (他の人の分で、閲覧がオフ) は null */
+  /** 作業レポート: 提出した授業日 / 数える授業日。読めないとき (他の人の分で、閲覧がオフ) は null */
   daily: { submitted: number; days: number; missed: number } | null;
   open: number;
   overdue: number;
@@ -34,7 +34,7 @@ const dayOf = (ms: number): string => (Number.isFinite(ms) ? jstDate(new Date(ms
 export type FactsInput = {
   members: { sid: string; name: string }[];
   tasks: Task[];
-  /** null: 日報を読めない */
+  /** null: 作業レポートを読めない */
   dailies: Daily[] | null;
   meetings: Meeting[];
   classDays: ClassDay[];
@@ -74,10 +74,10 @@ export function memberFacts(input: FactsInput): MemberFacts[] {
 
     const notes: string[] = [];
     if (open.length > 0 || mine.length > 0) {
-      if (idleDays === null) notes.push('WBSの更新も日報も、記録がありません');
-      else if (idleDays >= 7) notes.push(`${idleDays}日間、WBSの更新も日報もありません(最後: ${lastActive!.slice(5).replace('-', '/')})`);
+      if (idleDays === null) notes.push('WBSの更新も作業レポートも、記録がありません');
+      else if (idleDays >= 7) notes.push(`${idleDays}日間、WBSの更新も作業レポートもありません(最後: ${lastActive!.slice(5).replace('-', '/')})`);
     }
-    if (daily && daily.missed >= 2) notes.push(`日報が${daily.missed}回、未提出です`);
+    if (daily && daily.missed >= 2) notes.push(`作業レポートが${daily.missed}回、未提出です`);
     if (overdue > 0) notes.push(`期限超過が${overdue}件あります`);
     const missedPromises = promises.filter((a) => !a.done).length;
     if (missedPromises > 0) notes.push(`前回までの約束が${missedPromises}件、果たされていません`);

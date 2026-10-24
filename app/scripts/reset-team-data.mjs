@@ -1,5 +1,5 @@
 // 試運転のデータを消す。GitHub Actions (reset-pilot ワークフロー) から実行する。
-// 消すのは、指定したチームのタスク・日報・ミーティング記録・コメントだけ。
+// 消すのは、指定したチームのタスク・作業レポート・ミーティング記録・コメントだけ。
 // 名簿・設定・マイルストーン・授業日・ほかのチームには触れない。
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -53,12 +53,12 @@ export async function resetTeams({ db, teams, resetTeam = false, includeTeacherN
     log(`チーム ${id}: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(' ')}`);
   }
   if (restoreCalendar) {
-    // pilot-data が足した授業日 (備考がダミー) を消し、日報の運用開始日を元に戻す
+    // pilot-data が足した授業日 (備考がダミー) を消し、作業レポートの運用開始日を元に戻す
     const doc = await db.doc('config/classDays').get();
     const days = doc.exists ? doc.data().days ?? [] : [];
     const kept = days.filter((d) => d.note !== DUMMY_NOTE);
     report.calendar = { removedClassDays: days.length - kept.length };
-    log(`カレンダー: ダミーの授業日 ${days.length - kept.length}日、日報の運用開始日 → ${DEFAULT_DAILY_START}`);
+    log(`カレンダー: ダミーの授業日 ${days.length - kept.length}日、作業レポートの運用開始日 → ${DEFAULT_DAILY_START}`);
     if (!dryRun) {
       await db.doc('config/classDays').set({ days: kept });
       await db.doc('config/settings').set({ dailyStartDate: DEFAULT_DAILY_START }, { merge: true });

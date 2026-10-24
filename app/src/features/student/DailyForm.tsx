@@ -49,7 +49,7 @@ const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, J
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
 
 /**
- * 日報の入力。タスクごとのカードで「進んだ / 完了した / 詰まった」を押すと、そのカードが日報に入り、説明の欄が開く。
+ * 作業レポートの入力。タスクごとのカードで「進んだ / 完了した / 詰まった」を押すと、そのカードが作業レポートに入り、説明の欄が開く。
  * 説明は、何を・どこまでやったかを、一定の長さ以上で書く。最後に、次にやることも書く。
  * 入力の途中は、この端末に自動で保存する (画面を閉じても消えない)。
  */
@@ -111,7 +111,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     setState('saving'); setErr('');
     try {
       const first = statusOf(prev) !== 'submitted';
-      // WBSにない作業は、先にタスクとして作る (WBSとガントチャートに載り、日報とひも付く)
+      // WBSにない作業は、先にタスクとして作る (WBSとガントチャートに載り、作業レポートとひも付く)
       const idOf = new Map<string, string>();
       if (adhocItems.length > 0) {
         const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId, date: i.adhoc!.date || undefined })), () => newTaskId(teamId));
@@ -122,7 +122,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         plan.tasks.forEach((p) => idOf.set(p.key, p.task.id));
       }
       const real = entries.map((e) => (e.taskId && idOf.has(e.taskId) ? { ...e, taskId: idOf.get(e.taskId) } : e));
-      await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, next.trim()); // 以前の日報の「困っていること」は、そのまま残す (新しくは書かない)
+      await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, next.trim()); // 以前の作業レポートの「困っていること」は、そのまま残す (新しくは書かない)
       setState('saved');
       clearDraft(key);
       onSubmitted(first);
@@ -145,8 +145,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   return (
     <div className="daily-form">
       <section className="card">
-        <h3>① 前回の日報のあとに、やったこと</h3>
-        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
+        <h3>① 前回の作業レポートのあとに、やったこと</h3>
+        <p className="hint">{prevDate ? `前回の作業レポート(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
         {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -268,7 +268,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         </div>
       )}
       <div className="submit-bar">
-        <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '日報を更新する' : '日報を提出する'}</button>
+        <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '作業レポートを更新する' : '作業レポートを提出する'}</button>
         {state === 'saved' && <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>}
         {state !== 'saved' && (
           <span className={problems.length === 0 ? 'ok' : 'hint'}>

@@ -1,5 +1,5 @@
 // ミッション: 毎日の個人のミッションと、週ごとのチームのミッション。
-// すべて、タスク・日報のデータから求める (達成の記録のために、別の書き込みはしない)。
+// すべて、タスク・作業レポートのデータから求める (達成の記録のために、別の書き込みはしない)。
 // 点数や順位は出さない。「WBSを整える」「やったことを記録に残す」行動を、わかりやすい目標にするためのもの。
 import type { Task } from '../types';
 import { addDays, jstDate } from './dates';
@@ -23,7 +23,7 @@ const open = (t: Task) => t.status !== 'done' && t.status !== 'hold';
 /** 自分の担当 (子のない、未完了のタスク) */
 const myOpen = (live: Task[], sid: string) => live.filter((t) => isLeaf(live, t) && (t.assignees ?? []).includes(sid) && open(t));
 
-/** 今日、自分がタスクを更新した (状態・期間・追加など)。日報の提出でタスクが更新されたときも含む。 */
+/** 今日、自分がタスクを更新した (状態・期間・追加など)。作業レポートの提出でタスクが更新されたときも含む。 */
 export const touchedToday = (live: Task[], sid: string, today: string): number =>
   live.filter((t) => t.updatedBy === sid && dayOf(t.updatedAt) === today).length;
 
@@ -31,7 +31,7 @@ export const touchedToday = (live: Task[], sid: string, today: string): number =
 const dayOf = (ms: number): string => (Number.isFinite(ms) ? jstDate(new Date(ms)) : '');
 
 export function dailyMissions(
-  tasks: Task[], sid: string, today: string, opts: { dailySubmitted: boolean; isClassDay: boolean; thankedToday?: boolean },
+  tasks: Task[], sid: string, _today: string, opts: { dailySubmitted: boolean; isClassDay: boolean; thankedToday?: boolean },
 ): Mission[] {
   const live = tasks.filter((t) => !t.deleted);
   const mine = myOpen(live, sid);
@@ -42,14 +42,9 @@ export function dailyMissions(
       label: '自分の担当タスクに、期間を入れる',
       hint: mine.length === 0 ? '担当のタスクがありません。WBSで、やるものを担当にしましょう' : `期間が入っていないタスクが${undated.length}件あります`,
     },
-    {
-      id: 'update', to: 'wbs', done: touchedToday(live, sid, today) > 0,
-      label: '作業の進み具合を、WBSに反映する',
-      hint: 'やったタスクを「着手」「完了」にする。WBSにない作業をしたなら、日報で追加できます',
-    },
   ];
   if (opts.isClassDay || opts.dailySubmitted) {
-    out.push({ id: 'daily', to: 'daily', done: opts.dailySubmitted, label: '日報を提出する', hint: '何を・どこまでやったかを書きます' });
+    out.push({ id: 'daily', to: 'daily', done: opts.dailySubmitted, label: '作業レポートを提出する', hint: '何を・どこまでやったかを書きます' });
   }
   if (opts.thankedToday !== undefined) {
     out.push({ id: 'thanks', to: 'home', done: opts.thankedToday, label: 'チームの誰かに、ありがとうを送る', hint: 'ホームの「ありがとう」から、スタンプを1タップで送れます' });
@@ -78,7 +73,7 @@ export function weeklyMissions(tasks: Task[], members: { sid: string; name: stri
   const out: WeeklyMission[] = [
     {
       id: 'everyone', to: 'wbs', done: members.length > 0 && quiet.length === 0,
-      label: '全員が、今週WBSを更新する', hint: 'タスクの状態や期間を、1つでも更新します',
+      label: '全員が、今週の作業を更新する', hint: '作業レポートを出すか、タスクの期間などを更新します',
       detail: quiet.length === 0 ? '全員が更新しました' : `まだ: ${quiet.map((m) => m.name).join('・')}`,
     },
     {

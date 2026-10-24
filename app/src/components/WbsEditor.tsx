@@ -148,7 +148,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 onMove={(d) => patch(planMove(tasks, t.id, d))}
               />
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
-              {t.source === 'adhoc' && <span className="badge adhoc" title="日報で「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
+              {t.source === 'adhoc' && <span className="badge adhoc" title="作業レポートで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
             <div className="w-status">
               {hasChildren ? (
@@ -157,6 +157,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                   <span className={`status-auto st-${status}`} title="子タスクの状態から、自動で決まります" aria-label="状態(自動)">{STATUS_LABEL[status]}</span>
                   {(() => { const pg = progressOf(tasks, t.id); return <small className="w-count" title={`${pg.done}/${pg.total} 完了`}>{pg.done}/{pg.total}</small>; })()}
                 </>
+              ) : actor !== 'teacher' ? (
+                // 学生は、状態を直接変えない。作業レポートで「進んだ・完了した」を選ぶと、提出で更新される
+                <span className={`status-ro st-${t.status}`} title="状態は、作業レポートを出すと更新されます" aria-label="状態(作業レポートで更新)">{STATUS_LABEL[t.status]}</span>
               ) : (
                 <select
                   className={`status st-${t.status}`}

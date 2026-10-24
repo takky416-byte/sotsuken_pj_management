@@ -18,11 +18,11 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /チームの今週のミッション/ })).toBeVisible();
     // 既定では閉じている。開くと中身が見え、開き方は覚えている
-    await expect(page.getByText('全員が、今週WBSを更新する')).toBeHidden();
+    await expect(page.getByText('全員が、今週の作業を更新する')).toBeHidden();
     await page.getByRole('heading', { name: /チームの今週のミッション/ }).click();
-    await expect(page.getByText('全員が、今週WBSを更新する')).toBeVisible();
+    await expect(page.getByText('全員が、今週の作業を更新する')).toBeVisible();
     await page.reload();
-    await expect(page.getByText('全員が、今週WBSを更新する')).toBeVisible();
+    await expect(page.getByText('全員が、今週の作業を更新する')).toBeVisible();
     await page.getByRole('heading', { name: /チームの今週のミッション/ }).click(); // 閉じて戻す
     await expect(page.getByText('自分の担当タスクに、期間を入れる')).toBeVisible();
     // 今日のミッションも、見出しを押して閉じられる。開き方は覚えている
@@ -64,11 +64,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await page.mouse.up();
     await expect.poll(async () => (await row.locator('.gantt-bar').boundingBox())!.x).toBeGreaterThan(before.x + 20);
 
-    // タップで選択 → 状態を「進行中」に
-    // ドラッグしたタスクは、そのまま選ばれる。名前のタップでも選べる
-    await expect(page.getByRole('group', { name: '状態' })).toBeVisible();
-    await page.getByRole('group', { name: '状態' }).getByRole('button', { name: '進行中' }).click();
-    await expect(row.locator('.gantt-bar.doing')).toHaveCount(1);
+    // ドラッグしたタスクは、そのまま選ばれる。学生には、状態を変えるボタンは出ない (作業レポートで更新する)
+    await expect(page.getByLabel('追加するタスクの名前')).toBeVisible();
+    await expect(page.getByRole('group', { name: '状態' })).toHaveCount(0);
 
     // タスクの追加
     await page.getByLabel('追加するタスクの名前').fill('ガントチャートから追加したタスク');
@@ -76,9 +74,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャートから追加したタスク' })).toBeVisible();
   });
 
-  test('日報: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {
+  test('作業レポート: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: '日報', exact: true }).click();
+    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
     await page.getByRole('button', { name: '＋ WBSにない作業をした' }).click();
     await page.getByLabel('WBSにない作業の名前').fill('取引先へのAPI仕様の確認メール');
     await page.getByRole('group', { name: 'WBSにない作業の結果' }).getByRole('button', { name: '完了した' }).click();
@@ -87,7 +85,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     const preselected = page.locator('.dcard.on:not(.adhoc-card):not(.r-kind) .seg-btn.on');
     while (await preselected.count() > 0) await preselected.first().click();
     await page.getByLabel('次にやること', { exact: true }).fill('取引先の回答を待って、API仕様書を更新する。');
-    const submit = page.getByRole('button', { name: /日報を(提出|更新)する/ });
+    const submit = page.getByRole('button', { name: /作業レポートを(提出|更新)する/ });
     await submit.click();
     await expect(page.getByText(/提出しました|更新しました/).first()).toBeVisible({ timeout: 15000 });
 
@@ -178,16 +176,16 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
     await expect(dialog).toHaveCount(0);
 
-    // 日報の画面で開くと、日報の説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
-    await page.getByRole('link', { name: '日報', exact: true }).click();
+    // 作業レポートの画面で開くと、作業レポートの説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
+    await page.getByRole('link', { name: '作業レポート', exact: true }).click();
     await page.getByRole('button', { name: /ガイド/ }).first().click();
-    await expect(dialog).toContainText('日報: 何を・どこまでやったかを書く');
+    await expect(dialog).toContainText('作業レポート: 何を・どこまでやったかを書く');
     await dialog.getByRole('tab', { name: 'こんなとき' }).click();
     await dialog.getByRole('button', { name: 'WBSにない作業をしたとき' }).click();
     await expect(dialog).toContainText('WBSにタスクとして追加されます');
-    await dialog.getByRole('button', { name: '日報を開く' }).click();
+    await dialog.getByRole('button', { name: '作業レポートを開く' }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '日報', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '作業レポート', exact: true })).toBeVisible();
     await page.close();
   });
 

@@ -80,7 +80,7 @@ export function Export() {
           <h3>CSV(Excelなどで開く用)</h3>
           <div className="card row">
             <button className="ghost" onClick={() => csv('tasks', tasksCsv(backup))}>タスク</button>
-            <button className="ghost" onClick={() => csv('dailies', dailiesCsv(backup))}>日報</button>
+            <button className="ghost" onClick={() => csv('dailies', dailiesCsv(backup))}>作業レポート</button>
             <button className="ghost" onClick={() => csv('meetings', meetingsCsv(backup))}>ミーティング記録</button>
             <button className="ghost" onClick={() => csv('roster', rosterCsv(backup))}>名簿</button>
             <button className="ghost" onClick={() => csv('calendar', calendarCsv(backup))}>予定・授業日</button>

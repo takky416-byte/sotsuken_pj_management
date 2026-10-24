@@ -1,4 +1,4 @@
-// 「WBSにない作業」を、日報の提出と同時に WBS のタスクにする。
+// 「WBSにない作業」を、作業レポートの提出と同時に WBS のタスクにする。
 // 学生が WBS にないことをやっても、誰が何をやったかが記録に残り、ガントチャートや進捗にも反映される。
 import type { Task, TaskStatus } from '../types';
 import type { DailyResult } from './daily';
@@ -10,7 +10,7 @@ export const ADHOC_ROOT_ID = 'adhoc-root';
 export const ADHOC_ROOT_TITLE = 'WBS外の作業(あとから追加)';
 export const MIN_ADHOC_TITLE = 2;
 
-export type AdhocInput = { key: string; title: string; result: DailyResult; parentId: string | null; /** やった日 (前回の日報のあと〜今日)。省略すると今日 */ date?: string };
+export type AdhocInput = { key: string; title: string; result: DailyResult; parentId: string | null; /** やった日 (前回の作業レポートのあと〜今日)。省略すると今日 */ date?: string };
 
 export type AdhocPlan = {
   /** 「WBS外の作業」の大項目を新しく作る必要があるとき */
@@ -35,7 +35,7 @@ export function planAdhoc(
   const rootDoc = tasks.find((t) => t.id === ADHOC_ROOT_ID);
   const needRoot = inputs.some((i) => !i.parentId || !live.some((t) => t.id === i.parentId && t.depth <= 2));
   const root: NewTask | null = needRoot && !rootDoc
-    ? { id: ADHOC_ROOT_ID, parentId: null, depth: 1, title: ADHOC_ROOT_TITLE, detail: '日報で「WBSにない作業をした」と書かれた作業が、ここに入ります。担当やチームで整理して、WBSの正しい場所に移してください。', order: appendOrder(live, null) }
+    ? { id: ADHOC_ROOT_ID, parentId: null, depth: 1, title: ADHOC_ROOT_TITLE, detail: '作業レポートで「WBSにない作業をした」と書かれた作業が、ここに入ります。担当やチームで整理して、WBSの正しい場所に移してください。', order: appendOrder(live, null) }
     : null;
   const restoreRoot = needRoot && !!rootDoc?.deleted;
   const pool: Task[] = [...live];

@@ -28,14 +28,14 @@ describe('memberFacts', () => {
     expect(a).toMatchObject({ lastActive: '2026-11-12', idleDays: 0, updates7: 1 });
     expect(b).toMatchObject({ lastActive: '2026-10-20', idleDays: 23, updates7: 0 });
   });
-  it('日報の提出状況と、事実の気づき', () => {
+  it('作業レポートの提出状況と、事実の気づき', () => {
     expect(a.daily).toEqual({ submitted: 3, days: 3, missed: 0 });
     // 今日(未提出)は、まだ終わっていないので数えない
     expect(b.daily).toEqual({ submitted: 0, days: 2, missed: 2 });
     expect(a.notes).toEqual([]);
-    expect(b.notes).toEqual(['23日間、WBSの更新も日報もありません(最後: 10/20)', '日報が2回、未提出です', '期限超過が1件あります']);
+    expect(b.notes).toEqual(['23日間、WBSの更新も作業レポートもありません(最後: 10/20)', '作業レポートが2回、未提出です', '期限超過が1件あります']);
   });
-  it('日報を読めないときは、日報の数字を出さない', () => {
+  it('作業レポートを読めないときは、作業レポートの数字を出さない', () => {
     expect(memberFacts({ ...input, dailies: null })[1].daily).toBeNull();
   });
 });

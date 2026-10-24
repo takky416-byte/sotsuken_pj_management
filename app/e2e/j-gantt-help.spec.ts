@@ -42,7 +42,7 @@ test.describe.serial('ガントチャートと使い方', () => {
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-bar')).toHaveCount(1);
     await page.getByRole('link', { name: '使い方', exact: true }).click();
     await expect(page.getByRole('heading', { name: '使い方' })).toBeVisible();
-    await page.getByText('日報の書き方').click();
+    await page.getByText('作業レポートの書き方').click();
     await expect(page.getByText('何を・どこまでやったか', { exact: false }).first()).toBeVisible();
   });
 

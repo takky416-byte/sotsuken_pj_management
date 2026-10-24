@@ -14,12 +14,12 @@ describe('dailyMissions', () => {
     const m = dailyMissions([], 's1', T, { dailySubmitted: false, isClassDay: true });
     expect(m.find((x) => x.id === 'plan')?.done).toBe(false);
   });
-  it('担当タスクすべてに期間があれば達成。今日更新すれば反映ミッションも達成', () => {
+  it('担当タスクすべてに期間があれば達成。作業レポートを出せば提出ミッションも達成', () => {
     const tasks = [task({ id: 'a', assignees: ['s1'], startDate: T, endDate: T, updatedBy: 's1', updatedAt: at(T) })];
     const m = dailyMissions(tasks, 's1', T, { dailySubmitted: true, isClassDay: true });
-    expect(m.map((x) => [x.id, x.done])).toEqual([['plan', true], ['update', true], ['daily', true]]);
+    expect(m.map((x) => [x.id, x.done])).toEqual([['plan', true], ['daily', true]]);
   });
-  it('授業日でなく未提出なら、日報のミッションは出さない', () => {
+  it('授業日でなく未提出なら、作業レポートのミッションは出さない', () => {
     expect(dailyMissions([], 's1', T, { dailySubmitted: false, isClassDay: false }).some((x) => x.id === 'daily')).toBe(false);
   });
   it('完了したタスクは、期間がなくても数えない', () => {

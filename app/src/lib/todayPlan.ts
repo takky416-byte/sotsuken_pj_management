@@ -58,13 +58,13 @@ export type DayInfo = {
   /** 今日は授業日か */
   isClassDay: boolean;
   periods: ClassDay['periods'] | null;
-  /** 日報の運用が始まっているか (始まる前は、書いても未提出にならない) */
+  /** 作業レポートの運用が始まっているか (始まる前は、書いても未提出にならない) */
   started: boolean;
   status: TodayStatus;
   next: ClassDay | null;
 };
 
-/** 今日の状況: 授業日か、日報は出したか、次の授業日はいつか。 */
+/** 今日の状況: 授業日か、作業レポートは出したか、次の授業日はいつか。 */
 export function dayInfo(classDays: ClassDay[], today: string, dailyStart: string, mineToday: Daily | undefined): DayInfo {
   const day = classDays.find((d) => d.date === today);
   const started = today >= dailyStart;
@@ -74,7 +74,7 @@ export function dayInfo(classDays: ClassDay[], today: string, dailyStart: string
   return { isClassDay: !!day, periods: day?.periods ?? null, started, status, next };
 }
 
-/** 直近の日報の「次にやること」 (今日の日報を含む。空は除く)。 */
+/** 直近の作業レポートの「次にやること」 (今日の作業レポートを含む。空は除く)。 */
 export function lastNextPlan(mine: Daily[]): { date: string; text: string } | null {
   const d = [...mine].filter((x) => (x.next ?? '').trim() !== '').sort((a, b) => b.date.localeCompare(a.date))[0];
   return d ? { date: d.date, text: (d.next ?? '').trim() } : null;

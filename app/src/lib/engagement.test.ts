@@ -41,7 +41,7 @@ describe('engagement', () => {
   ];
   const r = engagement({ ...base, tasks, dailies });
 
-  test('日報: 提出/対象日(欠席は除く)と連続日数', () => {
+  test('作業レポート: 提出/対象日(欠席は除く)と連続日数', () => {
     expect(r[0].daily).toEqual({ submitted: 4, days: 4, streak: 4 });
     expect(r[1].daily).toEqual({ submitted: 1, days: 2, streak: 0 }); // 10/29 欠席は対象外。11/04 が未提出なので途切れる。今日(11/05)は未提出でも数えない
   });
@@ -49,7 +49,7 @@ describe('engagement', () => {
     expect(r[0]).toMatchObject({ assigned: 2, done: 1, overdue: 1, touched: 1 });
     expect(r[1]).toMatchObject({ assigned: 0, done: 0, overdue: 0, touched: 1 });
   });
-  test('日報を読めないときは null', () => {
+  test('作業レポートを読めないときは null', () => {
     expect(engagement({ ...base, tasks, dailies: null })[0]).toMatchObject({ daily: null, touched: null, assigned: 2 });
   });
   test('約束とありがとうを数える', () => {
@@ -64,7 +64,7 @@ describe('engagement', () => {
   });
   test('教員向けの注意: 数字だけで決めつけない目安', () => {
     expect(attention(r[1])).toContain('担当タスクがない');
-    expect(attention({ ...r[1], daily: { submitted: 0, days: 3, streak: 0 } })).toContain('日報の提出が半分未満');
+    expect(attention({ ...r[1], daily: { submitted: 0, days: 3, streak: 0 } })).toContain('作業レポートの提出が半分未満');
     expect(attention(r[0])).toEqual(['期限超過 1件']);
   });
 });

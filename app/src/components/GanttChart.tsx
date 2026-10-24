@@ -219,11 +219,13 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
               </div>
               {!parents.has(selTask.id) ? (
                 <>
-                  <div className="seg" role="group" aria-label="状態">
+                  {actor === 'teacher' && (
+                    <div className="seg" role="group" aria-label="状態">
                     {STATUSES.map((st) => (
                       <button key={st} type="button" className={`seg-btn st-${st} ${selTask.status === st ? 'on' : ''}`} aria-pressed={selTask.status === st} onClick={() => setStatus(selTask, st)}>{STATUS_LABEL[st]}</button>
                     ))}
                   </div>
+                  )}
                   <div className="row gantt-nudge">
                     <span>開始 {selTask.startDate ? formatDate(selTask.startDate).replace(/\(.*\)/, '') : '—'}</span>
                     <button type="button" className="ghost" aria-label="開始日を1日前へ" onClick={() => shift(selTask, 'start', -1)}>−1日</button>
@@ -243,7 +245,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
                 </>
               ) : <p className="hint">親のタスクの状態と期間は、中のタスクから自動で決まります。</p>}
             </>
-          ) : <p className="hint">バーや行の名前をタップすると、状態を変えられます。</p>}
+          ) : <p className="hint">バーや行の名前をタップすると、期間の調整・担当・タスクの追加ができます。</p>}
           <div className="label">タスクを追加</div>
           <div className="row gantt-add">
             <select aria-label="追加する場所" value={addParent} onChange={(e) => setAddParent(e.target.value)}>

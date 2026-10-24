@@ -14,7 +14,7 @@ export type Task = {
   startDate: string | null;
   endDate: string | null;
   links: TaskLink[];
-  /** user: 手で追加、draft: 叩き台、adhoc: 日報で「WBSにない作業」として追加 */
+  /** user: 手で追加、draft: 叩き台、adhoc: 作業レポートで「WBSにない作業」として追加 */
   source: 'user' | 'draft' | 'adhoc';
   createdBy: string;
   updatedBy: string;

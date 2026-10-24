@@ -1,5 +1,5 @@
 /**
- * 日報リマインドの判定ロジック (純粋な関数だけ。Apps Script にも Node にも依存しない)。
+ * 作業レポートリマインドの判定ロジック (純粋な関数だけ。Apps Script にも Node にも依存しない)。
  * Node のテストでは、require して使う。Apps Script では、グローバルの Reminder として使う。
  */
 var Reminder = (function () {
@@ -55,7 +55,7 @@ var Reminder = (function () {
   function plan(input) {
     var today = input.today;
     if (input.dailyStartDate && today < input.dailyStartDate) {
-      return skip('日報の運用開始日 (' + input.dailyStartDate + ') より前です');
+      return skip('作業レポートの運用開始日 (' + input.dailyStartDate + ') より前です');
     }
     var day = (input.classDays || []).filter(function (d) { return d.date === today; })[0];
     if (!day) return skip('今日 (' + today + ') は授業日ではありません');
@@ -80,17 +80,17 @@ var Reminder = (function () {
   // ---- メールの文面 ----
   function studentMail(name, date) {
     return {
-      subject: '【卒研】今日の日報をお願いします (' + date.slice(5).replace('-', '/') + ')',
+      subject: '【卒研】今日の作業レポートをお願いします (' + date.slice(5).replace('-', '/') + ')',
       body: [
         name + ' さん',
         '',
-        '今日の日報が、まだ提出されていません。',
+        '今日の作業レポートが、まだ提出されていません。',
         'できたことを選んで、選んだ項目に一言(何をしたか)を添えて、提出してください。1分ほどで書けます。',
         '',
         DAILY_URL,
         '',
         '※ 今日、欠席の人は、このメールは気にしなくて大丈夫です(欠席は先生が入力します)。',
-        '※ このメールは、日報の提出を促すための自動送信です。',
+        '※ このメールは、作業レポートの提出を促すための自動送信です。',
       ].join('\n'),
     };
   }
@@ -102,7 +102,7 @@ var Reminder = (function () {
       ? p.recipients.map(function (r) { return '・' + r.teamId + 'チーム ' + r.name + ' <' + r.email + '>'; }).join('\n')
       : '(送る相手はいません)';
     return {
-      subject: '[試験] 日報リマインドの送信予定 (' + p.date + ' ' + (p.slot === 'morning' ? '午前' : '午後') + ')',
+      subject: '[試験] 作業レポートリマインドの送信予定 (' + p.date + ' ' + (p.slot === 'morning' ? '午前' : '午後') + ')',
       body: [
         '試験モードです。学生には、メールを送っていません。',
         '本番モードにすると、次の ' + p.recipients.length + ' 名に、下の文面を送ります。',
@@ -121,9 +121,9 @@ var Reminder = (function () {
   function teacherLiveSummary(p, failed) {
     var list = p.recipients.map(function (r) { return '・' + r.teamId + 'チーム ' + r.name; }).join('\n');
     return {
-      subject: '日報リマインドを送信しました (' + p.date + ' ' + (p.slot === 'morning' ? '午前' : '午後') + ' / ' + p.recipients.length + '名)',
+      subject: '作業レポートリマインドを送信しました (' + p.date + ' ' + (p.slot === 'morning' ? '午前' : '午後') + ' / ' + p.recipients.length + '名)',
       body: [
-        p.recipients.length + ' 名に、日報のリマインドを送りました。',
+        p.recipients.length + ' 名に、作業レポートのリマインドを送りました。',
         failed && failed.length ? '\n送れなかった人: ' + failed.join('、') : '',
         '',
         list,
@@ -133,7 +133,7 @@ var Reminder = (function () {
 
   function tooManyMail(p) {
     return {
-      subject: '[要確認] 日報リマインドを止めました',
+      subject: '[要確認] 作業レポートリマインドを止めました',
       body: '送信先が ' + p.recipients.length + ' 名で、上限 (' + MAX_RECIPIENTS + ' 名) を超えたため、送らずに止めました。\n設定やデータを確認してください。',
     };
   }

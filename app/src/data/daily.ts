@@ -8,15 +8,15 @@ import { useQuery } from './util';
 
 const col = (teamId: string) => collection(db, 'teams', teamId, 'dailyReports');
 
-/** チーム全員の日報 (from 以降)。教員、または設定で閲覧が許可されているとき。 */
+/** チーム全員の作業レポート (from 以降)。教員、または設定で閲覧が許可されているとき。 */
 export function useTeamDailies(teamId: string | null, from: string) {
   return useQuery<Daily>(teamId ? query(col(teamId), where('date', '>=', from)) : null, `dailies:${teamId}:${from}`);
 }
 
 /**
- * 自分の日報だけ (from 以降)。
+ * 自分の作業レポートだけ (from 以降)。
  * 「sid が等しい」と「date が from 以降」を同時に指定する検索は、Firestore に複合インデックスが必要で、
- * 本番では、作らないとエラーになる (エミュレータでは起きない)。インデックスを増やさないため、自分の日報 (授業日の数だけで少ない)
+ * 本番では、作らないとエラーになる (エミュレータでは起きない)。インデックスを増やさないため、自分の作業レポート (授業日の数だけで少ない)
  * をすべて読み、from 以降を画面側で選ぶ。
  */
 export function useMyDailies(teamId: string | null, sid: string | null, from: string) {
@@ -51,6 +51,6 @@ export const saveDaily = (
   teamId: string, sid: string, date: string, entries: DailyEntry[], blocker: string, prev?: Daily, next = '',
 ) => setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries, blocker, absent: false, next }, prev));
 
-/** 教員のみ。欠席にすると内容は空になる。欠席を取り消しても、日報は空のまま (未提出) になる。 */
+/** 教員のみ。欠席にすると内容は空になる。欠席を取り消しても、作業レポートは空のまま (未提出) になる。 */
 export const setAbsent = (teamId: string, sid: string, date: string, absent: boolean, prev?: Daily) =>
   setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries: prev?.entries ?? [], blocker: prev?.blocker ?? '', absent }, prev));

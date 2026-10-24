@@ -151,7 +151,7 @@ export function counts(b: Backup): { label: string; n: number }[] {
     { label: '名簿', n: col(b, 'roster').length },
     { label: 'チーム', n: col(b, 'teams').length },
     { label: 'タスク(削除済みを含む)', n: sum('tasks') },
-    { label: '日報', n: sum('dailyReports') },
+    { label: '作業レポート', n: sum('dailyReports') },
     { label: 'ミーティング記録', n: sum('meetings') },
     { label: 'コメント', n: sum('comments') },
     { label: 'ありがとう', n: sum('thanks') },

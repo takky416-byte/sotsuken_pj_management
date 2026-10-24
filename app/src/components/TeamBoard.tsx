@@ -14,7 +14,7 @@ import { stamps as toneStamps, useTone } from '../lib/tone';
 import { Em } from './Em';
 
 /**
- * チームのようす (直近3週間)。日報・担当・約束・ありがとうの目安を、メンバーごとに並べる。
+ * チームのようす (直近3週間)。作業レポート・担当・約束・ありがとうの目安を、メンバーごとに並べる。
  * 点数や順位は出さない。教員には、確認したほうがよい点を添える。
  * viewer: 学生は自分の学生ID、教員は 'teacher'。
  */
@@ -44,7 +44,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
     dailyStart: settings.dailyStartDate,
     kickoffDate: team.kickoffAt ? jstDate(new Date(team.kickoffAt)) : null,
   };
-  // 自分の分しか読めないときは、他の人の日報は集計しない (読めない日報を「未提出」と誤って数えない)
+  // 自分の分しか読めないときは、他の人の作業レポートは集計しない (読めない作業レポートを「未提出」と誤って数えない)
   const stats = peer
     ? engagement({ ...common, dailies })
     : engagement({ ...common, dailies: null }).map((s) => (s.sid === viewer ? engagement({ ...common, members: [{ sid: s.sid, name: s.name }], dailies })[0] : s));
@@ -66,12 +66,12 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
     <>
       <p className="hint">
         直近3週間のようすです。点数や順位ではなく、チームで状況を見るための目安です。
-        {!peer && ' (日報は、自分の分だけ表示されます)'}
+        {!peer && ' (作業レポートは、自分の分だけ表示されます)'}
       </p>
       <div className="table-wrap">
         <StackTable className="board">
           <thead>
-            <tr><th>メンバー</th><th>日報</th><th>日報で触れたタスク</th><th>担当</th><th>完了</th><th>期限超過</th><th>WBS外</th><th>約束</th><th>ありがとう</th><th /></tr>
+            <tr><th>メンバー</th><th>作業レポート</th><th>作業レポートで触れたタスク</th><th>担当</th><th>完了</th><th>期限超過</th><th>WBS外</th><th>約束</th><th>ありがとう</th><th /></tr>
           </thead>
           <tbody>
             {stats.map((s) => {
@@ -84,7 +84,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
                   <td>{s.assigned}</td>
                   <td>{s.done}</td>
                   <td className={s.overdue > 0 ? 'bad' : ''}>{s.overdue}</td>
-                  <td title="日報で「WBSにない作業」として追加した作業">{s.adhoc}</td>
+                  <td title="作業レポートで「WBSにない作業」として追加した作業">{s.adhoc}</td>
                   <td>{s.promises.total === 0 ? '—' : `${s.promises.done}/${s.promises.total}`}</td>
                   <td>受 {s.thanks.received} / 送 {s.thanks.sent}</td>
                   <td>

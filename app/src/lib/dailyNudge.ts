@@ -1,4 +1,4 @@
-// 日報の間があいたときの、やさしい促し (強い警告ではない)。学生本人の画面にだけ出す。
+// 作業レポートの間があいたときの、やさしい促し (強い警告ではない)。学生本人の画面にだけ出す。
 import type { ClassDay } from '../types';
 import { statusOf, type Daily } from './daily';
 import { sinceOf } from './dailyDraft';
@@ -9,9 +9,9 @@ import type { ToneId } from './tone';
 export type Nudge = {
   /** 0: 出さない / 1: 少し間があいている / 2: しばらく出ていない */
   level: 0 | 1 | 2;
-  /** 前回の日報から今日まで (日)。前回がなければ null */
+  /** 前回の作業レポートから今日まで (日)。前回がなければ null */
   daysSince: number | null;
-  /** 前回の日報のあと、日報が出ていない授業日の数 (欠席を除く。今日は含まない) */
+  /** 前回の作業レポートのあと、作業レポートが出ていない授業日の数 (欠席を除く。今日は含まない) */
   missed: number;
   prevDate: string | null;
 };
@@ -38,22 +38,22 @@ export function nudgeMessage(n: Nudge, isClassDay: boolean, tone: ToneId = 'stan
   const md = n.prevDate ? `${Number(n.prevDate.slice(5, 7))}/${Number(n.prevDate.slice(8, 10))}` : '';
   if (tone === 'simple') {
     return {
-      title: n.level === 1 ? '日報の提出間隔' : '日報が未提出です',
+      title: n.level === 1 ? '作業レポートの提出間隔' : '作業レポートが未提出です',
       body: `${n.prevDate ? `前回: ${md}(${n.daysSince}日前)。` : '提出なし。'}未提出の授業日: ${n.missed}回。${isClassDay ? '今日' : '次の授業日'}に、前回以降の作業をまとめて提出してください。`,
     };
   }
-  const when = n.prevDate ? `前回の日報(${md})から、${n.daysSince}日たちました。` : 'まだ日報が出ていません。';
+  const when = n.prevDate ? `前回の作業レポート(${md})から、${n.daysSince}日たちました。` : 'まだ作業レポートが出ていません。';
   const go = isClassDay ? '今日の授業で、' : '次の授業日に、';
   if (tone === 'casual') {
     return n.level === 1
-      ? { title: '日報の間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書きましょう。` }
-      : { title: '日報を、そろそろ書いてみませんか', body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてみましょう。書きにくいことは、チームのメンバーに相談してみてください。` };
+      ? { title: '作業レポートの間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書きましょう。` }
+      : { title: '作業レポートを、そろそろ書いてみませんか', body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてみましょう。書きにくいことは、チームのメンバーに相談してみてください。` };
   }
   if (n.level === 1) {
-    return { title: '日報の間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書いてください。` };
+    return { title: '作業レポートの間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書いてください。` };
   }
   return {
-    title: '日報が、しばらく出ていません',
+    title: '作業レポートが、しばらく出ていません',
     body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてください。書きにくいことは、チームのメンバーに相談できます。`,
   };
 }

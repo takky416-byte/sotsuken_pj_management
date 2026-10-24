@@ -14,7 +14,7 @@ export function StudentNav({ teamId }: { teamId: string | null }) {
       <NavLink to={`${base}/`} end>ホーム</NavLink>
       <NavLink to={`${base}/wbs`}>WBS・ガントチャート</NavLink>
       <NavLink to={`${base}/report`}>報告書</NavLink>
-      <NavLink to={`${base}/daily`}>日報</NavLink>
+      <NavLink to={`${base}/daily`}>作業レポート</NavLink>
       <NavLink to={`${base}/meeting/${teamId ?? 'A'}`}>ミーティング</NavLink>
       <NavLink to={`${base}/help`}>使い方</NavLink>
     </nav>

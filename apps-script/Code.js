@@ -1,5 +1,5 @@
 /**
- * 日報のリマインド (Apps Script)。あなたの Google アカウントで動き、Gmail から送る。
+ * 作業レポートのリマインド (Apps Script)。あなたの Google アカウントで動き、Gmail から送る。
  * 設定・手順は README.md。判定のロジックは core.js (Reminder)。
  *
  * スクリプトのプロパティ:

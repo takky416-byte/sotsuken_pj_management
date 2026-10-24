@@ -46,7 +46,7 @@ describe('meetingView', () => {
     const tasks = [T('a', { assignees: [] }), T('b'), T('c', { assignees: [], status: 'done' })];
     expect(unassignedTasks(tasks).map((t) => t.id)).toEqual(['a']);
   });
-  test('進行中や予定期間内なのに、日報で触れられていない', () => {
+  test('進行中や予定期間内なのに、作業レポートで触れられていない', () => {
     const tasks = [
       T('doing', { status: 'doing' }), T('doingTouched', { status: 'doing' }),
       T('inRange', { startDate: '2026-11-01', endDate: '2026-11-10' }),

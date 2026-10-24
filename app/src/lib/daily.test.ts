@@ -59,7 +59,7 @@ describe('classDatesBetween / consecutiveMisses', () => {
   });
 });
 
-describe('validateDaily: 新しく提出する日報は、しっかり書かせる', () => {
+describe('validateDaily: 新しく提出する作業レポートは、しっかり書かせる', () => {
   const long = '設計書の画面一覧を整理して、足りない画面を3つ見つけた';
   test('取り組み・説明・次にやること がそろっていれば、問題なし', () => {
     expect(validateDaily([{ kind: 'task', taskId: 't', note: long, result: 'progress' }], '管理者画面のワイヤーフレームを描く')).toEqual([]);
