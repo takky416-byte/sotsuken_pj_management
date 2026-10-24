@@ -94,6 +94,20 @@ describe('試運転データ (pilot-data)', () => {
     expect((await assertSucceeds(getDocs(collection(s, 'teams/D/tasks')))).size).toBe(p.tasks.length + 3); // 試験の準備で作った3件を含む
   });
 
+  test('WBS外の作業 (後追い) とアクセス履歴が、型どおりに入る', () => {
+    const p = buildPilot({ teamId: 'D', members: MEMBERS, today: TODAY });
+    expect(p.tasks.filter((t) => t.data.source === 'adhoc').length).toBe(3); // 大項目 + 2件
+    const kids = p.tasks.filter((t) => t.data.parentId === 'adhoc-root');
+    expect(kids).toHaveLength(2);
+    expect(p.tasks.find((t) => t.id === 'adhoc-root')?.data.assignees).toEqual([]); // 親は担当なし
+    const by = (sid: string) => p.accessLogs.filter((x) => x.data.sid === sid);
+    expect(by(MEMBERS[0].sid).length).toBe(p.days.length); // 主力は、毎授業日
+    expect(by(MEMBERS[2].sid).length).toBeLessThan(by(MEMBERS[0].sid).length / 2); // 消極的な人は、少ない
+    const recent = p.days.slice(-3).map((d) => d.date);
+    expect(by(MEMBERS[2].sid).some((x) => recent.includes(x.data.date as string))).toBe(false); // 直近は来ていない
+    for (const x of p.accessLogs) expect(x.id).toBe(`${x.data.date}_${x.data.sid}`);
+  });
+
   test('画面に出る指標が、狙いどおりになる (主力・ふつう・消極的)', async () => {
     const p = buildPilot({ teamId: 'D', members: MEMBERS, today: TODAY });
     const tasks = p.tasks.map((x) => ({ id: x.id, ...x.data })) as never[];

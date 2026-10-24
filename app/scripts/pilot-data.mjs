@@ -158,6 +158,16 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
     }
   }
 
+  // WBSにない作業 (日報で「WBSにない作業をした」と書かれて、あとから追加された想定)。大項目「WBS外の作業」の下に、後追いの印つきで
+  if (!live.some((t) => t.id === 'adhoc-root')) {
+    mk('adhoc-root', null, 1, { t: 'WBS外の作業(あとから追加)', st: 'doing', p: [0] });
+    tasks.at(-1).data.source = 'adhoc';
+    tasks.at(-1).data.detail = '日報で「WBSにない作業をした」と書かれた作業が、ここに入ります。担当やチームで整理して、WBSの正しい場所に移してください。';
+  }
+  mk('pilot-adhoc1', 'adhoc-root', 2, { t: '取引先への確認メールを書いて送る', st: 'done', p: [0], s: T(-3), e: T(-3) });
+  mk('pilot-adhoc2', 'adhoc-root', 2, { t: 'ヒアリング会場の下見', st: 'done', p: [1], s: T(-5), e: T(-5) });
+  for (const id of ['pilot-adhoc1', 'pilot-adhoc2']) tasks.find((t) => t.id === id).data.source = 'adhoc';
+
   // 親タスク (子のあるタスク) は、担当を付けず、状態は子から自動で決まる (画面は子から求めるが、保存する値もそろえておく)
   const kidsOf = new Map();
   for (const t of [...tasks, ...live.map((l) => ({ id: l.id, data: l }))]) {
@@ -242,10 +252,28 @@ export function buildPilot({ teamId, members, today, existingTasks = [], existin
       return { id: `pilot-th${i + 1}`, data: { from: person(a), to: person(b), note, date, createdAt: at(date, '16:40') } };
     }).filter((t) => t.data.from !== t.data.to);
 
+  // ---- アクセス履歴 (主力は毎授業日、ふつうはほぼ毎回、消極的な人は少なく、直近は来ていない) ----
+  const accessLogs = [];
+  members.forEach((m, mi) => {
+    const pe = persona(mi);
+    days.forEach((d, di) => {
+      const visited = pe === 0 ? true : pe === 1 ? di % 5 !== 4 : di % 3 === 0 && di < days.length - 3;
+      if (!visited) return;
+      const first = at(d.date, d.periods === '1-2' ? '11:20' : '15:10');
+      accessLogs.push({
+        id: `${d.date}_${m.sid}`,
+        data: {
+          sid: m.sid, teamId, date: d.date, firstAt: first, lastAt: first + (pe === 2 ? 6 : 55) * 60000, visits: pe === 2 ? 1 : 2,
+          views: pe === 2 ? 5 : pe === 0 ? 42 : 24, screens: pe === 2 ? { home: 3, daily: 2 } : { home: 12, wbs: 10, daily: 6, gantt: 4, meeting: 2 },
+        },
+      });
+    });
+  });
+
   // ---- チーム・カレンダー ----
   const have = new Set(existingClassDays.map((d) => d.date));
   return {
-    start, days, tasks, dailies, meetings, comments, thanks,
+    start, days, tasks, dailies, meetings, comments, thanks, accessLogs,
     team: { status: 'active', kickoffAt: at(start, '10:00'), teamMeetingInput: false, ...(projectName ? {} : { projectName: 'イベント情報共有アプリ(試運転)' }) },
     newClassDays: days.filter((d) => !have.has(d.date)),
   };
@@ -264,7 +292,7 @@ export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), 
 
   const p = buildPilot({ teamId, members: t.members ?? [], today: jstToday(now), existingTasks, existingClassDays: existingDays, projectName: t.projectName, personas });
   log(`チーム ${teamId} (メンバー ${t.members.length}人、状態 ${t.status}、タスク ${existingTasks.length}件、日報 ${(await teamRef.collection('dailyReports').count().get()).data().count}件)`);
-  log(`作る: タスク ${p.tasks.length} / 日報 ${p.dailies.length} / ミーティング記録 ${p.meetings.length} / コメント ${p.comments.length} / ありがとう ${p.thanks.length} / 授業日 ${p.newClassDays.length}日 (${p.start}〜)`);
+  log(`作る: タスク ${p.tasks.length} / 日報 ${p.dailies.length} / ミーティング記録 ${p.meetings.length} / コメント ${p.comments.length} / ありがとう ${p.thanks.length} / アクセス履歴 ${p.accessLogs.length} / 授業日 ${p.newClassDays.length}日 (${p.start}〜)`);
   if (dryRun) { log('--- ドライラン: 何も書き込んでいません ---'); return p; }
 
   const writes = [
@@ -273,6 +301,7 @@ export async function applyPilot({ db, teamId, dryRun = true, now = Date.now(), 
     ...p.meetings.map((x) => [teamRef.collection('meetings').doc(x.id), x.data]),
     ...p.comments.map((x) => [teamRef.collection('comments').doc(x.id), x.data]),
     ...p.thanks.map((x) => [teamRef.collection('thanks').doc(x.id), x.data]),
+    ...p.accessLogs.map((x) => [db.collection('accessLogs').doc(x.id), x.data]),
   ];
   for (let i = 0; i < writes.length; i += 400) {
     const b = db.batch();

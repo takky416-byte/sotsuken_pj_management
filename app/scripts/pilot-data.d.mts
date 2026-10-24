@@ -16,7 +16,7 @@ export function buildPilot(input: {
 }): {
   start: string;
   days: { date: string; periods: string; meeting: boolean; note: string }[];
-  tasks: Doc[]; dailies: Doc[]; meetings: Doc[]; comments: Doc[]; thanks: Doc[];
+  tasks: Doc[]; dailies: Doc[]; meetings: Doc[]; comments: Doc[]; thanks: Doc[]; accessLogs: Doc[];
   team: Record<string, unknown>;
   newClassDays: { date: string }[];
 };
