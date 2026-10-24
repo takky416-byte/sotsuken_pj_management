@@ -567,9 +567,11 @@ table.access tr.detail td { background:var(--bg); }
 /* お気に入りの案内 (小さく) */
 .bookmark { border:2px dashed var(--accent2); padding:8px 14px; margin-bottom:12px; }
 .bookmark-bar { display:flex; justify-content:space-between; align-items:center; gap:8px 12px; flex-wrap:wrap; }
+.bookmark-main { flex:1; min-width:260px; }
+.bookmark-main strong { display:block; }
 .bookmark-act { display:flex; gap:6px; flex-wrap:wrap; }
 .bookmark-act button { padding:4px 12px; font-size:14px; }
-.bookmark details { margin-top:4px; font-size:14px; } .bookmark summary { cursor:pointer; color:var(--muted); }
+.bookmark details { margin-top:0; font-size:14px; } .bookmark summary { cursor:pointer; color:var(--muted); }
 .bookmark ol { margin:6px 0; padding-left:22px; }
 .bookmark code { background:var(--bg); border-radius:6px; padding:2px 8px; word-break:break-all; }
 

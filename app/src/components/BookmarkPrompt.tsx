@@ -46,7 +46,14 @@ export function BookmarkPrompt({ email }: { email: string }) {
   return (
     <section className="card bookmark" aria-label="お気に入りに追加">
       <div className="bookmark-bar">
-        <strong><Em e="⭐" />このアプリを、お気に入りに追加してください</strong>
+        <div className="bookmark-main">
+          <strong><Em e="⭐" />このアプリを、お気に入りに追加してください</strong>
+          <details>
+            <summary>{how.title} での追加のしかた</summary>
+            <ol>{how.steps.map((s) => <li key={s}>{s}</li>)}</ol>
+            <p className="hint">URL: <code>{url}</code>(「あとで」は3日後にまた出ます)</p>
+          </details>
+        </div>
         <span className="bookmark-act">
           {install && <button type="button" onClick={doInstall}>ホーム画面に追加</button>}
           {!install && canShare && <button type="button" onClick={share}>追加のメニューを開く</button>}
@@ -57,11 +64,6 @@ export function BookmarkPrompt({ email }: { email: string }) {
         </span>
       </div>
       {saved && <p className="hint" role="status">ダウンロードしたファイル「{file?.filename}」を、<strong>デスクトップにドラッグ</strong>して置いてください。ブラウザに「危険なファイル」と出たときは、このアプリのURLだけが入った小さなファイルなので、「保持」を選んでかまいません。</p>}
-      <details>
-        <summary>{how.title} での追加のしかた</summary>
-        <ol>{how.steps.map((s) => <li key={s}>{s}</li>)}</ol>
-        <p className="hint">URL: <code>{url}</code>(「あとで」は3日後にまた出ます)</p>
-      </details>
     </section>
   );
 }
