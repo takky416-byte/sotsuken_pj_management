@@ -83,7 +83,7 @@ test.describe.serial('読み取り回数', () => {
     expect(first).toBeLessThan(1000);
     expect(detail).toBeLessThan(30);
     expect(daily).toBeLessThan(30);
-    expect(access).toBeLessThan(700); // 28名 × 直近21日ぶんまで。開くたびではなく、5分間は共有される
+    expect(access).toBeLessThan(450); // 28名 × 直近14日ぶんまで。開くたびではなく、5分間は共有される
     expect(back).toBeLessThan(150); // 最初のチーム以外のデータを、新しく購読する分
   });
 

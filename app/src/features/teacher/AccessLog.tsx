@@ -10,7 +10,7 @@ const DAYS = 14;
 /** 教員だけが見る、学生のアクセス履歴。いつ・どの画面を開いたか。 */
 export function AccessLogPage() {
   const today = jstDate();
-  const from = addDays(today, -20);
+  const from = addDays(today, -(DAYS - 1)); // 表示する日数ぶんだけ読む
   const { data: logs, error } = useAccessLogs(from);
   const { data: teams } = useTeams();
   const classDays = useClassDays();
