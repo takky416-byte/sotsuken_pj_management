@@ -74,6 +74,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const [focusId, setFocusId] = useState<string | null>(null); // 結果を押したら、そのまま説明を書き始められるように
+  const [touched, setTouched] = useState<Set<string>>(new Set()); // いちど書いて離れた欄
+  const touch = (id: string) => setTouched((t) => (t.has(id) ? t : new Set(t).add(id)));
   const [shown, setShown] = useState(false); // 「提出する」を押してから、足りない点を赤く示す
 
   useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next }); }, [items, next, key, prev]);
@@ -136,13 +138,15 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     if (el && focusId === id) { setFocusId(null); setTimeout(() => el.focus({ preventScroll: false }), 0); }
   };
   const submitted = statusOf(prev) === 'submitted';
-  const counter = (n: number, min: number) => (n >= min ? <span className="counter ok">{n}字 ✓</span> : <span className={`counter ${shown ? 'bad' : ''}`}>あと{min - n}字({n}/{min})</span>);
+  // 字数は見せない。足りないときだけ、「もう少し具体的に」と出す (書いている途中は出さず、欄を離れたとき、または提出を押したあとに出す)
+  const counter = (id: string, n: number, min: number, hintText = '何を、どこまでやったか') =>
+    n >= min || !(shown || touched.has(id)) ? null : <span className={`counter ${shown ? 'bad' : ''}`} role="note">もう少し具体的に書いてください({hintText})</span>;
 
   return (
     <div className="daily-form">
       <section className="card">
         <h3>① 前回の日報のあとに、やったこと</h3>
-        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます({MIN_NOTE_CHARS}字以上)。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
+        <p className="hint">{prevDate ? `前回の日報(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
         {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -164,12 +168,12 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                 <>
                   <textarea
                     ref={focusOn(i.id)} className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
-                    placeholder={PLACEHOLDER[i.result]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })}
+                    placeholder={PLACEHOLDER[i.result]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
                   />
                   <div className="phrases" aria-label="ひとこと">
                     {PHRASES[i.result].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text) })}>＋ {ph.label}</button>)}
                   </div>
-                  <div className="counter-row">{counter(n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}</div>
+                  <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}</div>
                 </>
               )}
             </div>
@@ -204,9 +208,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
               </div>
               <textarea
                 className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label="WBSにない作業の説明"
-                placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })}
+                placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
               />
-              <div className="counter-row">{counter(n, MIN_NOTE_CHARS)}<span className="hint">提出すると、WBSにタスクとして追加されます(あなたが担当)</span></div>
+              <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}<span className="hint">提出すると、WBSにタスクとして追加されます(あなたが担当)</span></div>
             </div>
           );
         })}
@@ -223,9 +227,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
               <div className="dcard-head"><strong>{title(i)}</strong><button type="button" className="ghost icon" aria-label={`${title(i)}をやめる`} onClick={() => removeKind(i.id)}>×</button></div>
               <textarea
                 className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
-                placeholder={KIND_PLACEHOLDER[i.kind as Exclude<DailyKind, 'task'>]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })}
+                placeholder={KIND_PLACEHOLDER[i.kind as Exclude<DailyKind, 'task'>]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
               />
-              <div className="counter-row">{counter(n, MIN_NOTE_CHARS)}</div>
+              <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}</div>
             </div>
           );
         })}
@@ -239,7 +243,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
 
       <section className="card">
         <h3>② つぎにやること</h3>
-        <p className="hint">次の授業日までに、何をやるかを書きます({MIN_NEXT_CHARS}字以上)。ホームの「次にやること」にも出ます。</p>
+        <p className="hint">次の授業日までに、何をやるかを書きます。ホームの「次にやること」にも出ます。</p>
         {suggestions.length > 0 && (
           <div className="chips" aria-label="次にやることの候補">
             {suggestions.map((t) => (
@@ -250,9 +254,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         <textarea
           className={`note-area ${shown && charCount(next) < MIN_NEXT_CHARS ? 'need' : ''}`} rows={3} maxLength={1000} aria-label="次にやること"
           placeholder={'次の授業日までに、何をどこまでやる?\n例: 管理者画面のワイヤーフレームを描き終える。ログイン機能の画面を作り始める。'}
-          value={next} onChange={(e) => setNext(e.target.value)}
+          value={next} onChange={(e) => setNext(e.target.value)} onBlur={() => touch('next')}
         />
-        <div className="counter-row">{counter(charCount(next), MIN_NEXT_CHARS)}</div>
+        <div className="counter-row">{counter('next', charCount(next), MIN_NEXT_CHARS, 'いつまでに、何をやるか')}</div>
       </section>
 
 

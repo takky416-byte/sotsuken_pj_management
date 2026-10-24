@@ -67,11 +67,11 @@ describe('validateDaily: 新しく提出する日報は、しっかり書かせ�
   test('取り組みがない', () => {
     expect(validateDaily([], '管理者画面のワイヤーフレームを描く').map((p) => p.key)).toEqual(['entries']);
   });
-  test('説明が短い (空白は数えない)。あと何字かを示す', () => {
+  test('説明が短い (空白は数えない)。もう少し具体的に、と示す', () => {
     const p = validateDaily([{ kind: 'study', note: '  調べた   ' }], '管理者画面のワイヤーフレームを描く', () => '調査');
     expect(p).toHaveLength(1);
     expect(p[0].key).toBe('note:0');
-    expect(p[0].message).toContain('あと7字');
+    expect(p[0].message).toContain('もう少し具体的に');
     expect(charCount(' あ い\nう ')).toBe(3);
   });
   test('次にやることが短い・ない', () => {

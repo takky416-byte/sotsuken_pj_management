@@ -108,14 +108,16 @@ test.describe.serial('運用の流れ', () => {
     const card = page.locator('.dcard', { hasText: '画面遷移図を描く' });
     await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true');
     await submit.click();
-    await expect(page.getByRole('alert')).toContainText('画面遷移図を描くの説明を、あと10字以上');
+    await expect(page.getByRole('alert')).toContainText('画面遷移図を描くの説明を、もう少し具体的に');
     await expect(page.getByRole('alert')).toContainText('「次にやること」');
 
-    // 説明が短いと、まだ足りない (あと何字かが出る)
+    // 説明が短いと、まだ足りない (「もう少し具体的に」と出る。字数は見せない)
     await page.getByLabel('画面遷移図を描くの説明').fill('下書きを作った');
-    await expect(card).toContainText('あと3字');
+    await card.getByLabel('画面遷移図を描くの説明').blur();
+    await expect(card).toContainText('もう少し具体的に');
+    await expect(card).not.toContainText('あと3字');
     await page.getByLabel('画面遷移図を描くの説明').fill('画面の下書きを3枚作った');
-    await expect(card).toContainText('✓');
+    await expect(card).not.toContainText('もう少し具体的に');
     // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
     await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');
     await page.getByLabel('次にやること', { exact: true }).fill('下書きをレビューして、清書する');

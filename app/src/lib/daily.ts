@@ -63,10 +63,10 @@ export function validateDaily(
   if (entries.length === 0) out.push({ key: 'entries', message: '前回の日報のあとにやったことを、1つ以上選んでください' });
   entries.forEach((e, i) => {
     const n = charCount(e.note);
-    if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、あと${MIN_NOTE_CHARS - n}字以上書いてください(何を、どこまでやったか)` });
+    if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、もう少し具体的に書いてください(何を、どこまでやったか)` });
   });
   const n = charCount(next);
-  if (n < MIN_NEXT_CHARS) out.push({ key: 'next', message: `「次にやること」を、あと${MIN_NEXT_CHARS - n}字以上書いてください` });
+  if (n < MIN_NEXT_CHARS) out.push({ key: 'next', message: `「次にやること」を、もう少し具体的に書いてください(いつまでに、何をやるか)` });
   return out;
 }
 
