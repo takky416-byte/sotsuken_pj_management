@@ -657,7 +657,7 @@ table.access tr.detail td { background:var(--bg); }
 @media (min-width: 900px) { .home-top .nudge-main { display:block; } .home-top .nudge-main p { margin:4px 0 0; } }
 
 /* WBSとガントの統合: 行の右に、期間の棒を並べる (広い画面だけ。狭い画面では「ガントを大きく」で見る) */
-.view-switch { margin:4px 0 10px; }
+
 .w-bar { display:none; }
 @media (min-width: 1100px) {
   .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 124px 104px 100px minmax(260px,1.2fr) 76px; }
@@ -706,3 +706,8 @@ table.access tr.detail td { background:var(--bg); }
 .history-list li { display:flex; flex-wrap:wrap; gap:2px 8px; padding:4px 0; border-bottom:1px solid var(--line); font-size:14px; }
 .history-when { color:var(--muted); min-width:84px; }
 .detail-fs { border:0; padding:0; margin:0; min-width:0; }
+
+/* 表示の切り替え (一覧とガントチャート / ガントチャートを大きく): 小さく、選んでいる側を色で示す */
+.view-switch { display:inline-flex; gap:6px; margin:4px 0 10px; }
+.view-switch .seg-btn { min-height:0; padding:5px 14px; font-size:15px; border-radius:8px; }
+.view-switch .seg-btn.on { background:var(--accent); color:#fff; border-color:transparent; }
