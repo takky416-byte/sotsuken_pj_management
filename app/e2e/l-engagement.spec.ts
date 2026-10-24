@@ -129,6 +129,16 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(dialog).toContainText('最初にホームを確認します');
     await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
     await expect(em).toBeHidden();
+    // 使い方ページも、トーンに合わせた言い方になる
+    await page.getByRole('link', { name: '使い方', exact: true }).click();
+    await page.getByText('日報の書き方').click();
+    await expect(page.getByText('前回の日報以降の作業をまとめて記入します')).toBeVisible();
+    await page.getByLabel('トーン').selectOption('casual');
+    await expect(page.getByText('まとめて書きましょう', { exact: false }).first()).toBeVisible();
+    await page.getByLabel('トーン').selectOption('standard');
+    await expect(page.getByText('まとめて書きます。', { exact: false }).first()).toBeVisible();
+    await page.getByRole('link', { name: 'ホーム' }).click();
+
     await page.getByLabel('トーン').selectOption('standard');
     await expect(html).toHaveAttribute('data-tone', 'standard');
   });
