@@ -9,7 +9,9 @@ import { dailyWindowFrom, formatDate, jstDate } from '../lib/dates';
 import { attention, engagement } from '../lib/engagement';
 import type { Team } from '../types';
 
-import { STAMPS, THANKS_PER_DAY, stampNote } from '../lib/thanksView';
+import { THANKS_PER_DAY, stampNote } from '../lib/thanksView';
+import { stamps as toneStamps, useTone } from '../lib/tone';
+import { Em } from './Em';
 
 /**
  * チームのようす (直近3週間)。日報・担当・約束・ありがとうの目安を、メンバーごとに並べる。
@@ -17,6 +19,7 @@ import { STAMPS, THANKS_PER_DAY, stampNote } from '../lib/thanksView';
  * viewer: 学生は自分の学生ID、教員は 'teacher'。
  */
 export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
+  useTone();
   const teacher = viewer === 'teacher';
   const today = jstDate();
   const from = dailyWindowFrom(today);
@@ -76,7 +79,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
               return (
                 <tr key={s.sid} className={s.sid === viewer ? 'me' : ''}>
                   <td><strong>{s.name}</strong>{warn.length > 0 && <div className="warn-note">{warn.join(' / ')}</div>}</td>
-                  <td>{s.daily ? <>{s.daily.submitted}/{s.daily.days}日{s.daily.streak >= 2 && <span className="streak" title="連続で提出した授業日">🔥{s.daily.streak}</span>}</> : '—'}</td>
+                  <td>{s.daily ? <>{s.daily.submitted}/{s.daily.days}日{s.daily.streak >= 2 && <span className="streak" title="連続で提出した授業日"><span className="em" aria-hidden="true">🔥</span><span className="plain-only">連続</span>{s.daily.streak}<span className="plain-only">回</span></span>}</> : '—'}</td>
                   <td>{s.touched ?? '—'}</td>
                   <td>{s.assigned}</td>
                   <td>{s.done}</td>
@@ -87,7 +90,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
                   <td>
                     {s.sid !== viewer && (
                       <button className="ghost" disabled={!teacher && left <= 0} onClick={() => { setTo(to === s.sid ? null : s.sid); setNote(''); }}
-                        aria-label={`${s.name}にありがとう`}>👏 ありがとう</button>
+                        aria-label={`${s.name}にありがとう`}><Em e="👏" />ありがとう</button>
                     )}
                   </td>
                 </tr>
@@ -102,7 +105,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
         <div className="card form">
           <div className="label">{nameOf(to)}さんに、ありがとう{!teacher && <span className="hint">(今日はあと{left}回)</span>}</div>
           <div className="stamps" role="group" aria-label="スタンプ(押すとそのまま送れます)">
-            {STAMPS.map((s) => <button key={s.label} type="button" className="stamp" onClick={() => send(stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
+            {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" onClick={() => send(stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
           </div>
           <input aria-label="ありがとうの一言" placeholder="一言(任意。例: レビューしてくれて助かった)" maxLength={100} value={note}
             onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) send(); }} />

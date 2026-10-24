@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
+import { Em } from '../../components/Em';
 import { AnalysisView } from '../../components/AnalysisView';
 import { FactsTable } from '../../components/FactsTable';
 import { IdleHelper } from '../../components/IdleHelper';
@@ -201,7 +202,7 @@ function MeetingScreen({ team }: { team: Team }) {
         </section>
 
         <section className="card analysis-card">
-          <h3>📊 プロジェクト分析{me.role === 'student' && <Link to={`${base}/report`} className="hint"> 報告書を開く</Link>}</h3>
+          <h3><Em e="📊" />プロジェクト分析{me.role === 'student' && <Link to={`${base}/report`} className="hint"> 報告書を開く</Link>}</h3>
           <AnalysisView a={analysis} />
         </section>
 
@@ -244,7 +245,7 @@ function MeetingScreen({ team }: { team: Team }) {
         const week = thanks.filter((t) => t.date >= weekStart(today));
         return (
           <section className="card">
-            <h3>🙏 今週のありがとう <span className="hint">({week.length}件)</span></h3>
+            <h3><Em e="🙏" />今週のありがとう <span className="hint">({week.length}件)</span></h3>
             {week.length === 0 && <p className="hint">まだありません。助けてもらったことを、ホームから伝えましょう。</p>}
             <ul className="plain">
               {week.slice(0, 8).map((t) => (

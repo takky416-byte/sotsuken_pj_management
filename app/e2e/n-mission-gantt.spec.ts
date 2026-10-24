@@ -120,13 +120,13 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     const card = page.locator('.thanks-card');
     await expect(card).toBeVisible();
     await card.locator('.chips .chip-btn').first().click();
-    await card.locator('.chips + .stamps').getByRole('button', { name: /助かった/ }).click();
+    await card.locator('.chips + .stamps').getByRole('button', { name: /助かりました/ }).click();
     await expect(card.locator('.chips .chip-btn', { hasText: '✓' })).toHaveCount(1);
     await expect(card).toContainText(/今日あと\d回/);
 
     const s = await browser.newPage();
     await login(s, 'a1@trident.ac.jp');
-    await expect(s.locator('.thanks-card .received li.fresh')).toContainText('助かった');
+    await expect(s.locator('.thanks-card .received li.fresh')).toContainText('助かりました');
     await s.close();
   });
 
@@ -180,7 +180,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await page.close();
   });
 
-  test('お気に入りの案内: ホームに出て、「追加した」で出なくなる。「あとで」でも一時的に消える', async ({ browser }) => {
+  test('お気に入りの案内: ホームに出て、「追加しました」で出なくなる。「あとで」でも一時的に消える', async ({ browser }) => {
     const page = await (await browser.newContext()).newPage();
     await login(page, 'a2@trident.ac.jp');
     const card = page.getByRole('region', { name: 'お気に入りに追加' });
@@ -202,7 +202,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     // 追加した → 保存値を「あとで」前の状態に戻して、「追加した」を試す
     await page.evaluate(() => localStorage.removeItem('bookmark:a2@trident.ac.jp'));
     await page.reload();
-    await card.getByRole('button', { name: '追加した' }).click();
+    await card.getByRole('button', { name: '追加しました' }).click();
     await expect(card).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();

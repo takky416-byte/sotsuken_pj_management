@@ -6,6 +6,7 @@ import { useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
 import { useTeam } from '../../data/teams';
 import { celebrate } from '../../lib/celebrate';
+import { say } from '../../lib/tone';
 import { streakIfSubmitted } from '../../lib/engagement';
 import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
@@ -51,7 +52,7 @@ export function StudentDaily() {
         : <DailyForm key="form" teamId={me.teamId} sid={me.sid} today={today} prev={mineToday} tasks={tasks} since={since} prevDate={prevDate} onSubmitted={(first) => {
             if (!first) return;
             const n = streakIfSubmitted(dailies, me.sid!, classDays, settings.dailyStartDate, from, today);
-            celebrate(n >= 2 ? `提出しました! ${n}日連続` : '提出しました! おつかれさま');
+            celebrate(say.dailySubmitted(n));
           }} />}
 
         </div>

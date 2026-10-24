@@ -10,6 +10,7 @@ import {
   appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
+import { say } from '../lib/tone';
 import { jstDate } from '../lib/dates';
 import { nextDates } from '../lib/gantt';
 import { parseQuickAdd } from '../lib/quickAdd';
@@ -162,8 +163,8 @@ export function WbsEditor({ teamId, actor, members }: Props) {
                       if (ok && next === 'done' && t.status !== 'done') {
                         const p = overallProgress(tasks);
                         celebrate(parents.length > 0
-                          ? `「${parents[0].title}」がぜんぶ完了!`
-                          : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+                          ? say.taskDone(parents[0].title, 0, 0)
+                          : say.taskDone(null, Math.min(p.total, p.done + 1), p.total));
                       }
                     });
                   }}

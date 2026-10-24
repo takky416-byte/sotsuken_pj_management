@@ -1,7 +1,7 @@
 import type { ProjectAnalysis } from '../lib/analysis';
 import { mdLabel } from '../lib/report';
 
-const MARK = { good: '🟢', info: '🔵', warn: '🟠' } as const;
+const MARK = { good: '●', info: '●', warn: '●' } as const;
 
 /** 進捗の棒 (実績と、予定でここまで終わっているはずの位置) */
 export function ProgressMeter({ actual, planned }: { actual: number; planned: number }) {
@@ -29,7 +29,7 @@ export function AnalysisView({ a, detail = false }: { a: ProjectAnalysis; detail
       </div>
       {a.findings.length > 0 && (
         <ul className="plain findings">
-          {a.findings.map((f, i) => <li key={i} className={`finding ${f.level}`}><span aria-hidden="true">{MARK[f.level]}</span> {f.text}</li>)}
+          {a.findings.map((f, i) => <li key={i} className={`finding ${f.level}`}><span className="mark" aria-hidden="true">{MARK[f.level]}</span> {f.text}</li>)}
         </ul>
       )}
       {a.phases.length > 0 && (

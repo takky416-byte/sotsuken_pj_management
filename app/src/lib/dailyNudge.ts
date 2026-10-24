@@ -37,10 +37,10 @@ export function nudgeMessage(n: Nudge, isClassDay: boolean): { title: string; bo
   const when = n.prevDate ? `前回の日報(${Number(n.prevDate.slice(5, 7))}/${Number(n.prevDate.slice(8, 10))})から、${n.daysSince}日たちました。` : 'まだ日報が出ていません。';
   const go = isClassDay ? '今日の授業で、' : '次の授業日に、';
   if (n.level === 1) {
-    return { title: '日報の間が、少しあいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書きましょう。` };
+    return { title: '日報の間があいています', body: `${when}${go}授業時間外にやったことも含めて、まとめて書いてください。` };
   }
   return {
-    title: '日報を、そろそろ書いてみませんか',
-    body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてみましょう。書きにくいことは、チームのメンバーに相談してみてください。`,
+    title: '日報が、しばらく出ていません',
+    body: `${when}授業日${n.missed}回ぶんが、たまっています。${go}思い出せる範囲で、やったことをまとめて書いてください。書きにくいことは、チームのメンバーに相談できます。`,
   };
 }

@@ -17,7 +17,7 @@ export const HOW_TO: Record<Platform, { title: string; steps: string[] }> = {
 
 export type BookmarkState = { done: boolean; snoozedUntil: string | null; snoozes: number };
 export const EMPTY_STATE: BookmarkState = { done: false, snoozedUntil: null, snoozes: 0 };
-/** 「あとで」を押せる回数。これを超えたら、「追加した」を押すまで、毎回出す */
+/** 「あとで」を押せる回数。これを超えたら、「追加しました」を押すまで、毎回出す */
 export const MAX_SNOOZES = 3;
 
 /** カードを出すか。追加済みなら出さない。「あとで」の期間中は出さない。 */

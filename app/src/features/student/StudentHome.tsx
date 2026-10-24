@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
 import { BookmarkPrompt } from '../../components/BookmarkPrompt';
+import { Em } from '../../components/Em';
+import { say } from '../../lib/tone';
 import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
@@ -76,7 +78,7 @@ export function StudentHome() {
     await updateTask(team.id, sid, t.id, { status });
     if (status === 'done') {
       const p = overallProgress(tasks);
-      celebrate(parents.length > 0 ? `「${parents[0].title}」がぜんぶ完了!` : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+      celebrate(say.taskDone(parents.length > 0 ? parents[0].title : null, Math.min(p.total, p.done + 1), p.total));
     }
   });
   const takeOver = (t: Task) => run(() => updateTaskArray(team.id, sid, t.id, 'assignees', 'add', sid));
@@ -84,7 +86,7 @@ export function StudentHome() {
     const m = meetings.find((x) => x.id === meetingId);
     if (!m) return;
     await saveMeeting(team.id, meetingId, sid, { actions: m.actions.map((a, i) => (i === index ? { ...a, done: true } : a)) });
-    celebrate('約束を果たしました!');
+    celebrate(say.promiseKept());
   });
 
   return (
@@ -108,7 +110,7 @@ export function StudentHome() {
       <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 
       <section className="card">
-        <h3>🎯 今日やること</h3>
+        <h3><Em e="🎯" />今日やること</h3>
         {plan.length === 0 && promises.length === 0 && (
           <p className="hint">今日の担当タスクはありません。{free.length > 0 ? '下の「担当がいないタスク」から、やるものを選べます。' : <>WBS で、次のタスクを決めましょう。</>}</p>
         )}
@@ -140,7 +142,7 @@ export function StudentHome() {
       </section>
 
       <section className="card">
-        <h3>➡️ 次にやること</h3>
+        <h3><Em e="➡️" />次にやること</h3>
         {lastNext && (
           <blockquote className="next-quote">
             <div className="hint">前回の日報で決めたこと({formatDate(lastNext.date)})</div>
@@ -178,7 +180,7 @@ export function StudentHome() {
       <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
 
       <section className="card">
-        <h3>🗓 予定</h3>
+        <h3><Em e="🗓" />予定</h3>
         {upMs.length === 0 && <p className="hint">予定はありません。</p>}
         <ul className="plain">
           {upMs.map((m) => (
@@ -211,14 +213,14 @@ function DailyCta({ status, base, isClassDay, started }: { status: 'submitted' |
   if (status === 'submitted') {
     return (
       <div className="cta cta-done">
-        <span>✅ 今日の日報は提出済みです</span>
+        <span><Em e="✅" />今日の日報は提出済みです</span>
         <Link to={`${base}/daily`} className="btn ghost-btn">見直す・直す</Link>
       </div>
     );
   }
   return (
     <div className={`cta ${status === 'missing' ? 'cta-todo' : ''}`}>
-      <span>{status === 'missing' ? '📝 今日の日報が、まだです' : !started ? '日報は、運用開始日から始まります(それまでは、試しに書けます)' : isClassDay ? '' : '日報は、授業日に書きます(書きたいときは、いつでも)'}</span>
+      <span>{status === 'missing' ? '今日の日報が、まだ出ていません' : !started ? '日報は、運用開始日から始まります(それまでは、試しに書けます)' : isClassDay ? '' : '日報は、授業日に書きます(書きたいときは、いつでも)'}</span>
       <Link to={`${base}/daily`} className="btn big-btn">日報を書く</Link>
     </div>
   );

@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { login } from './helpers';
 
@@ -15,6 +15,8 @@ test.describe.serial('画面の見た目', () => {
     await page.getByRole('heading', { name: 'チーム一覧' }).waitFor();
     await page.waitForTimeout(800);
     await shot(page, 'teacher-dashboard');
+    // ヘッダーは、1行に収まる (配色とトーンの選択欄を並べても折り返さない)
+    expect((await page.locator('header').boundingBox())!.height).toBeLessThan(80);
     await page.goto('/meeting/A'); await page.getByLabel('ぜんぶ表示').check(); await page.getByText('今日決めること').first().waitFor(); await page.waitForTimeout(800);
     await shot(page, 'teacher-meeting');
     await page.goto('/teacher/calendar'); await page.getByRole('heading', { name: 'カレンダー' }).waitFor(); await page.waitForTimeout(500);
@@ -30,6 +32,7 @@ test.describe.serial('画面の見た目', () => {
     await login(page, 'a1@trident.ac.jp');
     await page.waitForTimeout(800);
     await shot(page, 'student-home-pc');
+    expect((await page.locator('header').boundingBox())!.height).toBeLessThan(80);
     await page.getByRole('link', { name: '日報', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-pc');
     await page.getByRole('link', { name: '使い方', exact: true }).click(); await page.waitForTimeout(500);

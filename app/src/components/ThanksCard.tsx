@@ -1,11 +1,13 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { ProfileOverride } from '../auth/AuthProvider';
 import { sendThanks } from '../data/thanks';
+import { Em } from './Em';
 import { celebrate } from '../lib/celebrate';
 import type { Thank } from '../lib/engagement';
 import { formatDate } from '../lib/dates';
+import { say, stamps as toneStamps, useTone } from '../lib/tone';
 import {
-  STAMPS, THANKS_PER_DAY, stampNote, suggestThanks, thanksLeft, unseenFor, type ThanksSuggestion,
+  THANKS_PER_DAY, stampNote, suggestThanks, thanksLeft, unseenFor, type ThanksSuggestion,
 } from '../lib/thanksView';
 import type { Member, Task } from '../types';
 
@@ -21,6 +23,7 @@ const setSeen = (sid: string, n: number) => { try { localStorage.setItem(seenKey
 export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   teamId: string; sid: string; members: Member[]; tasks: Task[]; thanks: Thank[]; today: string;
 }) {
+  useTone(); // トーンが変わったら、スタンプも描き直す
   const nameOf = (id: string) => (id === 'teacher' ? '先生' : members.find((m) => m.sid === id)?.name ?? id);
   const [seen0] = useState(() => getSeen(sid)); // 開いた時点の既読。新着の表示に使う
   const fresh = unseenFor(thanks, sid, seen0);
@@ -35,7 +38,7 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   useEffect(() => {
     if (preview || celebrated.current || fresh.length === 0) return;
     celebrated.current = true;
-    celebrate(fresh.length === 1 ? `${nameOf(fresh[0].from)}さんから、ありがとうが届きました!` : `ありがとうが${fresh.length}件届きました!`);
+    celebrate(fresh.length === 1 ? say.thanksReceived(nameOf(fresh[0].from)) : say.thanksReceivedMany(fresh.length));
     setSeen(sid, Math.max(...fresh.map((t) => t.createdAt)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fresh.length]);
@@ -48,18 +51,18 @@ export function ThanksCard({ teamId, sid, members, tasks, thanks, today }: {
   const send = async (to: string, note: string) => {
     if (left <= 0) return;
     setErr(''); setTarget(null); setSentTo((x) => [...x, to]);
-    try { await sendThanks(teamId, sid, to, note); celebrate(`${nameOf(to)}さんに、ありがとうを送りました`); }
+    try { await sendThanks(teamId, sid, to, note); celebrate(say.thanksSent(nameOf(to))); }
     catch (e) { setSentTo((x) => x.filter((y) => y !== to)); setErr(`送れませんでした: ${(e as Error).message}`); }
   };
   const stamps = (to: string) => (
     <div className="stamps" role="group" aria-label={`${nameOf(to)}さんに送るスタンプ`}>
-      {STAMPS.map((s) => <button key={s.label} type="button" className="stamp" disabled={left <= 0} onClick={() => send(to, stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
+      {toneStamps().map((s) => <button key={s.label} type="button" className="stamp" disabled={left <= 0} onClick={() => send(to, stampNote(s))}><span aria-hidden="true">{s.emoji}</span>{s.label}</button>)}
     </div>
   );
 
   return (
     <section className="card thanks-card">
-      <h3>🙏 ありがとう <span className="mission-count">{left > 0 ? `今日あと${left}回` : `今日は${THANKS_PER_DAY}回送りました`}</span></h3>
+      <h3><Em e="🙏" />ありがとう <span className="mission-count">{left > 0 ? `今日あと${left}回` : `今日は${THANKS_PER_DAY}回送りました`}</span></h3>
 
       {received.length > 0 && (
         <ul className="plain received">

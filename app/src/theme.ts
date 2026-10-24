@@ -1,10 +1,10 @@
 // 配色の切り替え。選んだ配色は、この端末のブラウザにだけ保存する (サーバーには送らない)。
 export const PALETTES = [
-  { id: 'pop', label: 'ポップ(むらさき×ピンク)' },
-  { id: 'ocean', label: 'オーシャン(あお×みどり)' },
-  { id: 'mint', label: 'ミント(みどり×きいろ)' },
-  { id: 'sunset', label: 'サンセット(だいだい×きいろ)' },
-  { id: 'classic', label: 'クラシック(シンプル)' },
+  { id: 'ocean', label: 'ブルー' },
+  { id: 'classic', label: 'シンプル(白・グレー)' },
+  { id: 'mint', label: 'グリーン' },
+  { id: 'pop', label: 'パープル' },
+  { id: 'sunset', label: 'オレンジ' },
 ] as const;
 
 export type PaletteId = (typeof PALETTES)[number]['id'];
@@ -15,7 +15,7 @@ export function getPalette(): PaletteId {
     const v = localStorage.getItem(KEY);
     if (PALETTES.some((p) => p.id === v)) return v as PaletteId;
   } catch { /* 保存できない環境では、既定のまま */ }
-  return 'pop';
+  return 'ocean';
 }
 
 export function applyPalette(id: PaletteId = getPalette()) {

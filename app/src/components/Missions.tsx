@@ -2,6 +2,8 @@ import { useContext, useEffect, useState } from 'react';
 import { ProfileOverride } from '../auth/AuthProvider';
 import { Link } from 'react-router-dom';
 import { celebrate } from '../lib/celebrate';
+import { say, useTone } from '../lib/tone';
+import { Em } from './Em';
 import type { Mission, WeeklyMission } from '../lib/missions';
 import { useBase } from './Base';
 
@@ -13,17 +15,18 @@ const mark = (k: string) => { try { localStorage.setItem(k, '1'); } catch { /* �
 /** ホームの「今日のミッション」。点数ではなく、やることの一覧。 */
 export function DailyMissions({ sid, today, daily }: { sid: string; today: string; daily: Mission[] }) {
   const base = useBase();
+  useTone();
   const preview = useContext(ProfileOverride) !== null; // 教員の「学生の画面」では、お祝いを出さない
   const doneCount = daily.filter((m) => m.done).length;
   const all = daily.length > 0 && doneCount === daily.length;
   const key = flagKey(sid, today);
   // 全部そろった瞬間に1日1回だけ演出する (開き直しでは出さない)
-  useEffect(() => { if (!preview && all && !seen(key)) { mark(key); celebrate('今日のミッション、ぜんぶ達成!'); } }, [all, key, preview]);
+  useEffect(() => { if (!preview && all && !seen(key)) { mark(key); celebrate(say.missionsAll()); } }, [all, key, preview]);
   const href = (to: Mission['to']) => (to === 'home' ? `${base}/` : `${base}/${to}`);
 
   return (
       <section className={`card missions ${all ? 'all-done' : ''}`}>
-        <h3>🚩 今日のミッション <span className="mission-count">{doneCount}/{daily.length}</span></h3>
+        <h3><Em e="🚩" />今日のミッション <span className="mission-count">{doneCount}/{daily.length}</span></h3>
         <ul className="plain mission-list">
           {daily.map((m) => (
             <li key={m.id} className={`mission ${m.done ? 'done' : ''}`}>
@@ -36,7 +39,7 @@ export function DailyMissions({ sid, today, daily }: { sid: string; today: strin
             </li>
           ))}
         </ul>
-        {all && <p className="mission-clear">ぜんぶ達成! 今日もおつかれさま。</p>}
+        {all && <p className="mission-clear">{say.missionsClear()}</p>}
       </section>
   );
 }
@@ -53,7 +56,7 @@ export function WeeklyMissions({ weekly }: { weekly: WeeklyMission[] }) {
   return (
     <details className="card missions weekly" open={open} onToggle={(e) => toggle((e.currentTarget as HTMLDetailsElement).open)}>
       <summary>
-        <h3>🏁 チームの今週のミッション <span className="mission-count">{weeklyDone}/{weekly.length}</span></h3>
+        <h3><Em e="🏁" />チームの今週のミッション <span className="mission-count">{weeklyDone}/{weekly.length}</span></h3>
       </summary>
       <p className="hint">メンバー全員で達成します。</p>
       <ul className="plain mission-list">

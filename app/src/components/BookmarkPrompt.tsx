@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Em } from './Em';
 import { EMPTY_STATE, HOW_TO, KEY, MAX_SNOOZES, load, platformOf, shouldShow, snooze, type BookmarkState } from '../lib/bookmark';
 import { addDays, jstDate } from '../lib/dates';
 
@@ -39,12 +40,12 @@ export function BookmarkPrompt({ email }: { email: string }) {
   return (
     <section className="card bookmark" aria-label="お気に入りに追加">
       <div className="bookmark-bar">
-        <strong>⭐ このアプリを、お気に入りに追加しよう</strong>
+        <strong><Em e="⭐" />このアプリを、お気に入りに追加してください</strong>
         <span className="bookmark-act">
           {install && <button type="button" onClick={doInstall}>ホーム画面に追加</button>}
           {!install && canShare && <button type="button" onClick={share}>追加のメニューを開く</button>}
           <button type="button" className="ghost" onClick={copy}>{copied ? 'コピーしました' : 'URLをコピー'}</button>
-          <button type="button" onClick={() => update({ ...state, done: true })}>追加した</button>
+          <button type="button" onClick={() => update({ ...state, done: true })}>追加しました</button>
           {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
         </span>
       </div>

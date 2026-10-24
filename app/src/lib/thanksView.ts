@@ -7,14 +7,7 @@ import { isLeaf } from './meetingView';
 /** 1日に送れる数 (送りすぎで意味が薄れないよう、画面で制限する) */
 export const THANKS_PER_DAY = 5;
 
-/** ワンタップで送れるスタンプ。押すとそのまま送られる (入力は要らない)。 */
-export const STAMPS: { emoji: string; label: string }[] = [
-  { emoji: '🙏', label: '助かった' },
-  { emoji: '👏', label: 'ナイス!' },
-  { emoji: '🎉', label: 'おめでとう' },
-  { emoji: '💪', label: 'がんばってるね' },
-  { emoji: '💡', label: 'いい考え' },
-];
+/** ワンタップで送れるスタンプは、トーンで変わる (lib/tone.ts の stamps)。押すとそのまま送られる。 */
 export const stampNote = (s: { emoji: string; label: string }) => `${s.emoji} ${s.label}`;
 
 export type ThanksSuggestion = { to: string; name: string; reason: string };

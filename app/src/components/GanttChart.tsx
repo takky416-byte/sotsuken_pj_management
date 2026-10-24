@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { createTasks, newTaskId, updateTask, updateTaskArray, useTasks } from '../data/tasks';
 import { celebrate } from '../lib/celebrate';
+import { say } from '../lib/tone';
 import { addDays, formatDate, jstDate } from '../lib/dates';
 import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { dayAt, dragDates, type DragKind } from '../lib/ganttDrag';
@@ -105,7 +106,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
     await save(t.id, { status });
     if (status === 'done') {
       const p = overallProgress(tasks);
-      celebrate(parents.length > 0 ? `「${parents[0].title}」がぜんぶ完了!` : `完了! チーム全体 ${Math.min(p.total, p.done + 1)}/${p.total}`);
+      celebrate(say.taskDone(parents.length > 0 ? parents[0].title : null, Math.min(p.total, p.done + 1), p.total));
     }
   };
   const shift = (t: Task, field: 'start' | 'end', n: number) => {

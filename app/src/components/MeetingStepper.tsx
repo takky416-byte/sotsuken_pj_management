@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Em } from './Em';
 import { MEETING_STEPS, TOTAL_MINUTES, mmss, stepAtElapsed } from '../lib/meetingFlow';
 
 /**
@@ -50,7 +51,7 @@ export function MeetingStepper({ step, onStep, all, onAll }: {
       {!all && (
         <div className="step-guide">
           <p><strong>ねらい:</strong> {cur.goal}</p>
-          <ul className="plain asks">{cur.asks.map((a) => <li key={a}>💬 {a}</li>)}</ul>
+          <ul className="plain asks">{cur.asks.map((a) => <li key={a}><Em e="💬" />{a}</li>)}</ul>
         </div>
       )}
       <div className="stepper-foot">

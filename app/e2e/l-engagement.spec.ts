@@ -93,18 +93,33 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await page.getByRole('link', { name: 'WBS', exact: true }).click();
     const select = page.locator('select.status').filter({ has: page.locator('option[value="todo"]:checked') }).first(); // 未着手のタスク
     await select.selectOption('done');
-    await expect(page.locator('.celebrate-msg')).toContainText('完了!');
+    await expect(page.locator('.celebrate-msg')).toContainText('完了しました');
   });
 
   test('配色を選べる。選んだ配色は、再読み込みしても残る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
     const html = page.locator('html');
-    await expect(html).toHaveAttribute('data-palette', 'pop'); // 既定
-    await page.getByLabel('配色').selectOption('ocean');
-    await expect(html).toHaveAttribute('data-palette', 'ocean');
+    await expect(html).toHaveAttribute('data-palette', 'ocean'); // 既定
+    await page.getByLabel('配色').selectOption('mint');
+    await expect(html).toHaveAttribute('data-palette', 'mint');
     await page.reload();
-    await expect(html).toHaveAttribute('data-palette', 'ocean');
-    await page.getByLabel('配色').selectOption('pop');
+    await expect(html).toHaveAttribute('data-palette', 'mint');
+    await page.getByLabel('配色').selectOption('ocean');
+  });
+
+  test('トーンを選べる。既定は落ち着き (絵文字なし)。親しみやすいでは見出しに絵文字が出る。選んだトーンは残る', async ({ page }) => {
+    await login(page, 'a1@trident.ac.jp');
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-tone', 'calm');
+    const em = page.locator('.em').first();
+    await expect(em).toBeHidden();
+    await page.getByLabel('トーン').selectOption('friendly');
+    await expect(html).toHaveAttribute('data-tone', 'friendly');
+    await expect(em).toBeVisible();
+    await page.reload();
+    await expect(html).toHaveAttribute('data-tone', 'friendly');
+    await page.getByLabel('トーン').selectOption('calm');
+    await expect(html).toHaveAttribute('data-tone', 'calm');
   });
 
   test('日報のチーム内閲覧がオフでも、チームのようすは崩れない (他の人の日報は集計しない)', async ({ page }) => {

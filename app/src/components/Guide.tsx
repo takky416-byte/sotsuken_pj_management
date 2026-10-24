@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Em } from './Em';
 import { GUIDE_SEEN_KEY, SCENES, TOUR, stepForPath } from '../lib/guide';
 
 type Ctx = { open: (opts?: { tab?: 'tour' | 'scenes'; step?: number }) => void } | null;
@@ -34,7 +35,7 @@ export const useGuide = () => useContext(GuideContext);
 export function GuideButton() {
   const g = useGuide();
   if (!g) return null;
-  return <button type="button" className="ghost guide-btn" onClick={() => g.open()} aria-haspopup="dialog">💡 ガイド</button>;
+  return <button type="button" className="ghost guide-btn" onClick={() => g.open()} aria-haspopup="dialog"><Em e="💡" />ガイド</button>;
 }
 
 /** 初回(案内の確認のあと)に、一度だけ自動で開く。 */
