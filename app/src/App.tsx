@@ -13,10 +13,8 @@ import { GuideAutoOpen, GuideButton, GuideProvider } from './components/Guide';
 import { AccessLogPage } from './features/teacher/AccessLog';
 import { Attendance } from './features/teacher/Attendance';
 import { CalendarPage } from './features/teacher/CalendarPage';
-import { Export } from './features/teacher/Export';
 import { Kickoff } from './features/teacher/Kickoff';
 import { Preview } from './features/teacher/Preview';
-import { Roster } from './features/teacher/Roster';
 import { Settings } from './features/teacher/Settings';
 import { TeacherHome } from './features/teacher/TeacherHome';
 import { TeacherTeam } from './features/teacher/TeacherTeam';
@@ -43,12 +41,10 @@ function Shell() {
           <nav>
             <NavLink to="/teacher" end>チーム</NavLink>
             <NavLink to="/meeting">ミーティング</NavLink>
-            <NavLink to="/teacher/preview">学生の画面</NavLink>
             <NavLink to="/teacher/attendance">欠席</NavLink>
             <NavLink to="/teacher/access">アクセス</NavLink>
-            <NavLink to="/teacher/roster">名簿</NavLink>
+            <NavLink to="/teacher/preview">学生の画面</NavLink>
             <NavLink to="/teacher/calendar">カレンダー</NavLink>
-            <NavLink to="/teacher/export">書き出し</NavLink>
             <NavLink to="/teacher/settings">設定</NavLink>
             <NavLink to="/teacher/help">使い方</NavLink>
           </nav>
@@ -74,8 +70,8 @@ function Shell() {
             <Route path="/teacher/preview/:sid/*" element={<Preview />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
             <Route path="/teacher/access" element={<AccessLogPage />} />
-            <Route path="/teacher/roster" element={<Roster />} />
-            <Route path="/teacher/export" element={<Export />} />
+            <Route path="/teacher/roster" element={<Navigate to="/teacher/settings?tab=roster" replace />} />
+            <Route path="/teacher/export" element={<Navigate to="/teacher/settings?tab=export" replace />} />
             <Route path="/teacher/settings" element={<Settings />} />
  <Route path="/teacher/help" element={<Help role="teacher" />} />
             <Route path="/teacher/calendar" element={<CalendarPage />} />

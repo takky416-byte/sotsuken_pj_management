@@ -82,7 +82,7 @@ export function Roster() {
 
   return (
     <>
-      <h2>名簿の登録</h2>
+      <h3>名簿の登録</h3>
       <div className="card form">
         <label>CSV を貼り付け (苗字,メールアドレス,チーム)
           <textarea rows={8} value={text} onChange={(e) => setText(e.target.value)}

@@ -39,7 +39,7 @@ export function Export() {
 
   return (
     <>
-      <h2>データの書き出し</h2>
+      <h3>データの書き出し</h3>
       <p className="hint">
         バックアップ(JSON)と、Excelで開けるCSVを、このブラウザの中で作ってダウンロードします(外部には送りません)。
         月に1回くらいを目安に、バックアップを取ってください。{last && <> 最後に書き出した日: <strong>{last}</strong></>}

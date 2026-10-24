@@ -31,7 +31,7 @@ export function Preview() {
         )}
         <span className="hint">閲覧のみです。操作しても、データは変わりません。</span>
       </div>
-      {students.length === 0 && <p className="card">学生がまだ登録されていません。<Link to="/teacher/roster">名簿</Link>から登録してください。</p>}
+      {students.length === 0 && <p className="card">学生がまだ登録されていません。<Link to="/teacher/settings?tab=roster">名簿</Link>から登録してください。</p>}
       {picked && (() => {
         const profile: Profile = { email: '', name: picked.name, role: 'student', teamId: picked.teamId, sid: picked.sid };
         return (

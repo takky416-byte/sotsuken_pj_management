@@ -5,7 +5,8 @@ import { login } from './helpers';
 // b-journey / d-roster のあとに実行され、それまでのデータを書き出す
 test('データの書き出し: バックアップ(JSON)と CSV', async ({ page }) => {
   await login(page, 'teacher@trident.ac.jp');
-  await page.getByRole('link', { name: '書き出し' }).click();
+  await page.getByRole('link', { name: '設定' }).click();
+  await page.getByRole('button', { name: '書き出し・バックアップ' }).click();
   await expect(page.getByRole('heading', { name: 'データの書き出し' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'バックアップ(JSON)をダウンロード' })).toHaveCount(0); // 読み込む前は出ない
 

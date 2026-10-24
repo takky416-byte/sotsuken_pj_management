@@ -19,7 +19,8 @@ test.describe.serial('名簿の修正と、教員の表示名', () => {
   test('CSV で学生を登録 → 苗字の変更 → チームの変更 → 名簿から外す', async ({ browser }) => {
     const t = await (await browser.newContext()).newPage();
     await login(t, TEACHER);
-    await t.getByRole('link', { name: '名簿' }).click();
+    await t.getByRole('link', { name: '設定' }).click();
+    await t.getByRole('button', { name: '名簿', exact: true }).click();
 
     // 登録 (新人: Bチーム)
     await t.getByLabel(/CSV を貼り付け/).fill(`新人,${NEW},B`);
@@ -39,7 +40,8 @@ test.describe.serial('名簿の修正と、教員の表示名', () => {
     await expect(s.getByText('新人改(Bチーム)')).toBeVisible();
     await t.goto('/teacher/team/B');
     await expect(t.getByText('長田・新人改')).toBeVisible(); // チームのメンバー表示にも反映
-    await t.getByRole('link', { name: '名簿' }).click();
+    await t.getByRole('link', { name: '設定' }).click();
+    await t.getByRole('button', { name: '名簿', exact: true }).click();
 
     // チームの変更 (B → A): 学生IDが付け替わる。学生は、画面を更新すると、新しいチームの画面になる
     // (移動前のチームのデータの購読が拒否されるため、ログイン中の画面が切り替わるまでには時間がかかることがある)
@@ -51,7 +53,8 @@ test.describe.serial('名簿の修正と、教員の表示名', () => {
     await expect(s.getByText('岩田・近内・新人改', { exact: true })).toBeVisible(); // 新しいチームのメンバー表示
     await t.goto('/teacher/team/A');
     await expect(t.getByText('岩田・近内・新人改', { exact: true })).toBeVisible();
-    await t.getByRole('link', { name: '名簿' }).click();
+    await t.getByRole('link', { name: '設定' }).click();
+    await t.getByRole('button', { name: '名簿', exact: true }).click();
 
     // 名簿から外す (2段階) → 学生は、画面を更新すると入れない。メンバー表からも外れる
     const r = t.locator('tr', { hasText: NEW });

@@ -1,12 +1,36 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useProfile } from '../../auth/AuthProvider';
 import { db } from '../../firebase';
 import { setSetting } from '../../data/calendar';
 import { useSettings } from '../../data/daily';
 import { updateTeam, useTeams } from '../../data/teams';
+import { Export } from './Export';
+import { Roster } from './Roster';
 
+const TABS = [['basic', '基本設定'], ['roster', '名簿'], ['export', '書き出し・バックアップ']] as const;
+
+/** 設定: 基本設定・名簿・書き出し/バックアップ/復元を、ひとつの画面にまとめる */
 export function Settings() {
+  const [params, setParams] = useSearchParams();
+  const tab = TABS.some(([id]) => id === params.get('tab')) ? (params.get('tab') as (typeof TABS)[number][0]) : 'basic';
+  return (
+    <>
+      <h2>設定</h2>
+      <div className="seg view-switch" role="group" aria-label="設定の項目">
+        {TABS.map(([id, label]) => (
+          <button key={id} type="button" className={`seg-btn ${tab === id ? 'on' : ''}`} aria-pressed={tab === id} onClick={() => setParams(id === 'basic' ? {} : { tab: id })}>{label}</button>
+        ))}
+      </div>
+      {tab === 'basic' && <BasicSettings />}
+      {tab === 'roster' && <Roster />}
+      {tab === 'export' && <Export />}
+    </>
+  );
+}
+
+function BasicSettings() {
   const me = useProfile();
   const [myName, setMyName] = useState(me.name);
   const [saved, setSaved] = useState(false);
@@ -20,7 +44,6 @@ export function Settings() {
   };
   return (
     <>
-      <h2>設定</h2>
       {err && <p className="error">{err}</p>}
       <div className="card form">
         <label>あなたの表示名(画面の右上や、先生のコメントに表示されます)
