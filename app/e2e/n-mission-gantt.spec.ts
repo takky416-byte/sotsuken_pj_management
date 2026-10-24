@@ -180,6 +180,13 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(card).toBeVisible();
     await card.getByText(/での追加のしかた/).click();
     await expect(card).toContainText('/');
+    // ブラウザが「インストールできる」と知らせたら、ボタンから「ホーム画面に追加」できる
+    await page.evaluate(() => {
+      const e = new Event('beforeinstallprompt', { cancelable: true }) as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+      e.prompt = async () => undefined; e.userChoice = Promise.resolve({ outcome: 'accepted' });
+      window.dispatchEvent(e);
+    });
+    await expect(card.getByRole('button', { name: 'ホーム画面に追加' })).toBeVisible();
     await card.getByRole('button', { name: /あとで/ }).click();
     await expect(card).toHaveCount(0);
     await page.reload();
@@ -192,6 +199,18 @@ test.describe.serial('ミッション・WBS外の作業・ガントで編集', (
     await expect(card).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole('heading', { name: /今日のミッション/ })).toBeVisible();
+    await expect(card).toHaveCount(0);
+
+    // 「ホーム画面に追加」を押して、追加が受け入れられたら、出なくなる
+    await page.evaluate(() => localStorage.removeItem('bookmark:a2@trident.ac.jp'));
+    await page.reload();
+    await expect(card).toBeVisible();
+    await page.evaluate(() => {
+      const e = new Event('beforeinstallprompt', { cancelable: true }) as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+      e.prompt = async () => undefined; e.userChoice = Promise.resolve({ outcome: 'accepted' });
+      window.dispatchEvent(e);
+    });
+    await card.getByRole('button', { name: 'ホーム画面に追加' }).click();
     await expect(card).toHaveCount(0);
     await page.close();
   });

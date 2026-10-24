@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EMPTY_STATE, HOW_TO, KEY, MAX_SNOOZES, load, platformOf, shouldShow, snooze, type BookmarkState } from '../lib/bookmark';
 import { addDays, jstDate } from '../lib/dates';
+
+type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 
 const read = (email: string): BookmarkState => { try { return load(localStorage.getItem(KEY(email))); } catch { return EMPTY_STATE; } };
 const write = (email: string, s: BookmarkState) => { try { localStorage.setItem(KEY(email), JSON.stringify(s)); } catch { /* 保存できなくても動く */ } };
@@ -9,11 +11,29 @@ const write = (email: string, s: BookmarkState) => { try { localStorage.setItem(
 export function BookmarkPrompt({ email }: { email: string }) {
   const [state, setState] = useState(() => read(email));
   const [copied, setCopied] = useState(false);
+  const [install, setInstall] = useState<InstallEvent | null>(null);
+  // Chrome・Edge などは、「ホーム画面に追加(インストール)」を、ボタンから動かせる
+  useEffect(() => {
+    const on = (e: Event) => { e.preventDefault(); setInstall(e as InstallEvent); };
+    window.addEventListener('beforeinstallprompt', on);
+    return () => window.removeEventListener('beforeinstallprompt', on);
+  }, []);
   const today = jstDate();
   if (!shouldShow(state, today)) return null;
   const how = HOW_TO[platformOf(navigator.userAgent)];
   const url = window.location.origin + '/';
   const update = (s: BookmarkState) => { write(email, s); setState(s); };
+  const platform = platformOf(navigator.userAgent);
+  const canShare = (platform === 'ios' || platform === 'android') && typeof navigator.share === 'function';
+  const doInstall = async () => {
+    if (!install) return;
+    await install.prompt();
+    const r = await install.userChoice;
+    setInstall(null);
+    if (r.outcome === 'accepted') update({ ...state, done: true });
+  };
+  // iPhone・Androidは、共有メニューを開く (「お気に入りに追加」「ホーム画面に追加」を選べる)
+  const share = () => { navigator.share({ title: '卒研PJ管理', url }).catch(() => undefined); };
   const copy = () => { navigator.clipboard?.writeText(url).then(() => setCopied(true), () => undefined); };
 
   return (
@@ -21,6 +41,8 @@ export function BookmarkPrompt({ email }: { email: string }) {
       <div className="bookmark-bar">
         <strong>⭐ このアプリを、お気に入りに追加しよう</strong>
         <span className="bookmark-act">
+          {install && <button type="button" onClick={doInstall}>ホーム画面に追加</button>}
+          {!install && canShare && <button type="button" onClick={share}>追加のメニューを開く</button>}
           <button type="button" className="ghost" onClick={copy}>{copied ? 'コピーしました' : 'URLをコピー'}</button>
           <button type="button" onClick={() => update({ ...state, done: true })}>追加した</button>
           {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
