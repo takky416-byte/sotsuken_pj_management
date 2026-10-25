@@ -9,6 +9,7 @@ import { say } from '../../lib/tone';
 import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
+import { useNarrow } from '../../lib/useNarrow';
 import { ThanksCard } from '../../components/ThanksCard';
 import { useThanks } from '../../data/thanks';
 import { Progress } from '../../components/Progress';
@@ -46,6 +47,7 @@ export function StudentHome() {
   const { data: thanks, error: e4 } = useThanks(me.teamId, dailyWindowFrom(today));
   const [err, setErr] = useState('');
   const [openedSubmit, setOpenedSubmit] = useState(false);
+  const narrow = useNarrow();
 
   if (!me.teamId || !me.sid) return <p>チームが設定されていません。先生に連絡してください。</p>;
   if (team === undefined) return <p>読み込み中…</p>;
@@ -83,6 +85,13 @@ export function StudentHome() {
     celebrate(say.promiseKept());
   });
 
+  const notice = team.message && team.message.text ? (
+    <section className="card teacher-msg" aria-label="先生からのメッセージ">
+      <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
+      <p className="msg-text">{team.message.text}</p>
+    </section>
+  ) : null;
+
   return (
     <>
       <div className="home-top">
@@ -106,6 +115,7 @@ export function StudentHome() {
       </div>
       {err && <p className="error">{err}</p>}
 
+      {narrow && notice}
       <div className="home-grid">
         <div className="col">
 
@@ -194,25 +204,21 @@ export function StudentHome() {
 
         </div>
         <div className="col">
-        {team.message && team.message.text && (
-          <section className="card teacher-msg" aria-label="先生からのメッセージ">
-            <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
-            <p className="msg-text">{team.message.text}</p>
-          </section>
-        )}
+        {!narrow && notice}
       <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
-
-      <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />
-
-      <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
 
         </div>
       </div>
 
-      <section className="home-team">
-        <h3><Em e="👥" />チームのようす</h3>
-        <TeamBoard team={team} viewer={sid} />
-      </section>
+      <details className="home-team" open={!narrow}>
+        <summary><h3><Em e="👥" />チーム(ようす・今週のミッション・ありがとう)</h3></summary>
+        <div className="home-team-body">
+          <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />
+          <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
+          <h3 className="team-sub"><Em e="👥" />チームのようす</h3>
+          <TeamBoard team={team} viewer={sid} />
+        </div>
+      </details>
     </>
   );
 }

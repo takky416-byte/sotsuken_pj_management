@@ -819,3 +819,5 @@ table.access tr.detail td { background:var(--bg); }
 .wbs-tools button { padding:3px 12px; font-size:14px; }
 .broadcast { margin-top:12px; } .broadcast textarea { width:100%; box-sizing:border-box; }
 .broadcast-teams { gap:10px; margin:6px 0; }
+.home-team > summary { cursor:pointer; list-style:revert; } .home-team > summary h3 { display:inline; margin:0; }
+.home-team-body { margin-top:8px; } .team-sub { margin:12px 0 6px; }
