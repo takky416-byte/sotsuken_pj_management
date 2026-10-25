@@ -1,4 +1,4 @@
-// 報告書 (Excel・印刷) 用の表データ。画面に依存しない。
+// PJ分析 (Excel・印刷) 用の表データ。画面に依存しない。
 // 企業への中間報告で提出するため、教員専用のデータ (教員メモなど) は含めない。
 import type { Milestone, Task, TaskStatus } from '../types';
 import { STATUS_LABEL } from '../types';

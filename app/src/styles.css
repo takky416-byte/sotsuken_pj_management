@@ -445,7 +445,7 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .gantt-add { gap:6px; flex-wrap:wrap; }
 .gantt-add input { flex:1; min-width:180px; }
 
-/* 分析・報告書 */
+/* 分析・PJ分析 */
 .analysis { display:flex; flex-direction:column; gap:14px; }
 .analysis-top { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
 .meter { flex:1; min-width:240px; }
@@ -711,3 +711,4 @@ table.access tr.detail td { background:var(--bg); }
 .view-switch { display:inline-flex; gap:6px; margin:4px 0 10px; }
 .view-switch .seg-btn { min-height:0; padding:5px 14px; font-size:15px; border-radius:8px; }
 .view-switch .seg-btn.on { background:var(--accent); color:#fff; border-color:transparent; }
+.pj-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; } .pj-head h2 { margin:0; }

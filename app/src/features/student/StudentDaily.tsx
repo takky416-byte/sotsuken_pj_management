@@ -39,12 +39,10 @@ export function StudentDaily() {
   return (
     <>
       <h2>作業ログ</h2>
-      <p className="hint">
-        今日({formatDate(today)})の授業で書きます。<strong>{prevDate ? `前回の作業ログ(${formatDate(prevDate)})のあと` : 'これまで'}</strong>にやったことを、授業時間外の作業も含めて、まとめて書きます。やったタスクの結果を押して、<strong>何を・どこまでやったか</strong>を、しっかり書いてください。提出した日のうちは、何度でも直せます。
-      </p>
+      <p className="hint">{formatDate(today)}の授業の作業ログです。提出した日のうちは、何度でも直せます。</p>
       <DailyNudge nudge={nudgeOf(dailies, me.sid, today, classDays, settings.dailyStartDate, from)} isClassDay={isClassDay} link={false} />
-      {!started && <p className="card">作業ログは {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書いてみるだけで、未提出にはなりません。</p>}
-      {started && !isClassDay && <p className="card">今日は授業日ではありません。書きたいときだけ書いてください(未提出にはなりません)。</p>}
+      {!started && <p className="hint">作業ログは {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書けます。</p>}
+      {started && !isClassDay && <p className="hint">今日は授業日ではありません。書きたいときだけ書いてください。</p>}
       <div className="home-grid">
         <div className="col">
       {mineToday?.absent

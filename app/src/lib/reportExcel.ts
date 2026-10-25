@@ -1,4 +1,4 @@
-// 報告書の Excel (.xlsx) をブラウザの中で作る。exceljs は大きいので、使うときだけ読み込む。
+// PJ分析の Excel (.xlsx) をブラウザの中で作る。exceljs は大きいので、使うときだけ読み込む。
 import type { Milestone, Task, TaskStatus } from '../types';
 import type { ProjectAnalysis } from './analysis';
 import { mdLabel, milestonesInWeek, overlapsWeek, wbsRows, weekColumns } from './report';

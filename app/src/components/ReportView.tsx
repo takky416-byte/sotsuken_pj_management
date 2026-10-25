@@ -11,7 +11,7 @@ import { GanttChart } from './GanttChart';
 import { STALE_MESSAGE, isStaleChunkError, mayReloadForUpdate } from '../lib/staleChunk';
 
 /**
- * 報告書: プロジェクトの概況・分析・ガントチャート・WBS。企業への中間報告で提出できるよう、Excel と PDF(印刷)で出力する。
+ * PJ分析: プロジェクトの概況・分析・ガントチャート・WBS。企業への中間報告で提出できるよう、Excel と PDF(印刷)で出力する。
  * 教員専用のデータは含まれない。
  */
 export function ReportView({ team, actor }: { team: Team; actor: string }) {

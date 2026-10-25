@@ -95,9 +95,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(page.locator('.badge.adhoc').first()).toBeVisible();
   });
 
-  test('報告書: 概況・ガントチャート・WBSが出て、Excelをダウンロードできる。ミーティング画面にも分析が出る', async ({ page }) => {
+  test('PJ分析: 概況・ガントチャート・WBSが出て、Excelをダウンロードできる。ミーティング画面にも分析が出る', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
-    await page.getByRole('link', { name: '報告書', exact: true }).click();
+    await page.getByRole('link', { name: 'PJ分析', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '概況と分析' })).toBeVisible();
     await expect(page.locator('.report .gantt-row').first()).toBeVisible();
@@ -109,16 +109,16 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     expect(file.suggestedFilename()).toMatch(/^sotsuken-A-report-\d{4}-\d{2}-\d{2}\.xlsx$/);
     await page.screenshot({ path: 'e2e-shots/report.png', fullPage: true });
 
-    await page.getByRole('link', { name: 'ミーティング', exact: true }).click();
+    await page.getByRole('link', { name: 'ミーティングを始める' }).click();
     await page.locator('.step').nth(1).click();
     await expect(page.getByRole('heading', { name: /プロジェクト分析/ })).toBeVisible();
     await expect(page.locator('.analysis-card .meter')).toBeVisible();
   });
 
-  test('教員: チーム詳細に報告書タブがある', async ({ page }) => {
+  test('教員: チーム詳細にPJ分析タブがある', async ({ page }) => {
     await login(page, 'teacher@trident.ac.jp');
     await page.goto('/teacher/team/A');
-    await page.getByRole('button', { name: '報告書', exact: true }).click();
+    await page.getByRole('button', { name: 'PJ分析', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
   });
 

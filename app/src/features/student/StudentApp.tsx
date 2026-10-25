@@ -7,15 +7,14 @@ import { StudentHome } from './StudentHome';
 import { StudentReport } from './StudentReport';
 import { StudentWbs } from './StudentWbs';
 
-export function StudentNav({ teamId }: { teamId: string | null }) {
+export function StudentNav(_props: { teamId: string | null }) {
   const base = useBase();
   return (
     <nav>
       <NavLink to={`${base}/`} end>ホーム</NavLink>
       <NavLink to={`${base}/daily`}>作業ログ</NavLink>
       <NavLink to={`${base}/wbs`}>WBS・ガントチャート</NavLink>
-      <NavLink to={`${base}/meeting/${teamId ?? 'A'}`}>ミーティング</NavLink>
-      <NavLink to={`${base}/report`}>報告書</NavLink>
+      <NavLink to={`${base}/report`}>PJ分析</NavLink>
       <NavLink to={`${base}/help`}>使い方</NavLink>
     </nav>
   );

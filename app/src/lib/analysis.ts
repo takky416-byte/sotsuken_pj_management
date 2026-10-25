@@ -1,5 +1,5 @@
 // プロジェクトの分析 (進み具合・遅れ・偏り・次のマイルストーンまでのペース)。
-// ミーティング画面と報告書で使う。タスクのデータだけから求める (学生に見せてよい情報だけ)。
+// ミーティング画面とPJ分析で使う。タスクのデータだけから求める (学生に見せてよい情報だけ)。
 import type { Milestone, Task } from '../types';
 import { ADHOC_ROOT_ID } from './adhoc';
 import { addDays, jstDate } from './dates';

@@ -145,8 +145,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   return (
     <div className="daily-form">
       <section className="card">
-        <h3>① 前回の作業ログのあとに、やったこと</h3>
-        <p className="hint">{prevDate ? `前回の作業ログ(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを、「進んだ・完了した・詰まった」で選びます。選ぶと説明の欄が開くので、<strong>何を・どこまでやったか</strong>を書きます。授業時間外の作業も含めます。やっていないタスクは、そのままにします。</p>
+        <h3>1. やったこと</h3>
+        <p className="hint">{prevDate ? `前回(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを選んで、何をどこまでやったかを書きます。授業時間外の作業も含めます。</p>
         {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -170,9 +170,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                     ref={focusOn(i.id)} className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
                     placeholder={PLACEHOLDER[i.result]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
                   />
-                  <div className="phrases" aria-label="ひとこと">
+                  {!i.note.trim() && <div className="phrases" aria-label="ひとこと">
                     {PHRASES[i.result].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text) })}>＋ {ph.label}</button>)}
-                  </div>
+                  </div>}
                   <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}</div>
                 </>
               )}
@@ -242,9 +242,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       </section>
 
       <section className="card">
-        <h3>② つぎにやること</h3>
-        <p className="hint">次の授業日までに、何をやるかを書きます。ホームの「次にやること」にも出ます。</p>
-        {suggestions.length > 0 && (
+        <h3>2. つぎにやること</h3>
+        <p className="hint">次の授業日までに、何をやるかを書きます。</p>
+        {suggestions.length > 0 && !next.trim() && (
           <div className="chips" aria-label="次にやることの候補">
             {suggestions.map((t) => (
               <button key={t.id} type="button" className="chip-btn" onClick={() => setNext((v) => `${v}${v && !v.endsWith('\n') ? '\n' : ''}「${t.title}」を進める。`)}>＋ {t.title}</button>
@@ -273,7 +273,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         {state !== 'saved' && (
           <span className={problems.length === 0 ? 'ok' : 'hint'}>
             {problems.length === 0 ? `提出できます(${included.length}項目)` : `提出まで あと${problems.length}か所`}
-            {!submitted && <> ・ 入力は、この端末に自動で保存されます</>}
+            {!submitted && <> ・ 自動で保存されます</>}
           </span>
         )}
       </div>

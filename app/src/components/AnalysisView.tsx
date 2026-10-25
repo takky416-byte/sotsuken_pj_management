@@ -13,7 +13,7 @@ export function ProgressMeter({ actual, planned }: { actual: number; planned: nu
   );
 }
 
-/** プロジェクトの分析 (ミーティング画面と報告書で共通) */
+/** プロジェクトの分析 (ミーティング画面とPJ分析で共通) */
 export function AnalysisView({ a, detail = false }: { a: ProjectAnalysis; detail?: boolean }) {
   return (
     <div className="analysis">
