@@ -1,4 +1,6 @@
+import { ScreenMock } from '../components/ScreenMock';
 import { helpFor } from '../lib/helpContent';
+import { scenesFor } from '../lib/guideTone';
 import { useTone } from '../lib/tone';
 
 const Q = ({ q, children }: { q: string; children: React.ReactNode }) => (
@@ -14,23 +16,58 @@ export function Help({ role }: { role: 'student' | 'teacher' }) {
 const inline = (t: string): React.ReactNode =>
   t.split('**').map((x, i) => (i % 2 === 1 ? <strong key={i}>{x}</strong> : x));
 
+/** 「困ったとき」に、先に見せる場面 (残りは、右上の「ガイド」の「こんなとき」にある) */
+const QUICK_SCENES = ['adhoc', 'stuck', 'missed', 'free', 'plan', 'report'];
+
 function StudentHelp() {
-  const { intro, sections } = helpFor(useTone());
+  const tone = useTone();
+  const { intro, start, sections } = helpFor(tone);
+  const scenes = scenesFor(tone).filter((x) => QUICK_SCENES.includes(x.id)).sort((x, y) => QUICK_SCENES.indexOf(x.id) - QUICK_SCENES.indexOf(y.id));
   return (
     <>
       <h2>使い方</h2>
       <p className="hint">{inline(intro)}</p>
-      <div className="help-cols">
-        {sections.map((s) => (
-          <Q key={s.id} q={s.q}>
-            {s.blocks.map((b, i) => ('p' in b
-              ? <p key={i}>{inline(b.p)}</p>
-              : 'ul' in b
-                ? <ul key={i}>{b.ul.map((x, j) => <li key={j}>{inline(x)}</li>)}</ul>
-                : <ol key={i}>{b.ol.map((x, j) => <li key={j}>{inline(x)}</li>)}</ol>))}
-          </Q>
-        ))}
-      </div>
+
+      <section className="help-start" aria-label={start.title}>
+        <h3>{start.title}</h3>
+        <div className="help-steps">
+          {start.steps.map((st) => (
+            <div key={st.title} className="help-step card">
+              <ScreenMock art={st.art} />
+              <strong>{st.title}</strong>
+              <p>{st.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section aria-label="困ったとき">
+        <h3>困ったとき</h3>
+        <div className="help-scenes">
+          {scenes.map((sc) => (
+            <details key={sc.id} className="card">
+              <summary><strong>{sc.title}</strong></summary>
+              <ol>{sc.steps.map((x, i) => <li key={i}>{inline(x)}</li>)}</ol>
+            </details>
+          ))}
+        </div>
+        <p className="hint">ほかの場面は、右上の「ガイド」の「こんなとき」から探せます。</p>
+      </section>
+
+      <details className="help-more">
+        <summary><strong>くわしい説明を見る({sections.length}項目)</strong></summary>
+        <div className="help-cols">
+          {sections.map((s) => (
+            <Q key={s.id} q={s.q}>
+              {s.blocks.map((b, i) => ('p' in b
+                ? <p key={i}>{inline(b.p)}</p>
+                : 'ul' in b
+                  ? <ul key={i}>{b.ul.map((x, j) => <li key={j}>{inline(x)}</li>)}</ul>
+                  : <ol key={i}>{b.ol.map((x, j) => <li key={j}>{inline(x)}</li>)}</ol>))}
+            </Q>
+          ))}
+        </div>
+      </details>
     </>
   );
 }

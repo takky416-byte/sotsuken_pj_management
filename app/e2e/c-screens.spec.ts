@@ -37,14 +37,19 @@ test.describe.serial('画面の見た目', () => {
     await shot(page, 'student-daily-pc');
     await page.getByRole('link', { name: 'WBS・ガントチャート' }).click(); await page.waitForTimeout(1000);
     await shot(page, 'student-wbs-pc');
-    await page.getByLabel('トーン').selectOption('simple');
+    await page.getByLabel('トーン', { exact: true }).selectOption('simple');
     await page.getByRole('link', { name: 'ホーム' }).click(); await page.waitForTimeout(500);
     await shot(page, 'student-home-pc-simple');
-    await page.getByLabel('トーン').selectOption('casual'); await page.waitForTimeout(500);
+    await page.getByLabel('トーン', { exact: true }).selectOption('casual'); await page.waitForTimeout(500);
     await shot(page, 'student-home-pc-casual');
-    await page.getByLabel('トーン').selectOption('standard');
+    await page.getByLabel('トーン', { exact: true }).selectOption('standard');
     await page.getByRole('link', { name: '使い方', exact: true }).click(); await page.waitForTimeout(500);
     await shot(page, 'student-help-pc');
+    await page.getByRole('button', { name: /ガイド/ }).first().click(); await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/student-guide-1.png` });
+    await page.getByRole('button', { name: '次へ →' }).click(); await page.waitForTimeout(200);
+    await page.screenshot({ path: `${OUT}/student-guide-2.png` });
+    await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
   });
 
   test('学生の画面 (スマホ)', async ({ browser }) => {

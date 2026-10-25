@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Em } from './Em';
+import { ScreenMock } from './ScreenMock';
 import { GUIDE_SEEN_KEY, stepForPath, type Scene } from '../lib/guide';
 import { scenesFor, tourFor } from '../lib/guideTone';
 import { useTone } from '../lib/tone';
@@ -92,6 +93,7 @@ function GuideModal({ state, setState, onClose }: {
               {TOUR.map((t, i) => <button key={t.id} type="button" className={`gdot ${i === state.step ? 'on' : ''}`} aria-label={`${i + 1}. ${t.title}`} onClick={() => setState({ ...state, step: i })} />)}
             </div>
             <h3>{step.title}</h3>
+            <ScreenMock art={step.art} />
             <p className="guide-lead">{step.lead}</p>
             <ul className="guide-points">{step.points.map((p) => <li key={p}>{p}</li>)}</ul>
             {(step.scenes ?? []).length > 0 && (

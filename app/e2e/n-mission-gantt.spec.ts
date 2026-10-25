@@ -167,7 +167,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(dialog).toBeVisible(); // 初回(案内の確認のあと)に自動で出る
     await expect(dialog).toContainText('このアプリでできること');
     await dialog.getByRole('button', { name: '次へ →' }).click();
-    await expect(dialog).toContainText('ホーム: 今日やること');
+    await expect(dialog).toContainText('ホーム: まずここを見る');
     await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
     await expect(dialog).toHaveCount(0);
 
@@ -179,7 +179,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     // 作業ログの画面で開くと、作業ログの説明から始まる。「こんなとき」から、場面のやり方と画面への移動ができる
     await page.getByRole('link', { name: '作業ログ', exact: true }).click();
     await page.getByRole('button', { name: /ガイド/ }).first().click();
-    await expect(dialog).toContainText('作業ログ: 何を・どこまでやったかを書く');
+    await expect(dialog).toContainText('作業ログ: やったことを書く');
     await dialog.getByRole('tab', { name: 'こんなとき' }).click();
     await dialog.getByRole('button', { name: 'WBSにない作業をしたとき' }).click();
     await expect(dialog).toContainText('WBSにタスクとして追加されます');

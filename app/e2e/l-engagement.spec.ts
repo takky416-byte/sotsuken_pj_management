@@ -106,7 +106,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(html).toHaveAttribute('data-tone', 'standard');
     const em = page.locator('.em').first();
     await expect(em).toBeHidden();
-    await page.getByLabel('トーン').selectOption('casual');
+    await page.getByLabel('トーン', { exact: true }).selectOption('casual');
     await expect(html).toHaveAttribute('data-tone', 'casual');
     await expect(em).toBeVisible();
     // 利用ガイドも、トーンに合わせた言い方になる
@@ -116,7 +116,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await page.getByRole('button', { name: 'ガイドを閉じる' }).click();
     await page.reload();
     await expect(html).toHaveAttribute('data-tone', 'casual');
-    await page.getByLabel('トーン').selectOption('simple');
+    await page.getByLabel('トーン', { exact: true }).selectOption('simple');
     await expect(html).toHaveAttribute('data-tone', 'simple');
     await page.getByRole('button', { name: /ガイド/ }).first().click();
     await expect(dialog).toContainText('最初にホームを確認します');
@@ -124,15 +124,16 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(em).toBeHidden();
     // 使い方ページも、トーンに合わせた言い方になる
     await page.getByRole('link', { name: '使い方', exact: true }).click();
+    await page.getByText('くわしい説明を見る').click();
     await page.getByText('作業ログの書き方').click();
     await expect(page.getByText('前回の作業ログ以降の作業をまとめて記入します')).toBeVisible();
-    await page.getByLabel('トーン').selectOption('casual');
-    await expect(page.getByText('まとめて書きましょう', { exact: false }).first()).toBeVisible();
-    await page.getByLabel('トーン').selectOption('standard');
-    await expect(page.getByText('まとめて書きます。', { exact: false }).first()).toBeVisible();
+    await page.getByLabel('トーン', { exact: true }).selectOption('casual');
+    await expect(page.locator('.help-more').getByText('まとめて書きましょう', { exact: false }).first()).toBeVisible();
+    await page.getByLabel('トーン', { exact: true }).selectOption('standard');
+    await expect(page.locator('.help-more').getByText('まとめて書きます。', { exact: false }).first()).toBeVisible();
     await page.getByRole('link', { name: 'ホーム' }).click();
 
-    await page.getByLabel('トーン').selectOption('standard');
+    await page.getByLabel('トーン', { exact: true }).selectOption('standard');
     await expect(html).toHaveAttribute('data-tone', 'standard');
   });
 

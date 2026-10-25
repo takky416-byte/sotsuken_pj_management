@@ -1,10 +1,13 @@
 // 学生向けの使い方ページの内容。標準・カジュアル・シンプルの3つのトーンで、言い方を変える。
 // 画面名・ボタン名・手順の中身は、3つとも同じにする (言い方だけを変える)。**太字** は強調。
+import type { ArtId } from '../components/ScreenMock';
 import type { ToneId } from './tone';
 
 export type Block = { p: string } | { ul: string[] } | { ol: string[] };
 export type HelpSection = { id: string; q: string; blocks: Block[] };
-export type Help = { intro: string; sections: HelpSection[] };
+export type HelpStep = { art: ArtId; title: string; text: string };
+/** start: 「まずはこの4つ」(画面のイメージ図つき)。sections: くわしい説明 (ふだんは閉じておく) */
+export type Help = { intro: string; start: { title: string; steps: HelpStep[] }; sections: HelpSection[] };
 
 const S = (id: string, q: string, ...blocks: Block[]): HelpSection => ({ id, q, blocks });
 const p = (t: string): Block => ({ p: t });
@@ -12,7 +15,13 @@ const ul = (...t: string[]): Block => ({ ul: t });
 const ol = (...t: string[]): Block => ({ ol: t });
 
 const STANDARD: Help = {
-  intro: 'アプリの使い方で迷ったら、まずここを見てください。それでも解決しない、アプリの不具合は、先生に連絡してください。(卒研の進め方は、チームで相談して決めます。)',
+  intro: '迷ったら、まず下の「まずはこの4つ」を見てください。細かいことは、いちばん下の「くわしい説明」にあります。不具合は、先生に連絡してください。',
+  start: { title: 'まずはこの4つ', steps: [
+    { art: 'home', title: '1. ホームを開く', text: '今日やること・次にやることが分かります。先生からのメッセージも、ここに出ます。' },
+    { art: 'daily', title: '2. 授業日に、作業ログを送信', text: 'やったことを選んで、一言書いて「作業ログを送信」。1分ほどです。' },
+    { art: 'wbs', title: '3. WBS・ガントチャートで予定を見る', text: 'チームの予定がひと目で分かります。直すときは「編集モードにする」。' },
+    { art: 'pj', title: '4. PJ分析からミーティング', text: '毎週10分の確認は、「ミーティングを始める」から始めます。' },
+  ] },
   sections: [
     S('home', 'アプリを開いたら(ホーム)', ul(
       '**今日やること**: 期限を過ぎたもの、進行中のもの、今が予定の期間のものが、急ぎの順に出ます。着手・完了は、作業ログで知らせます(「作業ログに書く」から書けます)。ミーティングで決めた自分の約束も、ここに出ます。',
@@ -81,7 +90,13 @@ const STANDARD: Help = {
 };
 
 const CASUAL: Help = {
-  intro: '使い方で迷ったら、まずここを見てください。それでも解決しないとき、アプリの不具合のときは、先生に連絡してください。(卒研の進め方は、チームで相談して決めましょう。)',
+  intro: '迷ったら、まず下の「まずはこの4つ」をどうぞ。細かいことは、いちばん下の「くわしい説明」にあります。不具合は、先生に連絡してください。',
+  start: { title: 'まずはこの4つ', steps: [
+    { art: 'home', title: '1. ホームを開く', text: '今日やること・次にやることが分かります。先生からのメッセージも、ここに出ます。' },
+    { art: 'daily', title: '2. 授業日に、作業ログを送信', text: 'やったことを選んで、一言書いて「作業ログを送信」。1分ほどで終わります。' },
+    { art: 'wbs', title: '3. WBS・ガントチャートで予定を見る', text: 'チームの予定がひと目で分かります。直すときは「編集モードにする」を押します。' },
+    { art: 'pj', title: '4. PJ分析からミーティング', text: '毎週10分の確認は、「ミーティングを始める」からスタートします。' },
+  ] },
   sections: [
     S('home', 'アプリを開いたら(ホーム)', ul(
       '**今日やること**: 期限を過ぎたもの、進行中のもの、今が予定の期間のものが、急ぎの順に並びます。着手・完了は、作業ログで知らせます(「作業ログに書く」から書けます)。ミーティングで決めた自分の約束も、ここに出ます。',
@@ -151,7 +166,13 @@ const CASUAL: Help = {
 };
 
 const SIMPLE: Help = {
-  intro: '操作で迷ったときに確認してください。アプリの不具合は先生に連絡してください。卒研の進め方は、チームで相談して決めます。',
+  intro: 'まず「基本の4つ」を確認してください。詳細は「くわしい説明」にあります。不具合は先生に連絡してください。',
+  start: { title: '基本の4つ', steps: [
+    { art: 'home', title: '1. ホーム', text: '今日・次にやること。先生のメッセージも表示されます。' },
+    { art: 'daily', title: '2. 作業ログ(授業日)', text: '結果を選び、一言記入して「作業ログを送信」。' },
+    { art: 'wbs', title: '3. WBS・ガントチャート', text: '予定の確認。変更は「編集モードにする」。' },
+    { art: 'pj', title: '4. PJ分析', text: '「ミーティングを始める」から、週1回10分。' },
+  ] },
   sections: [
     S('home', 'アプリを開いたら(ホーム)', ul(
       '**今日やること**: 期限超過・進行中・期間内のタスク(急ぎ順)と、自分の約束。着手・完了は、作業ログで知らせます。',
