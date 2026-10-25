@@ -158,7 +158,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
             <div key={i.id} className={`dcard ${i.result ? `on r-${i.result}` : ''}`}>
               <div className="dcard-head">
                 <strong>{title(i)}</strong>
-                {t && <span className="hint">{periodLabel(t.startDate, t.endDate)}</span>}
+                {t && <span className="hint">{t.status === 'done' ? '完了済み(ほかの人が完了)・' : ''}{periodLabel(t.startDate, t.endDate)}</span>}
               </div>
               <div className="seg" role="group" aria-label={`${title(i)}の結果`}>
                 {RESULTS.map((r) => (

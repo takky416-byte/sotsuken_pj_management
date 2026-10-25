@@ -59,6 +59,12 @@ export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string
   for (const t of candidateTasks(tasks, sid, today)) {
     if (!has(t.id)) items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
   }
+  // 共同の担当で、前回の作業ログのあとに (ほかの人が) 完了したタスクも、自分の作業ログに書けるよう候補に残す
+  for (const t of live) {
+    if (isLeaf(live, t) && t.status === 'done' && (t.assignees ?? []).includes(sid) && Number.isFinite(t.updatedAt) && t.updatedAt > from && !has(t.id)) {
+      items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
+    }
+  }
   // 作業ログに入っているタスクが、削除されている場合も、そのまま残す (内容を失わない)
   return items.filter((i) => i.kind !== 'task' || byId.has(i.taskId ?? '') || i.result !== null);
 }

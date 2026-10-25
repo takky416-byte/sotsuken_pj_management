@@ -28,6 +28,23 @@ describe('candidateTasks', () => {
   });
 });
 
+describe('共同の担当で、相方が完了したタスク', () => {
+  const since = NOW - 3 * 86400000;
+  const pair = (o: Partial<Task>) => T('pair', { status: 'done', assignees: ['A1', 'A2'], updatedBy: 'A2', ...o });
+  test('前回のあとに完了していれば、自分の作業ログの候補に出る', () => {
+    const items = initialItems(undefined, [pair({ updatedAt: NOW - 86400000 })], 'A1', TODAY, since);
+    expect(items.map((i) => [i.id, i.result])).toEqual([['pair', null]]);
+  });
+  test('前回より前に完了していた/自分の担当でないなら、出ない', () => {
+    expect(initialItems(undefined, [pair({ updatedAt: since - 1000 })], 'A1', TODAY, since)).toEqual([]);
+    expect(initialItems(undefined, [pair({ updatedAt: NOW - 1000, assignees: ['A2'] })], 'A1', TODAY, since)).toEqual([]);
+  });
+  test('完了した本人の分は、重ならない', () => {
+    const items = initialItems(undefined, [pair({ updatedAt: NOW - 1000, updatedBy: 'A1' })], 'A1', TODAY, since);
+    expect(items).toHaveLength(1);
+  });
+});
+
 describe('initialItems', () => {
   test('作業ログがまだなければ、今日自分が更新したタスクを、先に入れる (完了していれば「完了した」)', () => {
     const ts = [...tasks.filter((t) => t.id !== 'doing'), T('doing', { status: 'doing', updatedBy: 'A1', updatedAt: NOW }), T('fin', { status: 'done', updatedBy: 'A1', updatedAt: NOW })];
