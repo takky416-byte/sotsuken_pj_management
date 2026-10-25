@@ -166,14 +166,6 @@ export function StudentHome() {
         {!lastNext && soon.length === 0 && free.length === 0 && <p className="hint">次にやることは、作業ログの「つぎにやること」に書くと、ここに出ます。</p>}
       </section>
 
-        </div>
-        <div className="col">
-      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
-
-      <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />
-
-      <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
-
       <section className="card plan-card">
         <h3><Em e="🗓" />マイルストーンと企画</h3>
         {upMs.length === 0 && <p className="hint">マイルストーンは、まだありません。</p>}
@@ -194,6 +186,15 @@ export function StudentHome() {
           </div>
         </div>
       </section>
+
+        </div>
+        <div className="col">
+      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
+
+      <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />
+
+      <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
+
         </div>
       </div>
 

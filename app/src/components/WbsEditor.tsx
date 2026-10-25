@@ -12,7 +12,7 @@ import {
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
 import { formatDate, jstDate } from '../lib/dates';
-import { buildGantt, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
+import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
@@ -28,6 +28,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [msOpen, setMsOpenRaw] = useState(() => { try { return localStorage.getItem('wbs-ms-open') !== '0'; } catch { return true; } });
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
+  const [bolt, setBolt] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
@@ -57,6 +58,14 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const ticks = g ? weekTicks(g) : [];
 
   const rows = flatten(tasks, collapsed);
+  // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行は、直前の位置を引きつぐ)
+  const boltXs: number[] = (() => {
+    if (!g) return [];
+    const parentIds = new Set(tasks.filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string));
+    const at = new Map(lightning(g, today, 3, (id) => parentIds.has(id)).map((p) => [g.rows[p.row].task.id, p.x]));
+    let last = pct(g, today);
+    return rows.map(({ task }) => { last = at.get(task.id) ?? last; return last; });
+  })();
   const byId = new Map(tasks.map((t) => [t.id, t]));
 
   const add = (parentId: string | null, title: string, afterId?: string) => {
@@ -115,6 +124,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           <span className="hint">{editMode ? '編集できます。終わったら「編集モードを終える」を押します。' : '閲覧モードです。タスクの追加・担当・期間・状態を変えるときは、「編集モードにする」を押します。'}</span>
         </div>
       )}
+      {g && rows.length > 0 && (
+        <label className="check wbs-bolt-toggle"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する<span className="hint">(今日の線より左は、予定の期間に入っているのに未着手、右は、予定より早く着手・完了したタスク)</span></label>
+      )}
       {orphans.length > 0 && canEdit && (
         <div className="card orphan" role="alert">
           <strong>行き場がなくなったタスクがあります</strong>
@@ -154,7 +166,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           </div>
         );
       })()}
-      {rows.map(({ task: t, hasChildren }) => {
+      {rows.map(({ task: t, hasChildren }, ri) => {
         const status = eff.get(t.id) ?? t.status;
         return (
         <div key={t.id}>
@@ -265,6 +277,14 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 <div className="w-bar" aria-hidden="true">
                   {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
                   <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
+                  {bolt && (() => {
+                    const x = boltXs[ri], prev = ri > 0 ? boltXs[ri - 1] : pct(g, today), next = ri < boltXs.length - 1 ? boltXs[ri + 1] : pct(g, today);
+                    return (
+                      <svg className="wbs-bolt" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <polyline points={`${(prev + x) / 2},0 ${x},50 ${(x + next) / 2},100`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                      </svg>
+                    );
+                  })()}
                   {a && b && (
                     <span
                       className={`gantt-bar ${status}${pr.derived ? ' derived' : ''}${overdue ? ' overdue' : ''}`}
