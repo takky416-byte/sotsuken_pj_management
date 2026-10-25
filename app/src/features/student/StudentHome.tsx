@@ -100,6 +100,12 @@ export function StudentHome() {
       <BookmarkPrompt email={me.email} />
       </div>
       {err && <p className="error">{err}</p>}
+      {team.message && team.message.text && (
+        <section className="card teacher-msg" aria-label="先生からのメッセージ">
+          <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
+          <p className="msg-text">{team.message.text}</p>
+        </section>
+      )}
 
       <div className="home-grid">
         <div className="col">
@@ -179,6 +185,9 @@ export function StudentHome() {
           <div className="hint">{team.members.map((m) => m.name).join('・') || '—'}</div>
           <div className="row">
             <Link to={`${base}/wbs`} className="btn ghost-btn">WBSを開く</Link>
+            {team.submitUrl && isHttpUrl(team.submitUrl) && (
+              <a className="btn" href={team.submitUrl} target="_blank" rel="noreferrer noopener">成果物を提出(Google ドライブ)</a>
+            )}
             {team.driveUrl && isHttpUrl(team.driveUrl) && (
               <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダ</a>
             )}

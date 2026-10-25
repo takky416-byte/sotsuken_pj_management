@@ -9,7 +9,7 @@ import { WbsGantt } from '../../components/WbsGantt';
 import { useClassDays } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
-import { useTeam } from '../../data/teams';
+import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
 import { addDays, dailyWindowFrom, jstDate } from '../../lib/dates';
@@ -43,6 +43,7 @@ function TeamDetail({ team }: { team: Team }) {
           )}
         </div>
       </div>
+      <TeamNotice team={team} />
       <div className="tabs">
         <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガントチャート</button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>PJ分析</button>
@@ -77,5 +78,41 @@ function TeamDaily({ team }: { team: Team }) {
       <h3>作業ログの内容</h3>
       <DailyFeed dailies={dailies} members={team.members} tasks={tasks} />
     </>
+  );
+}
+
+const MESSAGE_MAX = 200;
+
+/** 教員から、このチームへのメッセージと、成果物の提出先 (Google ドライブ)。学生のホームに出る */
+function TeamNotice({ team }: { team: Team }) {
+  const [text, setText] = useState(team.message?.text ?? '');
+  const [url, setUrl] = useState(team.submitUrl ?? '');
+  const [err, setErr] = useState('');
+  const [saved, setSaved] = useState('');
+  const urlOk = url.trim() === '' || isHttpUrl(url.trim());
+  const run = async (what: string, fn: () => Promise<unknown>) => {
+    setErr(''); setSaved('');
+    try { await fn(); setSaved(what); } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); }
+  };
+  const sendMessage = () => run('メッセージを送りました', () => updateTeam(team.id, { message: text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null }));
+  return (
+    <div className="card team-notice">
+      <h3>チームへのお知らせ</h3>
+      <label className="label" htmlFor={`msg-${team.id}`}>メッセージ(学生のホームに出ます。送り直すと入れ替わります)</label>
+      <textarea id={`msg-${team.id}`} rows={2} maxLength={MESSAGE_MAX} value={text} placeholder="例: 来週は中間確認をします。WBSの期間を入れておいてください。" onChange={(e) => { setText(e.target.value); setSaved(''); }} />
+      <div className="row">
+        <button type="button" onClick={sendMessage}>メッセージを送る</button>
+        {team.message && <button type="button" className="ghost" onClick={() => { setText(''); run('メッセージを消しました', () => updateTeam(team.id, { message: null })); }}>メッセージを消す</button>}
+        {team.message && <span className="hint">送信: {new Date(team.message.at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+      </div>
+      <label className="label" htmlFor={`submit-${team.id}`}>成果物の提出先(Google ドライブのフォルダのURL)</label>
+      <div className="row">
+        <input id={`submit-${team.id}`} className="grow" value={url} placeholder="https://drive.google.com/drive/folders/..." onChange={(e) => { setUrl(e.target.value); setSaved(''); }} />
+        <button type="button" disabled={!urlOk} onClick={() => run('提出先を保存しました', () => updateTeam(team.id, { submitUrl: url.trim() }))}>提出先を保存</button>
+      </div>
+      {!urlOk && <p className="error">https:// で始まるURLを入れてください。</p>}
+      {err && <p className="error">{err}</p>}
+      {saved && <p className="hint" role="status">{saved}</p>}
+    </div>
   );
 }

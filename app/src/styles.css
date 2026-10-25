@@ -738,3 +738,10 @@ table.access tr.detail td { background:var(--bg); }
 /* ホームのマイルストーン: 期限までの日数を目立たせる */
 .ms-item { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; }
 .ms-until { background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:13px; padding:1px 8px; border-radius:10px; }
+
+/* 教員からのメッセージ (ホーム) と、教員のお知らせ欄 */
+.teacher-msg { border-left:4px solid var(--accent); background:var(--accent-soft); }
+.teacher-msg .msg-text { margin:2px 0 0; font-size:17px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.team-notice textarea { width:100%; box-sizing:border-box; }
+.team-notice .grow { flex:1; min-width:200px; }
+.team-notice .row { margin:4px 0 8px; }
