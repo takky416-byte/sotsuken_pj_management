@@ -1,3 +1,5 @@
+import { addDays } from './dates';
+import { DEADLINES, DRAFT_END, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS } from './draftSchedule';
 import { parseOutline, type OutlineNode } from './outline';
 import { TEMPLATE_NODES } from './template';
 
@@ -59,6 +61,24 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
   }
 
   // --- 項目ごと ---
+  let orderNo = 0;
+  const secOf = (n: OutlineNode) => secs.find((x) => x.items.includes(n))?.title ?? '';
+  const periodCheck = (n: OutlineNode, where: string) => {
+    const { startDate: a, endDate: b } = n;
+    if (!a || !b) { err(`${where}: 期間がありません (「> 期間: 2026-11-02〜2026-11-10」。キックオフ画面は自動で入れます)`); return; }
+    if (a > b) err(`${where}: 期間の開始が終了より後です (${a}〜${b})`);
+    if (a < DRAFT_START || b > DRAFT_END) err(`${where}: 期間が授業期間(${DRAFT_START}〜${DRAFT_END})の外です (${a}〜${b})`);
+    const sec = secOf(n);
+    const dl = DEADLINES.find((d) => d.section === sec && d.re.test(n.title));
+    if (dl && b > dl.end) err(`${where}: 終了日 ${b} が、${dl.why} の ${dl.end} より後です`);
+    if (/発注/.test(n.title)) {
+      const lim = ORDER_DEADLINES[Math.min(orderNo++, ORDER_DEADLINES.length - 1)];
+      if (b > lim) err(`${where}: 発注の終了日 ${b} が、機材発注の期限 ${lim} より後です`);
+    }
+    const win = SECTION_WINDOWS[sec];
+    if (win && (a < addDays(win[0], -7) || b > addDays(win[1], 7))) warn(`${where}: 期間 ${a}〜${b} が、「${sec}」の時期 (${win[0]}〜${win[1]}) から外れています`);
+    if ((Date.parse(b) - Date.parse(a)) / 86400000 > 45) warn(`${where}: 期間が45日より長いです。項目を分けられませんか`);
+  };
   const siblings = new Map<string, number>();
   let parent2 = '';
   nodes.forEach((n, i) => {
@@ -85,6 +105,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
         if (/^できあがり[:：]/m.test(n.detail) && doneLine.trim().length < 6) warn(`${where}: 「できあがり」が短すぎます。完了と言える状態を書く`);
         if (/^できあがり[:：]\s*(完了|終了|できる|終わる)[。]?$/m.test(n.detail)) warn(`${where}: 「できあがり」が完了と言うだけです。何ができていれば完了かを書く`);
       }
+      periodCheck(n, where);
     }
   });
   for (const [key, c] of siblings) if (c > 1) err(`同じ場所に同じ題名が重なっています: ${key.split('/').slice(-1)[0]} (取り込みで1つにまとまり、片方が消えます)`);

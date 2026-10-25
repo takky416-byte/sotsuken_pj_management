@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { checkDraft } from './draftCheck';
+import { fillPeriods } from './draftSchedule';
 
 const example = readFileSync(new URL('../../../docs/wbs-drafts/example-soft.md', import.meta.url), 'utf8');
 const errors = (t: string, k?: 'ソフト' | 'ハード') => checkDraft(t, k).issues.filter((i) => i.level === 'error').map((i) => i.message);
@@ -40,5 +41,22 @@ describe('checkDraft', () => {
   test('日程の節目 (外部設計レビューなど) が抜けると、注意', () => {
     const r = checkDraft(example.replace('外部設計レビューの資料を作る', '外部設計の資料を作る').replace('外部設計レビューの指摘を整理する', '外部設計の指摘を整理する'));
     expect(r.issues.some((i) => i.level === 'warn' && i.message.includes('外部設計レビュー'))).toBe(true);
+  });
+});
+
+describe('期間', () => {
+  test('期間のない項目は誤り。範囲外・逆順・節目の期限超えも誤り', () => {
+    const stripped = example.replace(/^ {2}> 期間: .*\n/m, '');
+    expect(errors(stripped).some((m) => m.includes('期間がありません'))).toBe(true);
+    expect(errors(example.replace('2026-10-28〜2026-10-30', '2026-10-01〜2026-10-30')).some((m) => m.includes('外'))).toBe(true);
+    expect(errors(example.replace('2026-10-28〜2026-10-30', '2026-10-30〜2026-10-28')).some((m) => m.includes('開始が終了より後'))).toBe(true);
+    const late = example.replace(/(- 外部設計レビューの資料を作る\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-02');
+    expect(errors(late).some((m) => m.includes('外部設計レビュー'))).toBe(true);
+  });
+  test('自動で入れると、誤りがなくなる (見本から期間を外して入れ直す)', () => {
+    const stripped = example.replace(/^ {2}> 期間: .*\n/gm, '');
+    expect(errors(stripped).length).toBeGreaterThan(40);
+    expect(checkDraft(fillPeriods(stripped)).issues).toEqual([]);
+    expect(fillPeriods(fillPeriods(stripped))).toBe(fillPeriods(stripped)); // 2回かけても変わらない
   });
 });

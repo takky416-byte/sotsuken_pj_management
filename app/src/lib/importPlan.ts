@@ -53,6 +53,7 @@ export function planImport(
       const sibs = childrenOf(known, parentId);
       const n: NewTask = {
         id: newId(), parentId, depth, title: node.title, detail: node.detail,
+        ...(node.startDate && node.endDate ? { startDate: node.startDate, endDate: node.endDate } : {}),
         order: (sibs.at(-1)?.order ?? 0) + 1024,
       };
       created.push(n);

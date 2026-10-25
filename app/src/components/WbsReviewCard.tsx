@@ -55,8 +55,8 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
           {s.unassigned.length === 0 ? '担当が決まっていない項目は、ありません。' : <>担当が決まっていない項目が <strong>{s.unassigned.length}件</strong> あります。</>}
         </li>
         <li className={s.noPeriod === 0 ? 'ok' : ''}>
-          <strong>{step(s.noPeriod === 0)} 期間(いつからいつまで)を入れる。</strong>{' '}
-          {s.noPeriod === 0 ? '期間のない項目は、ありません。' : <>期間のない項目が {s.noPeriod}件あります(目安。まず近い項目から)。</>}
+          <strong>{step(s.noPeriod === 0)} 期間(いつからいつまで)を確かめる。</strong>{' '}
+          {s.noPeriod === 0 ? '期間は、はじめから入っています。自分たちの進め方に合わせて、ずれている所を直しましょう。' : <>期間のない項目が {s.noPeriod}件あります(目安。まず近い項目から)。</>}
         </li>
       </ol>
       <p className="hint">WBSの画面で「編集モードにする」を押すと直せます。「担当が決まっていない項目だけ」で絞ると、残りが見つかります。</p>

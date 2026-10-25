@@ -4,10 +4,14 @@ import { createTasks, newTaskId, useTasks } from '../../data/tasks';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { checkDraft } from '../../lib/draftCheck';
+import { autoSchedule, fillPeriods } from '../../lib/draftSchedule';
 import { planImport } from '../../lib/importPlan';
 import { parseOutline } from '../../lib/outline';
 import { TEMPLATE_NODES } from '../../lib/template';
 import type { Team } from '../../types';
+
+/** 叩き台の項目。期間のない項目には、大項目ごとの時期と節目の期限に合わせて、期間を入れる */
+const draftNodes = (text: string, fill: boolean) => (fill ? autoSchedule(parseOutline(text)) : parseOutline(text));
 
 const TEMPLATE_TITLES = new Set(TEMPLATE_NODES.map((n) => n.title));
 
@@ -28,17 +32,18 @@ function KickoffForm({ team }: { team: Team }) {
   const [driveUrl, setDriveUrl] = useState(team.driveUrl);
   const [outline, setOutline] = useState('');
   const [hard, setHard] = useState(false);
+  const [fill, setFill] = useState(true);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [err, setErr] = useState('');
 
   const plan = useMemo(() => {
     if (!tasks) return null;
-    const nodes = [...TEMPLATE_NODES, ...parseOutline(outline)];
+    const nodes = [...TEMPLATE_NODES, ...draftNodes(outline, fill)];
     return planImport(tasks, nodes, () => `preview-${Math.random()}`);
-  }, [tasks, outline]);
+  }, [tasks, outline, fill]);
 
-  const report = useMemo(() => (outline.trim() ? checkDraft(outline, hard ? 'ハード' : 'ソフト') : null), [outline, hard]);
+  const report = useMemo(() => (outline.trim() ? checkDraft(fill ? fillPeriods(outline) : outline, hard ? 'ハード' : 'ソフト') : null), [outline, hard, fill]);
 
   const urlOk = driveUrl === '' || isHttpUrl(driveUrl);
   const canRun = !!projectName.trim() && urlOk && !busy && !!tasks;
@@ -47,7 +52,7 @@ function KickoffForm({ team }: { team: Team }) {
     if (!tasks) return;
     setBusy(true); setErr(''); setResult('');
     try {
-      const real = planImport(tasks, [...TEMPLATE_NODES, ...parseOutline(outline)], () => newTaskId(team.id));
+      const real = planImport(tasks, [...TEMPLATE_NODES, ...draftNodes(outline, fill)], () => newTaskId(team.id));
       const drafts = real.created.filter((n) => !(n.depth === 1 && TEMPLATE_TITLES.has(n.title)));
       const templ = real.created.filter((n) => n.depth === 1 && TEMPLATE_TITLES.has(n.title));
       await createTasks(team.id, 'teacher', templ, 'user');
@@ -106,6 +111,10 @@ function KickoffForm({ team }: { team: Team }) {
           「# 」は大項目、「- 」はタスク(インデントで階層)、「{'>'} 」は詳細です。雛形の6大項目は自動で作ります。
           同じ名前の項目がすでにあれば作り直さないので、何度実行しても増えません。
         </p>
+        <label className="chip">
+          <input type="checkbox" checked={fill} onChange={(e) => setFill(e.target.checked)} />
+          期間のない項目に、期間を自動で入れる(「{'>'} 期間: 2026-11-02〜2026-11-10」と書けば、その期間になります)
+        </label>
         <label className="chip">
           <input type="checkbox" checked={hard} onChange={(e) => setHard(e.target.checked)} />
           ハード系の企画(機材発注の項目も点検する)

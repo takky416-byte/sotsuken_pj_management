@@ -1,4 +1,6 @@
-export type OutlineNode = { depth: 1 | 2 | 3; title: string; detail: string };
+import { parsePeriod } from './period';
+
+export type OutlineNode = { depth: 1 | 2 | 3; title: string; detail: string; startDate?: string; endDate?: string };
 
 const clamp = (n: number): 1 | 2 | 3 => (Math.min(Math.max(n, 1), 3) as 1 | 2 | 3);
 
@@ -17,6 +19,9 @@ export function parseOutline(text: string, baseDepth: 1 | 2 | 3 = 1): OutlineNod
     const detail = /^\s*>\s?(.*)$/.exec(raw);
     if (detail) {
       const last = nodes[nodes.length - 1];
+      const period = /^期間[:：]\s*(.+)$/.exec(detail[1].trim());
+      const range = period ? parsePeriod(period[1]) : null;
+      if (last && range) { last.startDate = range.startDate; last.endDate = range.endDate; continue; }
       if (last) last.detail = last.detail ? `${last.detail}\n${detail[1]}` : detail[1];
       continue;
     }
