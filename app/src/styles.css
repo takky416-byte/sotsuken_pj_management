@@ -815,3 +815,7 @@ table.access tr.detail td { background:var(--bg); }
   .seg .ns { display:inline; } .seg .nl { display:none; }
 }
 @media (max-width:640px) { .submit-bar { bottom:58px; } }
+.wbs-tools { gap:10px; align-items:center; margin:4px 0 6px; }
+.wbs-tools button { padding:3px 12px; font-size:14px; }
+.broadcast { margin-top:12px; } .broadcast textarea { width:100%; box-sizing:border-box; }
+.broadcast-teams { gap:10px; margin:6px 0; }

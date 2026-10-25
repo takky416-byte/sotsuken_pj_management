@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { StackTable } from '../../components/StackTable';
 import { Link } from 'react-router-dom';
 import { Progress } from '../../components/Progress';
@@ -5,14 +6,14 @@ import { useClassDays, useMilestones } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useMeetings } from '../../data/meetings';
 import { useTasks } from '../../data/tasks';
-import { useTeams } from '../../data/teams';
+import { updateTeam, useTeams } from '../../data/teams';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import { teamFlags } from '../../lib/flags';
 import { overallProgress } from '../../lib/wbs';
 import type { ClassDay, Milestone, Team } from '../../types';
 
 
-function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string }) {
+function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string; onSeverity: (id: string, n: number) => void }) {
   const today = jstDate();
   const { data: tasks } = useTasks(team.id);
   const { data: dailies } = useTeamDailies(team.id, dailyWindowFrom(today));
@@ -23,6 +24,9 @@ function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; mile
   const delayed = (tasks ?? []).filter((t) => !t.deleted && t.status !== 'done' && t.status !== 'hold'
     && t.endDate && t.endDate < today).length;
   const active = team.status === 'active';
+  // 要確認の多さ (一覧を、要確認の多い順に並べるために、親へ知らせる)
+  const severity = flags ? flags.missing.length * 2 + flags.unassignedOverdue : 0;
+  useEffect(() => { onSeverity(team.id, severity); }, [team.id, severity, onSeverity]);
   return (
     <tr>
       <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link></td>
@@ -60,12 +64,16 @@ export function TeacherHome() {
   const milestones = useMilestones('all');
   const classDays = useClassDays();
   const settings = useSettings();
+  const [severity, setSeverity] = useState<Record<string, number>>({});
+  const [flagFirst, setFlagFirst] = useState(true);
+  const onSeverity = (id: string, n: number) => setSeverity((s) => (s[id] === n ? s : { ...s, [id]: n }));
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!teams || !milestones || !classDays || !settings) return <p>読み込み中…</p>;
-  const sorted = [...teams].sort((a, b) => a.id.localeCompare(b.id));
+  const sorted = [...teams].sort((a, b) => (flagFirst ? (severity[b.id] ?? 0) - (severity[a.id] ?? 0) : 0) || a.id.localeCompare(b.id));
   return (
     <>
       <h2>チーム一覧</h2>
+      <label className="check"><input type="checkbox" checked={flagFirst} onChange={(e) => setFlagFirst(e.target.checked)} />要確認のチームを上に並べる</label>
       <div className="table-wrap">
         <StackTable>
           <thead>
@@ -74,13 +82,49 @@ export function TeacherHome() {
               <th>作業ログ(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
             </tr>
           </thead>
-          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} />)}</tbody>
+          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} onSeverity={onSeverity} />)}</tbody>
         </StackTable>
       </div>
+      <Broadcast teams={sorted} />
       <p className="hint">
         「要確認」は目安です。授業日に2回続けて作業ログが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
         評価や単位認定には使いません。
       </p>
     </>
+  );
+}
+
+const MESSAGE_MAX = 200;
+
+/** 全チーム(または選んだチーム)に、同じメッセージを一度に送る。学生のホームに出る。 */
+function Broadcast({ teams }: { teams: Team[] }) {
+  const [text, setText] = useState('');
+  const [picked, setPicked] = useState<Set<string>>(() => new Set(teams.filter((t) => t.status === 'active').map((t) => t.id)));
+  const [done, setDone] = useState('');
+  const [err, setErr] = useState('');
+  const toggle = (id: string) => setPicked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const send = async () => {
+    setErr(''); setDone('');
+    const ids = teams.filter((t) => picked.has(t.id)).map((t) => t.id);
+    try {
+      const message = text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null;
+      await Promise.all(ids.map((id) => updateTeam(id, { message })));
+      setDone(message ? `${ids.length}チームに送りました` : `${ids.length}チームのメッセージを消しました`);
+    } catch (e) { setErr(`送れませんでした: ${(e as Error).message}`); }
+  };
+  return (
+    <details className="card broadcast">
+      <summary><strong>全チームにメッセージを送る</strong></summary>
+      <p className="hint">学生のホームの上に出ます。送り直すと入れ替わります。空のまま送ると、メッセージが消えます。1チームだけに送るときは、チームの詳細から。</p>
+      <textarea rows={2} maxLength={MESSAGE_MAX} value={text} aria-label="全チームへのメッセージ" placeholder="例: 来週は中間確認をします。WBSの期間を入れておいてください。" onChange={(e) => { setText(e.target.value); setDone(''); }} />
+      <div className="row broadcast-teams" role="group" aria-label="送るチーム">
+        {teams.map((t) => <label key={t.id} className="check"><input type="checkbox" checked={picked.has(t.id)} onChange={() => toggle(t.id)} />{t.id}</label>)}
+      </div>
+      <div className="row">
+        <button type="button" disabled={picked.size === 0} onClick={send}>{picked.size}チームに送る</button>
+        {done && <span className="hint" role="status">{done}</span>}
+      </div>
+      {err && <p className="error">{err}</p>}
+    </details>
   );
 }

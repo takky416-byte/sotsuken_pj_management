@@ -7,7 +7,7 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
@@ -29,6 +29,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const [msOpen, setMsOpenRaw] = useState(() => { try { return localStorage.getItem('wbs-ms-open') !== '0'; } catch { return true; } });
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [bolt, setBolt] = useState(true);
+  const [onlyMine, setOnlyMine] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
@@ -57,7 +58,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const g = timeline ? buildGantt(tasks, milestones ?? [], today, 3) : null;
   const ticks = g ? weekTicks(g) : [];
 
-  const rows = flatten(tasks, collapsed);
+  const mineIds = actor !== 'teacher' && onlyMine ? ownedWithAncestors(tasks, actor) : null;
+  const rows = flatten(tasks, collapsed).filter((r) => !mineIds || mineIds.has(r.task.id));
+  const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);
   // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行は、直前の位置を引きつぐ)
   const boltXs: number[] = (() => {
     if (!g) return [];
@@ -127,6 +130,15 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       {g && rows.length > 0 && (
         <label className="check wbs-bolt-toggle"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する<span className="hint">(今日の線より左は、予定の期間に入っているのに未着手、右は、予定より早く着手・完了したタスク)</span></label>
       )}
+      {tasks.some((t) => !t.deleted) && (
+        <div className="row wbs-tools">
+          {actor !== 'teacher' && (
+            <label className="check"><input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} />自分の担当だけ</label>
+          )}
+          <button type="button" className="ghost" onClick={() => setCollapsed(new Set(parentTaskIds))}>すべて閉じる</button>
+          <button type="button" className="ghost" onClick={() => setCollapsed(new Set())}>すべて開く</button>
+        </div>
+      )}
       {orphans.length > 0 && canEdit && (
         <div className="card orphan" role="alert">
           <strong>行き場がなくなったタスクがあります</strong>
@@ -143,7 +155,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           ))}
         </div>
       )}
-      {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
+      {rows.length === 0 && orphans.length === 0 && mineIds && <p className="hint">あなたが担当のタスクは、まだありません。「自分の担当だけ」を外すと、すべて見られます。</p>}
+      {rows.length === 0 && orphans.length === 0 && !mineIds && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.length > 0 && (
         <div className="wbs-head" aria-hidden="true"><div>タスク<span className="h2">・担当</span></div><div className="h-st"><span className="h1">状態</span><span className="h2">期間・状態</span></div><div className="h-as">担当</div><div className="h-pe">期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus, periodLabel, periodOf,
+  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus, periodLabel, periodOf, ownedWithAncestors,
 } from './wbs';
 
 let seq = 0;
@@ -163,5 +163,15 @@ describe('期間の表示', () => {
     expect(periodOf(ts, ts[0])).toEqual({ start: '2026-10-01', end: '2026-10-08', derived: true });
     expect(periodOf(ts, ts[1])).toEqual({ start: '2026-10-03', end: '2026-10-08', derived: false });
     expect(periodOf(ts, T('x'))).toEqual({ start: null, end: null, derived: false });
+  });
+});
+
+describe('自分の担当だけ', () => {
+  test('担当のタスクと、その上の階層だけが残る。削除済みは数えない', () => {
+    const tasks = sample();
+    tasks.find((t) => t.id === 'a2x')!.assignees = ['A1'];
+    tasks.push(T('gone', { parentId: 'b', depth: 2, order: 1, assignees: ['A1'], deleted: true }));
+    expect([...ownedWithAncestors(tasks, 'A1')].sort()).toEqual(['a', 'a2', 'a2x']);
+    expect(ownedWithAncestors(tasks, 'A2').size).toBe(0);
   });
 });

@@ -26,6 +26,17 @@ export function flatten(tasks: Task[], collapsed: ReadonlySet<string> = new Set(
   return rows;
 }
 
+/** 指定した人が担当のタスクと、その上の階層 (親・祖父母) の id。「自分の担当だけ」の表示に使う。 */
+export function ownedWithAncestors(tasks: Task[], sid: string): Set<string> {
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const out = new Set<string>();
+  for (const t of tasks) {
+    if (t.deleted || !t.assignees.includes(sid)) continue;
+    for (let cur: Task | undefined = t; cur && !out.has(cur.id); cur = cur.parentId ? byId.get(cur.parentId) : undefined) out.add(cur.id);
+  }
+  return out;
+}
+
 export function descendantsOf(tasks: Task[], id: string): Task[] {
   const out: Task[] = [];
   const walk = (pid: string) => {
