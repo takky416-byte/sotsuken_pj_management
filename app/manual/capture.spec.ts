@@ -100,10 +100,10 @@ test('学生編の画面写真', async ({ browser }) => {
   const p = await phone.newPage();
   await loginAs(p, 'a1@trident.ac.jp');
   await p.waitForTimeout(1000);
-  await shot(p, '17-phone-home');
+  await shot(p, '17-phone-home', [], { fullPage: false });
   await p.getByRole('link', { name: '作業ログ', exact: true }).click();
   await p.waitForTimeout(1000);
-  await shot(p, '18-phone-daily');
+  await shot(p, '18-phone-daily', [], { fullPage: false });
   await phone.close();
   await ctx.close();
 });
