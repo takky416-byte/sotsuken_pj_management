@@ -10,10 +10,10 @@ export default async function seed() {
   const t = today();
 
   const members = [
-    { sid: 'A1', name: '岩田', email: 'a1@trident.ac.jp' },
-    { sid: 'A2', name: '近内', email: 'a2@trident.ac.jp' },
-    { sid: 'A3', name: '小林', email: 'a3@trident.ac.jp' },
-    { sid: 'A4', name: '佐藤', email: 'a4@trident.ac.jp' },
+    { sid: 'A1', name: '氷室', email: 'a1@trident.ac.jp' },
+    { sid: 'A2', name: '瀬戸口', email: 'a2@trident.ac.jp' },
+    { sid: 'A3', name: '御子柴', email: 'a3@trident.ac.jp' },
+    { sid: 'A4', name: '月島', email: 'a4@trident.ac.jp' },
   ];
   await db.doc('roster/teacher@trident.ac.jp').set({ name: '先生', role: 'teacher', teamId: null, sid: null });
   for (const m of members) await db.doc(`roster/${m.email}`).set({ name: m.name, role: 'student', teamId: 'A', sid: m.sid });
@@ -60,7 +60,7 @@ export default async function seed() {
     });
   }
 
-  // 前回の授業日の作業ログ (近内・小林・佐藤)。岩田の今日の分は、操作の中で書く
+  // 前回の授業日の作業ログ (瀬戸口・御子柴・月島)。氷室の今日の分は、操作の中で書く
   const prev = addDays(t, -7);
   const log = (sid: string, taskId: string, note: string, result: string, next: string) => db.doc(`teams/A/dailyReports/${prev}_${sid}`).set({
     sid, date: prev, dayKey: Number(prev.replaceAll('-', '')), entries: [{ kind: 'task', taskId, note, result }], blocker: '', next, absent: false, submittedAt: 1, updatedAt: 1,

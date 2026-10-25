@@ -50,10 +50,10 @@ test('動画2: WBS・ガントチャートを見る・直す', async ({ browser 
   await caption(page, '3. ◆はマイルストーン。赤い線は今日、オレンジの線は遅れ・先行(稲妻線)です'); await pause(page, 3500);
   await caption(page, '4. 直すときは「編集モードにする」を押します');
   await tap(page, page.getByRole('button', { name: '編集モードにする' })); await pause(page, 2000);
-  await caption(page, '5. タスクの追加は、入力欄に書いて Enter(例: テスト項目を書く @近内 〜11/20)');
+  await caption(page, '5. タスクの追加は、入力欄に書いて Enter(例: テスト項目を書く @瀬戸口 〜11/20)');
   const add = page.getByPlaceholder(/タスクを追加/);
   await tap(page, add);
-  await add.pressSequentially('テスト項目を書く @近内 〜11/20', { delay: 60 }); await pause(page, 800);
+  await add.pressSequentially('テスト項目を書く @瀬戸口 〜11/20', { delay: 60 }); await pause(page, 800);
   await add.press('Enter'); await pause(page, 2500);
   await caption(page, '6. 終わったら「編集モードを終える」。状態は、作業ログで更新します');
   await tap(page, page.getByRole('button', { name: '編集モードを終える' })); await pause(page, 2500);
