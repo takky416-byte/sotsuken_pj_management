@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { createTasks, newTaskId, useTasks } from '../../data/tasks';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
+import { checkDraft } from '../../lib/draftCheck';
 import { planImport } from '../../lib/importPlan';
 import { parseOutline } from '../../lib/outline';
 import { TEMPLATE_NODES } from '../../lib/template';
@@ -26,6 +27,7 @@ function KickoffForm({ team }: { team: Team }) {
   const [adopted, setAdopted] = useState<1 | 2>(team.proposals.find((p) => p.adopted)?.no === 2 ? 2 : 1);
   const [driveUrl, setDriveUrl] = useState(team.driveUrl);
   const [outline, setOutline] = useState('');
+  const [hard, setHard] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [err, setErr] = useState('');
@@ -35,6 +37,8 @@ function KickoffForm({ team }: { team: Team }) {
     const nodes = [...TEMPLATE_NODES, ...parseOutline(outline)];
     return planImport(tasks, nodes, () => `preview-${Math.random()}`);
   }, [tasks, outline]);
+
+  const report = useMemo(() => (outline.trim() ? checkDraft(outline, hard ? 'ハード' : 'ソフト') : null), [outline, hard]);
 
   const urlOk = driveUrl === '' || isHttpUrl(driveUrl);
   const canRun = !!projectName.trim() && urlOk && !busy && !!tasks;
@@ -102,6 +106,23 @@ function KickoffForm({ team }: { team: Team }) {
           「# 」は大項目、「- 」はタスク(インデントで階層)、「{'>'} 」は詳細です。雛形の6大項目は自動で作ります。
           同じ名前の項目がすでにあれば作り直さないので、何度実行しても増えません。
         </p>
+        <label className="chip">
+          <input type="checkbox" checked={hard} onChange={(e) => setHard(e.target.checked)} />
+          ハード系の企画(機材発注の項目も点検する)
+        </label>
+        {report && (
+          <div className="card" aria-label="叩き台の点検">
+            <strong>叩き台の点検</strong>: {report.total}項目(目安は50〜60)
+            {report.issues.length === 0 ? <p className="ok">問題は見つかりませんでした。</p> : (
+              <ul>
+                {report.issues.map((i, k) => (
+                  <li key={k} className={i.level === 'error' ? 'error' : 'hint'}>{i.level === 'error' ? '直したほうがよい: ' : '見直し: '}{i.message}</li>
+                ))}
+              </ul>
+            )}
+            <p className="hint">点検は目安です。このまま取り込むこともできます。</p>
+          </div>
+        )}
         {plan && (
           <p className="card">
             実行すると、タスクを<strong>{plan.created.length}件</strong>作成します(既にある{plan.reused}件は、そのまま使います)。
