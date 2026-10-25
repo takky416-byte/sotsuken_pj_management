@@ -26,6 +26,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const { data: tasks, error } = useTasks(teamId);
   const milestones = useMilestones(teamId);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [msOpen, setMsOpenRaw] = useState(() => { try { return localStorage.getItem('wbs-ms-open') !== '0'; } catch { return true; } });
+  const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
@@ -138,8 +140,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
         const ms = placeMilestones(milestones ?? [], g, 500, 12);
         return (
           <div className="wbs-ms-row">
-            <div className="ms-label">◆ マイルストーン</div>
-            <div className="ms-track" style={{ height: ms.lanes * 18 + 4 }}>
+            <button type="button" className="ms-label ghost" aria-expanded={msOpen} onClick={() => setMsOpen((v) => !v)}>{msOpen ? '▾' : '▸'} ◆ マイルストーン({(milestones ?? []).length})</button>
+            {msOpen && <div className="ms-track" style={{ height: ms.lanes * 18 + 4 }}>
               {(milestones ?? []).map((m) => {
                 const pl = ms.places.find((p) => p.id === m.id)!;
                 return (
@@ -148,7 +150,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                     title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
                 );
               })}
-            </div>
+            </div>}
           </div>
         );
       })()}
@@ -262,7 +264,6 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               return (
                 <div className="w-bar" aria-hidden="true">
                   {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
-                  {(milestones ?? []).map((m) => <i key={m.id} className="tl-ms" style={{ left: `${pct(g, m.date)}%` }} />)}
                   <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
                   {a && b && (
                     <span

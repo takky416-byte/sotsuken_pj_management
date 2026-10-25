@@ -75,7 +75,7 @@ ul.plain { list-style:none; padding:0; margin:6px 0; }
 .progress .pct { font-size:14px; color:var(--muted); min-width:32px; }
 .wbs { margin-top:8px; }
 .wbs-row.depth-1 .title-input { font-weight:600; }
-.wbs-row.st-done .title-input { color:var(--muted); text-decoration:line-through; }
+.wbs-row.st-done .title-input { color:var(--muted); }
 .title-input { flex:1; min-width:160px; border-color:transparent; background:transparent; }
 .title-input:focus, .title-input:hover { border-color:var(--line); background:var(--bg); }
 select.status { padding:3px 6px; font-size:15px; }
@@ -670,7 +670,7 @@ table.access tr.detail td { background:var(--bg); }
   .wbs.with-timeline .wbs-row { grid-template-areas:"title period bar acts" "assign status bar acts"; row-gap:2px; padding:4px 0; }
   .wbs.with-timeline .w-title { grid-area:title; }
   .wbs.with-timeline .w-period { grid-area:period; }
-  .wbs.with-timeline .w-assign { grid-area:assign; padding-left:calc(var(--indent) + 30px); }
+  .wbs.with-timeline .w-assign { grid-area:assign; padding-left:calc(var(--indent) + 69px); }
   .wbs.with-timeline .w-status { grid-area:status; }
   .wbs.with-timeline .w-bar:not(.tl-head) { grid-area:bar; align-self:stretch; }
   .wbs.with-timeline .w-acts { grid-area:acts; }
@@ -682,9 +682,8 @@ table.access tr.detail td { background:var(--bg); }
   .wbs.with-timeline .w-bar .gantt-grid { position:absolute; top:0; bottom:0; width:1px; background:var(--line); opacity:.6; }
   .wbs.with-timeline .tl-today { position:absolute; top:0; bottom:0; width:2px; background:var(--danger); opacity:.7; }
   .wbs.with-timeline .wbs-ms-row { display:grid; column-gap:8px; border-bottom:1px solid var(--line); padding:2px 0; align-items:start; }
-  .wbs-ms-row .ms-label { grid-column:1 / 5; font-size:13px; font-weight:700; color:var(--warn); padding-top:2px; }
+  .wbs-ms-row .ms-label { grid-column:1 / 5; font-size:13px; font-weight:700; color:var(--warn); padding:2px 0; text-align:left; justify-self:start; background:none; border:0; cursor:pointer; }
   .wbs-ms-row .ms-track { grid-column:5; position:relative; }
-  .wbs.with-timeline .w-bar .tl-ms { position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--warn); opacity:.75; }
   .wbs.with-timeline .tl-head { height:20px; font-size:12px; font-weight:400; color:var(--muted); }
   .wbs.with-timeline .tl-head span { position:absolute; top:2px; transform:translateX(-50%); white-space:nowrap; }
 }
