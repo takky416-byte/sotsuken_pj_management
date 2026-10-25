@@ -93,6 +93,9 @@ export function StudentHome() {
             {info.isClassDay ? <>今日は<strong>授業日</strong>です({info.periods ? periodsLabel(info.periods) : ''})。</>
               : info.next ? <>次の授業日は <strong>{formatDate(info.next.date)}</strong> です。</> : '授業日の予定は、まだありません。'}
           </p>
+          {team.submitUrl && isHttpUrl(team.submitUrl) && (
+            <a className="btn hero-submit" href={team.submitUrl} target="_blank" rel="noreferrer noopener">成果物を提出</a>
+          )}
         </div>
         <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
       </section>
@@ -100,12 +103,6 @@ export function StudentHome() {
       <BookmarkPrompt email={me.email} />
       </div>
       {err && <p className="error">{err}</p>}
-      {team.message && team.message.text && (
-        <section className="card teacher-msg" aria-label="先生からのメッセージ">
-          <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
-          <p className="msg-text">{team.message.text}</p>
-        </section>
-      )}
 
       <div className="home-grid">
         <div className="col">
@@ -185,9 +182,6 @@ export function StudentHome() {
           <div className="hint">{team.members.map((m) => m.name).join('・') || '—'}</div>
           <div className="row">
             <Link to={`${base}/wbs`} className="btn ghost-btn">WBSを開く</Link>
-            {team.submitUrl && isHttpUrl(team.submitUrl) && (
-              <a className="btn" href={team.submitUrl} target="_blank" rel="noreferrer noopener">成果物を提出(Google ドライブ)</a>
-            )}
             {team.driveUrl && isHttpUrl(team.driveUrl) && (
               <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダ</a>
             )}
@@ -198,6 +192,12 @@ export function StudentHome() {
 
         </div>
         <div className="col">
+        {team.message && team.message.text && (
+          <section className="card teacher-msg" aria-label="先生からのメッセージ">
+            <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
+            <p className="msg-text">{team.message.text}</p>
+          </section>
+        )}
       <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 
       <WeeklyMissions weekly={weeklyMissions(tasks, team.members, today, thanks)} />

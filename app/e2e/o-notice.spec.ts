@@ -21,6 +21,7 @@ test.describe.serial('チームへのお知らせ', () => {
     const link = s.getByRole('link', { name: /成果物を提出/ });
     await expect(link).toHaveAttribute('href', 'https://drive.google.com/drive/folders/abc123');
 
+    await s.screenshot({ path: 'e2e-shots/student-home-notice.png' });
     // 他のチームの学生には、出ない
     const o = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(o, 'b1@trident.ac.jp');

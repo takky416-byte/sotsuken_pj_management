@@ -745,3 +745,4 @@ table.access tr.detail td { background:var(--bg); }
 .team-notice textarea { width:100%; box-sizing:border-box; }
 .team-notice .grow { flex:1; min-width:200px; }
 .team-notice .row { margin:4px 0 8px; }
+.hero-submit { background:var(--card); color:var(--accent); border:1px solid var(--line); font-weight:700; text-decoration:none; }
