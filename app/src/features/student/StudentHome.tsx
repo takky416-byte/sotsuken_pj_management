@@ -45,6 +45,7 @@ export function StudentHome() {
   const settings = useSettings();
   const { data: thanks, error: e4 } = useThanks(me.teamId, dailyWindowFrom(today));
   const [err, setErr] = useState('');
+  const [openedSubmit, setOpenedSubmit] = useState(false);
 
   if (!me.teamId || !me.sid) return <p>チームが設定されていません。先生に連絡してください。</p>;
   if (team === undefined) return <p>読み込み中…</p>;
@@ -94,8 +95,9 @@ export function StudentHome() {
               : info.next ? <>次の授業日は <strong>{formatDate(info.next.date)}</strong> です。</> : '授業日の予定は、まだありません。'}
           </p>
           {team.submitUrl && isHttpUrl(team.submitUrl) && (
-            <a className="btn hero-submit" href={team.submitUrl} target="_blank" rel="noreferrer noopener">成果物を提出</a>
+            <a className="btn hero-submit" href={team.submitUrl} target="_blank" rel="noreferrer noopener" onClick={() => setOpenedSubmit(true)}>成果物を提出</a>
           )}
+          {openedSubmit && <span className="hero-note" role="status">Googleドライブが開きます。入れたら、チームのみんなに声をかけましょう。</span>}
         </div>
         <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
       </section>
@@ -134,7 +136,7 @@ export function StudentHome() {
             </li>
           ))}
         </ul>
-        <p className="hint">着手・完了は、作業ログで「進んだ・完了した」を選んで知らせます。授業時間外の作業も、次の授業の作業ログにまとめて書きます。</p>
+        {mine.length === 0 && <p className="hint">着手・完了は、作業ログで「進んだ・完了した」を選んで知らせます。授業時間外の作業も、次の授業の作業ログにまとめて書きます。</p>}
       </section>
 
       <section className="card">

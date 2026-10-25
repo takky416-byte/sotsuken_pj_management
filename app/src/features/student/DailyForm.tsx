@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useBase } from '../../components/Base';
 import { saveDaily } from '../../data/daily';
 import { createTasks, newTaskId, setDeleted, updateTask } from '../../data/tasks';
 import {
@@ -58,6 +60,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   onSubmitted: (first: boolean) => void;
 }) {
   const key = draftKey(sid, today);
+  const base = useBase();
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
   const [items, setItems] = useState<DraftItem[]>(() => {
     const base = initialItems(prev, tasks, sid, today, since);
@@ -269,7 +272,15 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       )}
       <div className="submit-bar">
         <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '作業ログを更新する' : '作業ログを送信'}</button>
-        {state === 'saved' && <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>}
+        {state === 'saved' && (
+          <>
+            <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>
+            <span className="after-submit">
+              <Link to={`${base}/`} className="btn ghost-btn">ホームに戻る</Link>
+              <Link to={`${base}/wbs`} className="btn ghost-btn">WBSを見る</Link>
+            </span>
+          </>
+        )}
         {state !== 'saved' && (
           <span className={problems.length === 0 ? 'ok' : 'hint'}>
             {problems.length === 0 ? `提出できます(${included.length}項目)` : `提出まで あと${problems.length}か所`}

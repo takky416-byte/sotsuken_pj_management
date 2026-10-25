@@ -1,6 +1,8 @@
 import { ScreenMock } from '../components/ScreenMock';
 import { helpFor } from '../lib/helpContent';
+import { ThemePicker } from '../components/ThemePicker';
 import { scenesFor } from '../lib/guideTone';
+import { useNarrow } from '../lib/useNarrow';
 import { useTone } from '../lib/tone';
 
 const Q = ({ q, children }: { q: string; children: React.ReactNode }) => (
@@ -21,6 +23,7 @@ const QUICK_SCENES = ['adhoc', 'stuck', 'missed', 'free', 'plan', 'report'];
 
 function StudentHelp() {
   const tone = useTone();
+  const narrow = useNarrow();
   const { intro, start, sections } = helpFor(tone);
   const scenes = scenesFor(tone).filter((x) => QUICK_SCENES.includes(x.id)).sort((x, y) => QUICK_SCENES.indexOf(x.id) - QUICK_SCENES.indexOf(y.id));
   return (
@@ -53,6 +56,14 @@ function StudentHelp() {
         </div>
         <p className="hint">ほかの場面は、右上の「ガイド」の「こんなとき」から探せます。</p>
       </section>
+
+      {narrow && (
+        <section aria-label="画面の設定" className="card help-theme">
+          <h3>画面の色と言い方</h3>
+          <p className="hint">配色と、画面・ガイドの言い方(トーン)を選べます。</p>
+          <div className="row"><ThemePicker /></div>
+        </section>
+      )}
 
       <details className="help-more">
         <summary><strong>くわしい説明を見る({sections.length}項目)</strong></summary>

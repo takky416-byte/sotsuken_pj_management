@@ -8,6 +8,8 @@ export type TeamFlags = {
   latestDay: string | null;
   submitted: number;
   total: number;
+  /** 直近の授業日に、まだ提出していない人 (欠席は除く)。名前で返す。 */
+  latestMissing: string[];
   /** 授業日に2回以上連続で未提出の人 (欠席は除く)。名前で返す。 */
   missing: string[];
   /** 担当者がいなくて、期限を過ぎているタスクの数 */
@@ -31,6 +33,10 @@ export function teamFlags(
     ? team.members.filter((m) => statusOf(by.get(`${latestDay}_${m.sid}`)) !== 'missing').length
     : 0;
 
+  const latestMissing = latestDay
+    ? team.members.filter((m) => statusOf(by.get(`${latestDay}_${m.sid}`)) === 'missing').map((m) => m.name)
+    : [];
+
   const start = team.kickoffAt ? jstDate(new Date(team.kickoffAt)) : null;
   const dates = start ? classDatesBetween(classDays, start, today) : [];
   const missing = team.members.filter((m) => {
@@ -41,5 +47,5 @@ export function teamFlags(
   const unassignedOverdue = tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && t.status !== 'done' && t.status !== 'hold'
     && t.assignees.length === 0 && t.endDate !== null && t.endDate < today).length;
 
-  return { latestDay, submitted, total: team.members.length, missing, unassignedOverdue };
+  return { latestDay, submitted, total: team.members.length, latestMissing, missing, unassignedOverdue };
 }

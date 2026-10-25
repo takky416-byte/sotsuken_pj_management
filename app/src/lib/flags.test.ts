@@ -20,6 +20,11 @@ describe('teamFlags', () => {
     const f = teamFlags(team(), [], [sub('A1', '2026-11-04'), sub('A2', '2026-11-04', { entries: [], absent: true })], days, '2026-11-04', '2026-10-28');
     expect(f.latestDay).toBe('2026-11-04');
     expect(f.submitted).toBe(2);
+    expect(f.latestMissing).toEqual([]);
+  });
+  test('直近の授業日に、まだ出していない人の名前', () => {
+    const f = teamFlags(team(), [], [sub('A1', '2026-11-04')], days, '2026-11-04', '2026-10-28');
+    expect(f.latestMissing).toEqual(['近内']);
   });
   test('2回連続の未提出。今日の分は数えない', () => {
     // 10/28, 10/29, 11/4 が対象 (今日 11/5 より前)。A2 は 10/29 と 11/4 が未提出

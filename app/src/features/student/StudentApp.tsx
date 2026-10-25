@@ -7,13 +7,14 @@ import { StudentHome } from './StudentHome';
 import { StudentReport } from './StudentReport';
 import { StudentWbs } from './StudentWbs';
 
-export function StudentNav(_props: { teamId: string | null }) {
+/** bottom: スマホでは、画面の下に固定する (本物の画面のヘッダー用)。教員のプレビューでは固定しない。 */
+export function StudentNav({ bottom = false }: { teamId: string | null; bottom?: boolean }) {
   const base = useBase();
   return (
-    <nav>
+    <nav className={bottom ? 'bottom-nav' : undefined}>
       <NavLink to={`${base}/`} end>ホーム</NavLink>
       <NavLink to={`${base}/daily`}>作業ログ</NavLink>
-      <NavLink to={`${base}/wbs`}>WBS・ガントチャート</NavLink>
+      <NavLink to={`${base}/wbs`} aria-label="WBS・ガントチャート"><span className="nl">WBS・ガントチャート</span><span className="ns" aria-hidden="true">WBS</span></NavLink>
       <NavLink to={`${base}/report`}>PJ分析</NavLink>
       <NavLink to={`${base}/help`}>使い方</NavLink>
     </nav>

@@ -32,7 +32,12 @@ function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; mile
       <td className={delayed ? 'warn' : ''}>{delayed || '—'}</td>
       <td>
         {!active || !flags ? '—' : flags.latestDay
-          ? <>{flags.submitted}/{flags.total}<span className="hint"> ({formatDate(flags.latestDay)})</span></>
+          ? (
+            <>
+              {flags.submitted}/{flags.total}<span className="hint"> ({formatDate(flags.latestDay)})</span>
+              {flags.latestMissing.length > 0 && <div className="warn latest-missing">未提出: {flags.latestMissing.join('・')}</div>}
+            </>
+          )
           : '—'}
       </td>
       <td>

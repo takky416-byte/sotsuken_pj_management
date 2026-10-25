@@ -4,6 +4,7 @@ import { shortcutFor } from '../lib/shortcut';
 import { Em } from './Em';
 import { EMPTY_STATE, HOW_TO, KEY, MAX_SNOOZES, load, platformOf, shouldShow, snooze, type BookmarkState } from '../lib/bookmark';
 import { addDays, jstDate } from '../lib/dates';
+import { useNarrow } from '../lib/useNarrow';
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 
@@ -16,6 +17,8 @@ export function BookmarkPrompt({ email }: { email: string }) {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [install, setInstall] = useState<InstallEvent | null>(null);
+  const narrow = useNarrow();
+  const [expanded, setExpanded] = useState(false);
   // Chrome・Edge などは、「ホーム画面に追加(インストール)」を、ボタンから動かせる
   useEffect(() => {
     const on = (e: Event) => { e.preventDefault(); setInstall(e as InstallEvent); };
@@ -54,6 +57,13 @@ export function BookmarkPrompt({ email }: { email: string }) {
             <p className="hint">URL: <code>{url}</code>(「あとで」は3日後にまた出ます)</p>
           </details>
         </div>
+        {narrow && !expanded ? (
+          <span className="bookmark-act">
+            <button type="button" onClick={() => setExpanded(true)}>追加する</button>
+            <button type="button" onClick={() => update({ ...state, done: true })}>追加しました</button>
+            {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
+          </span>
+        ) : (
         <span className="bookmark-act">
           {install && <button type="button" onClick={doInstall}>ホーム画面に追加</button>}
           {!install && canShare && <button type="button" onClick={share}>追加のメニューを開く</button>}
@@ -62,6 +72,7 @@ export function BookmarkPrompt({ email }: { email: string }) {
           <button type="button" onClick={() => update({ ...state, done: true })}>追加しました</button>
           {state.snoozes < MAX_SNOOZES && <button type="button" className="ghost" onClick={() => update(snooze(state, today, addDays))}>あとで</button>}
         </span>
+        )}
       </div>
       {saved && <p className="hint" role="status">ダウンロードしたファイル「{file?.filename}」を、<strong>デスクトップにドラッグ</strong>して置いてください。ブラウザに「危険なファイル」と出たときは、このアプリのURLだけが入った小さなファイルなので、「保持」を選んでかまいません。</p>}
     </section>

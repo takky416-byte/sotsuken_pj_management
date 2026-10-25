@@ -49,7 +49,7 @@ function Shell() {
             <NavLink to="/teacher/help">使い方</NavLink>
           </nav>
         ) : (
-          <StudentNav teamId={profile.teamId} />
+          <StudentNav teamId={profile.teamId} bottom />
         )}
         <span className="spacer" />
         <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : '(教員)'}</span>
