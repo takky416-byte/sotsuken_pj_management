@@ -479,3 +479,19 @@ describe('ミーティングの議事録 (先生がアップ。チームの学�
     await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/meetingMinutes/2026-10-28')));
   });
 });
+
+describe('初期WBSの見直しの記録 (チームの学生が書ける)', () => {
+  test('自分のチームの学生は、wbsReview だけ書ける。形が違う・名前が違う・他の項目・他のチームは不可', async () => {
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A1' } }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A2' } }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A1', x: 1 } }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: null }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A1' }, projectName: '書き換え' }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { message: { text: 'x', at: 1 } }));
+    await assertFails(updateDoc(doc(as(B1), 'teams/A'), { wbsReview: { at: 1, by: 'B1' } }));
+  });
+  test('先生は、もう一度見直しを求められる (null に戻す)', async () => {
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A1' } }));
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'teams/A'), { wbsReview: null }));
+  });
+});

@@ -7,7 +7,7 @@ import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, unassignedWithAncestors, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
@@ -30,6 +30,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [bolt, setBolt] = useState(true);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [onlyFree, setOnlyFree] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
@@ -59,7 +60,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const ticks = g ? weekTicks(g) : [];
 
   const mineIds = actor !== 'teacher' && onlyMine ? ownedWithAncestors(tasks, actor) : null;
-  const rows = flatten(tasks, collapsed).filter((r) => !mineIds || mineIds.has(r.task.id));
+  const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
+  const rows = flatten(tasks, collapsed).filter((r) => (!mineIds || mineIds.has(r.task.id)) && (!freeIds || freeIds.has(r.task.id)));
   const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);
   // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行は、直前の位置を引きつぐ)
   const boltXs: number[] = (() => {
@@ -135,6 +137,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           {actor !== 'teacher' && (
             <label className="check"><input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} />自分の担当だけ</label>
           )}
+          <label className="check"><input type="checkbox" checked={onlyFree} onChange={(e) => setOnlyFree(e.target.checked)} />担当が決まっていない項目だけ</label>
           <button type="button" className="ghost" onClick={() => setCollapsed(new Set(parentTaskIds))}>すべて閉じる</button>
           <button type="button" className="ghost" onClick={() => setCollapsed(new Set())}>すべて開く</button>
         </div>
@@ -155,8 +158,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           ))}
         </div>
       )}
-      {rows.length === 0 && orphans.length === 0 && mineIds && <p className="hint">あなたが担当のタスクは、まだありません。「自分の担当だけ」を外すと、すべて見られます。</p>}
-      {rows.length === 0 && orphans.length === 0 && !mineIds && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
+      {rows.length === 0 && orphans.length === 0 && mineIds && !freeIds && <p className="hint">あなたが担当のタスクは、まだありません。「自分の担当だけ」を外すと、すべて見られます。</p>}
+      {rows.length === 0 && orphans.length === 0 && freeIds && <p className="ok">担当が決まっていない項目は、ありません。</p>}
+      {rows.length === 0 && orphans.length === 0 && !mineIds && !freeIds && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.length > 0 && (
         <div className="wbs-head" aria-hidden="true"><div>タスク<span className="h2">・担当</span></div><div className="h-st"><span className="h1">状態</span><span className="h2">期間・状態</span></div><div className="h-as">担当</div><div className="h-pe">期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>

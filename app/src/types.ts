@@ -39,6 +39,8 @@ export type Team = {
   message?: { text: string; at: number } | null;
   /** 成果物を提出する Google ドライブのフォルダ (教員が設定) */
   submitUrl?: string;
+  /** 初期WBS (叩き台) の見直しを、チームの誰かが「終えた」と記録した時刻と人。なければ未確認 (学生も書ける) */
+  wbsReview?: { at: number; by: string } | null;
 };
 
 export type Milestone = {

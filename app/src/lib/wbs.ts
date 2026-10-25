@@ -37,6 +37,18 @@ export function ownedWithAncestors(tasks: Task[], sid: string): Set<string> {
   return out;
 }
 
+/** 担当が決まっていない (完了していない) いちばん下のタスクと、その上の階層の id。「担当が決まっていない項目だけ」の表示に使う。 */
+export function unassignedWithAncestors(tasks: Task[]): Set<string> {
+  const live = tasks.filter((t) => !t.deleted);
+  const byId = new Map(live.map((t) => [t.id, t]));
+  const out = new Set<string>();
+  for (const t of live) {
+    if (live.some((c) => c.parentId === t.id) || t.assignees.length > 0 || t.status === 'done') continue;
+    for (let cur: Task | undefined = t; cur && !out.has(cur.id); cur = cur.parentId ? byId.get(cur.parentId) : undefined) out.add(cur.id);
+  }
+  return out;
+}
+
 export function descendantsOf(tasks: Task[], id: string): Task[] {
   const out: Task[] = [];
   const walk = (pid: string) => {

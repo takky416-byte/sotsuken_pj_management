@@ -62,7 +62,7 @@ function KickoffForm({ team }: { team: Team }) {
         driveUrl: driveUrl.trim(),
         kickoffAt: team.kickoffAt ?? Date.now(),
       });
-      setResult(`キックオフしました。タスクを${real.created.length}件作成しました(既にあった${real.reused}件は、そのまま使いました)。`);
+      setResult(`キックオフしました。タスクを${real.created.length}件作成しました(既にあった${real.reused}件は、そのまま使いました)。学生のホームに「初期WBSの見直し」が出ます。`);
       setOutline('');
     } catch (e) {
       setErr(`できませんでした: ${(e as Error).message}`);

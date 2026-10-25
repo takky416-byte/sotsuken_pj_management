@@ -9,6 +9,7 @@ import { say } from '../../lib/tone';
 import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
+import { WbsReviewCard } from '../../components/WbsReviewCard';
 import { useNarrow } from '../../lib/useNarrow';
 import { MeetingMinutesCard } from '../../components/MeetingMinutesView';
 import { useMinutes } from '../../data/meetingMinutes';
@@ -117,6 +118,7 @@ export function StudentHome() {
       <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
       <BookmarkPrompt email={me.email} />
       </div>
+      <WbsReviewCard />
       {err && <p className="error">{err}</p>}
 
       {narrow && notice}

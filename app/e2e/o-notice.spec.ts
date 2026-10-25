@@ -111,3 +111,56 @@ test.describe.serial('チームへのお知らせ', () => {
     await expect(s.getByRole('region', { name: '前回のミーティングの議事録' })).toHaveCount(0);
   });
 });
+
+test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
+  test('学生のホームに案内が出る。担当のない項目がある間は「終えた」を押せない。ほかの画面にも案内が出る', async ({ browser }) => {
+    const s = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await login(s, 'a1@trident.ac.jp');
+    const card = s.getByRole('region', { name: '初期WBSの見直し' });
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('button', { name: '見直しを終えた' })).toBeDisabled();
+    await s.screenshot({ path: 'e2e-shots/student-home-review.png' });
+    await s.goto('/daily');
+    await expect(s.getByRole('status').filter({ hasText: '初期WBS(叩き台)の見直し' })).toBeVisible();
+  });
+
+  test('教員の一覧と詳細に、未確認と出る', async ({ browser }) => {
+    const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await expect(t.getByText('初期WBSの見直し: 未').first()).toBeVisible();
+    await t.goto('/teacher/team/A');
+    await expect(t.getByText(/まだ終えていません/)).toBeVisible();
+  });
+
+  test('WBSで「担当が決まっていない項目だけ」に絞り、担当を付けると、「終えた」を押せる。記録される', async ({ browser }) => {
+    const s = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await login(s, 'a1@trident.ac.jp');
+    await s.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    await s.locator('.wbs-row').first().waitFor();
+    await s.getByRole('button', { name: '編集モードにする' }).click();
+    await s.getByLabel('担当が決まっていない項目だけ').check();
+    // いちばん下の項目に、担当が付くたびに行が減る。付ける人は、自分
+    for (let guard = 0; guard < 80; guard++) {
+      const btn = s.locator('[aria-label^="担当を変える:"]').first();
+      if ((await btn.count()) === 0) break;
+      await btn.click();
+      await s.locator('.chips .chip-btn').first().click();
+      await s.keyboard.press('Escape');
+      await s.waitForTimeout(150);
+    }
+    await expect(s.getByText('担当が決まっていない項目は、ありません。').first()).toBeVisible();
+    await s.getByLabel('担当が決まっていない項目だけ').uncheck();
+    const card = s.getByRole('region', { name: '初期WBSの見直し' });
+    await card.getByLabel(/全部の項目を見て/).check();
+    await card.getByRole('button', { name: '見直しを終えた' }).click();
+    await expect(card).toHaveCount(0);
+
+    const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await t.goto('/teacher/team/A');
+    await expect(t.getByText(/終えました/)).toBeVisible();
+    await t.getByRole('button', { name: 'もう一度見直してもらう' }).click();
+    await expect(t.getByText(/まだ終えていません/)).toBeVisible();
+    await expect(s.getByRole('region', { name: '初期WBSの見直し' })).toBeVisible();
+  });
+});

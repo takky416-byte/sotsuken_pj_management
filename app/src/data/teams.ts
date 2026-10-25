@@ -23,3 +23,10 @@ export const updateTeam = (teamId: string, changes: Partial<Omit<Team, 'id'>>) =
   updateDoc(doc(db, 'teams', teamId), changes);
 
 export const setTeam = (teamId: string, data: Omit<Team, 'id'>) => setDoc(doc(db, 'teams', teamId), data);
+
+/** 初期WBSの見直しを終えた、と記録する (チームの学生も書ける) */
+export const confirmWbsReview = (teamId: string, sid: string) =>
+  updateDoc(doc(db, 'teams', teamId), { wbsReview: { at: Date.now(), by: sid } });
+
+/** 教員が、もう一度見直しを求める */
+export const resetWbsReview = (teamId: string) => updateDoc(doc(db, 'teams', teamId), { wbsReview: null });

@@ -82,6 +82,13 @@ service cloud.firestore {
     match /teams/{teamId} {
       allow read: if canSeeTeam(teamId);
       allow write: if isTeacher();
+      // 初期WBSの見直しの確認だけは、チームの学生も書ける (ほかの項目は触れない)
+      allow update: if inTeam(teamId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wbsReview'])
+        && request.resource.data.wbsReview is map
+        && request.resource.data.wbsReview.keys().hasOnly(['at', 'by'])
+        && request.resource.data.wbsReview.by == me().sid
+        && request.resource.data.wbsReview.at is number;
 
       match /tasks/{taskId} {
         allow read: if canSeeTeam(teamId);

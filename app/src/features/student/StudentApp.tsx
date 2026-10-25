@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useBase } from '../../components/Base';
+import { WbsReviewCard } from '../../components/WbsReviewCard';
 import { Help } from '../Help';
 import { MeetingIndex, MeetingPage } from '../meeting/MeetingPage';
 import { StudentDaily } from './StudentDaily';
@@ -30,8 +31,8 @@ export function StudentApp() {
       <Route path="wbs" element={<StudentWbs />} />
       <Route path="gantt" element={<StudentWbs initial="gantt" />} />
       <Route path="team" element={<Navigate to={base || '/'} replace />} />
-      <Route path="report" element={<StudentReport />} />
-      <Route path="daily" element={<StudentDaily />} />
+      <Route path="report" element={<><WbsReviewCard compact /><StudentReport /></>} />
+      <Route path="daily" element={<><WbsReviewCard compact /><StudentDaily /></>} />
       <Route path="help" element={<Help role="student" />} />
       <Route path="meeting" element={<MeetingIndex />} />
       <Route path="meeting/:teamId" element={<MeetingPage />} />

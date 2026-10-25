@@ -830,3 +830,11 @@ table.access tr.detail td { background:var(--bg); }
 .ms-old { border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
 .minutes-editor textarea { width:100%; box-sizing:border-box; }
 .file-btn { cursor:pointer; }
+
+/* 初期WBSの見直し (キックオフのあと) */
+.review-card { border:2px solid var(--accent); background:var(--accent-soft); margin:12px 0; }
+.review-card h3 { margin-top:0; }
+.review-steps { padding-left:1.4em; display:grid; gap:6px; }
+.review-steps li.ok { color:var(--ok); }
+.review-confirm { margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.review-banner { border-color:var(--accent); background:var(--accent-soft); margin:8px 0; }

@@ -10,6 +10,8 @@ import { WbsGantt } from '../../components/WbsGantt';
 import { useClassDays } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useTasks } from '../../data/tasks';
+import { resetWbsReview } from '../../data/teams';
+import { reviewState } from '../../lib/wbsReview';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
@@ -25,6 +27,26 @@ export function TeacherTeam() {
   return <TeamDetail team={team} />;
 }
 
+/** 初期WBSの見直し (学生が「終えた」を押したか)。教員は、もう一度求めることもできる */
+function ReviewStatus({ team }: { team: Team }) {
+  const { data: tasks } = useTasks(team.id);
+  const [err, setErr] = useState('');
+  if (team.status !== 'active' || !tasks) return null;
+  const s = reviewState(team, tasks);
+  const by = team.members.find((m) => m.sid === team.wbsReview?.by)?.name ?? team.wbsReview?.by;
+  return (
+    <>
+      <div className="label">初期WBSの見直し</div>
+      <div>
+        {team.wbsReview
+          ? <>終えました({by}さん・{new Date(team.wbsReview.at).toLocaleDateString('ja-JP')}) <button type="button" className="ghost" onClick={() => resetWbsReview(team.id).catch((e) => setErr((e as Error).message))}>もう一度見直してもらう</button></>
+          : <span className="warn">まだ終えていません(担当が決まっていない項目 {s.unassigned.length}件)</span>}
+        {err && <span className="error"> {err}</span>}
+      </div>
+    </>
+  );
+}
+
 function TeamDetail({ team }: { team: Team }) {
   const [tab, setTab] = useState<'wbs' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
   return (
@@ -36,6 +58,7 @@ function TeamDetail({ team }: { team: Team }) {
         <div>{team.members.map((m) => m.name).join('・') || '—'}</div>
         <div className="label">企画</div>
         <div>{team.status === 'active' ? <strong>{team.projectName}</strong> : '企画検討中'}</div>
+        <ReviewStatus team={team} />
         <div className="row">
           <Link to={`/meeting/${team.id}`} className="btn ghost-btn">ミーティング画面</Link>
           <Link to={`/teacher/kickoff/${team.id}`} className="btn">{team.status === 'active' ? 'キックオフの内容を編集' : 'キックオフ'}</Link>

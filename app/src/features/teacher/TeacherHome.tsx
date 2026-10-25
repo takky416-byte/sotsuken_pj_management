@@ -31,7 +31,7 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
     <tr>
       <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link></td>
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
-      <td>{active ? team.projectName : <span className="hint">企画検討中</span>}</td>
+      <td>{active ? team.projectName : <span className="hint">企画検討中</span>}{active && tasks && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}</td>
       <td>{tasks ? <Progress {...overallProgress(tasks)} /> : '…'}</td>
       <td className={delayed ? 'warn' : ''}>{delayed || '—'}</td>
       <td>
