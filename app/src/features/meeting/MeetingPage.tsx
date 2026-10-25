@@ -202,7 +202,7 @@ function MeetingScreen({ team }: { team: Team }) {
         </section>
 
         <section className="card analysis-card">
-          <h3><Em e="📊" />プロジェクト分析{me.role === 'student' && <Link to={`${base}/report`} className="hint"> PJ分析を開く</Link>}</h3>
+          <h3><Em e="📊" />PJ分析{me.role === 'student' && <Link to={`${base}/report`} className="hint"> PJ分析を開く</Link>}</h3>
           <AnalysisView a={analysis} />
         </section>
 

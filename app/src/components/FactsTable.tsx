@@ -1,4 +1,5 @@
 import type { MemberFacts } from '../lib/facts';
+import { StackTable } from './StackTable';
 import { shortDate } from '../lib/wbs';
 
 /** メンバーごとの活動の事実 (記録されたデータだけ)。評価ではなく、気づくための一覧。 */
@@ -7,7 +8,7 @@ export function FactsTable({ facts, today }: { facts: MemberFacts[]; today: stri
   return (
     <div>
       <div className="table-wrap">
-        <table className="facts">
+        <StackTable className="facts">
           <thead>
             <tr><th>メンバー</th><th>最後に動いた日</th><th>7日の更新</th><th>7日の完了</th><th>作業ログ</th><th>担当(未完了)</th><th>期限超過</th><th>約束</th></tr>
           </thead>
@@ -27,7 +28,7 @@ export function FactsTable({ facts, today }: { facts: MemberFacts[]; today: stri
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
       {facts.some((f) => f.notes.length > 0) ? (
         <ul className="plain fact-notes">

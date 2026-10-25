@@ -111,7 +111,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
 
     await page.getByRole('link', { name: 'ミーティングを始める' }).click();
     await page.locator('.step').nth(1).click();
-    await expect(page.getByRole('heading', { name: /プロジェクト分析/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /PJ分析/ })).toBeVisible();
     await expect(page.locator('.analysis-card .meter')).toBeVisible();
   });
 
