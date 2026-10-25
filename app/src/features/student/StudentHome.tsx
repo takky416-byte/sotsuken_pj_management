@@ -10,8 +10,8 @@ import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
 import { useNarrow } from '../../lib/useNarrow';
-import { MeetingSummaryCard } from '../../components/MeetingSummaryView';
-import { useSummaries } from '../../data/meetingSummaries';
+import { MeetingMinutesCard } from '../../components/MeetingMinutesView';
+import { useMinutes } from '../../data/meetingMinutes';
 import { ThanksCard } from '../../components/ThanksCard';
 import { useThanks } from '../../data/thanks';
 import { Progress } from '../../components/Progress';
@@ -41,7 +41,7 @@ export function StudentHome() {
   const team = useTeam(me.teamId);
   const today = jstDate();
   const milestones = useMilestones(me.teamId ?? 'none');
-  const { data: summaries } = useSummaries(me.teamId);
+  const { data: minutes } = useMinutes(me.teamId);
   const { data: tasks, error: e1 } = useTasks(me.teamId);
   const { data: meetings, error: e2 } = useMeetings(me.teamId);
   const { data: mine, error: e3 } = useMyDailies(me.teamId, me.sid, dailyWindowFrom(today));
@@ -94,7 +94,7 @@ export function StudentHome() {
       <p className="msg-text">{team.message.text}</p>
     </section>
   ) : null;
-  const summaryCard = summaries && summaries.length > 0 ? <MeetingSummaryCard summaries={summaries} /> : null;
+  const minutesCard = minutes && minutes.length > 0 ? <MeetingMinutesCard minutes={minutes} /> : null;
 
   return (
     <>
@@ -120,7 +120,7 @@ export function StudentHome() {
       {err && <p className="error">{err}</p>}
 
       {narrow && notice}
-      {narrow && summaryCard}
+      {narrow && minutesCard}
       <div className="home-grid">
         <div className="col">
 
@@ -186,6 +186,13 @@ export function StudentHome() {
         {!lastNext && soon.length === 0 && free.length === 0 && <p className="hint">次にやることは、作業ログの「つぎにやること」に書くと、ここに出ます。</p>}
       </section>
 
+
+        </div>
+        <div className="col">
+        {!narrow && notice}
+        {!narrow && minutesCard}
+      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
+
       <section className="card plan-card">
         <h3><Em e="🗓" />マイルストーンと企画</h3>
         {upMs.length === 0 && <p className="hint">マイルストーンは、まだありません。</p>}
@@ -206,12 +213,6 @@ export function StudentHome() {
           </div>
         </div>
       </section>
-
-        </div>
-        <div className="col">
-        {!narrow && notice}
-        {!narrow && summaryCard}
-      <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 
         </div>
       </div>

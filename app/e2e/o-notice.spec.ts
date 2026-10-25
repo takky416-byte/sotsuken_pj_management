@@ -68,44 +68,46 @@ test.describe.serial('チームへのお知らせ', () => {
     await expect(page.locator('.wbs-row')).toHaveCount(all);
   });
 
-  test('ミーティングの要旨: 先生が下書きを直して公開すると、学生のホームに出る。公開をやめると消える。学生には下書きは見えない', async ({ browser }) => {
+  test('ミーティングの議事録: 先生がテキストをアップして公開すると、学生のホームに出る。置き換え・削除ができる。他のチームには出ない', async ({ browser }) => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher/team/A');
     await t.getByRole('button', { name: 'ミーティング記録' }).click();
-    await t.getByRole('button', { name: '要旨を自分で書く' }).click();
-    const date = await t.getByLabel('要旨の日付').inputValue();
-    await t.getByLabel(`要旨・本文 ${date}`).fill('設計を進める方針を確認した。');
-    await t.getByLabel(`要旨・決定事項 ${date}`).fill('画面を先に作る\n・検索は後回し');
-    await t.getByLabel(`要旨・次の1週間 ${date}`).fill('氷室: ワイヤーフレームを描く');
-    await t.getByRole('button', { name: '下書きを保存' }).click();
 
-    // 公開前は、学生に見えない
+    // テキストファイル (Shift_JIS ではなく UTF-8) を選ぶと、本文と日付が入る
+    await t.getByLabel('議事録のファイル').setInputFiles({ name: 'A_2026-11-04.txt', mimeType: 'text/plain', buffer: Buffer.from('\uFEFF決まったこと\r\n・画面を先に作る\r\n\r\n\r\n\r\n次の1週間\r\n・検索は後回し', 'utf8') });
+    await expect(t.getByLabel('議事録の本文')).toHaveValue(/画面を先に作る/);
+    await expect(t.getByLabel('議事録の日付')).toHaveValue('2026-11-04');
+    await t.getByRole('button', { name: '公開', exact: true }).click();
+    await expect(t.getByText(/の議事録を公開しました/)).toBeVisible();
+
     const s = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(s, 'a1@trident.ac.jp');
-    await expect(s.getByText('設計を進める方針を確認した。')).toHaveCount(0);
-
-    await t.getByRole('button', { name: '学生に公開' }).click();
-    await expect(t.getByText('公開中')).toBeVisible();
-    await s.reload();
-    const card = s.getByRole('region', { name: '前回のミーティングの要旨' });
-    await expect(card).toContainText('設計を進める方針を確認した。');
+    const card = s.getByRole('region', { name: '前回のミーティングの議事録' });
     await expect(card).toContainText('画面を先に作る');
     await expect(card).toContainText('検索は後回し');
-    await expect(card).toContainText('氷室: ワイヤーフレームを描く');
 
-    // 他のチームの学生には、出ない
     const o = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(o, 'b1@trident.ac.jp');
-    await expect(o.getByText('設計を進める方針を確認した。')).toHaveCount(0);
+    await expect(o.getByText('画面を先に作る')).toHaveCount(0);
 
-    await t.getByRole('button', { name: '公開をやめて、下書きに戻す' }).click();
-    await expect(t.getByRole('button', { name: '学生に公開' })).toBeVisible();
-    await s.reload();
-    await expect(s.getByText('設計を進める方針を確認した。')).toHaveCount(0);
-    // 後片付け
+    // 置き換え
+    await t.getByLabel('議事録の日付').fill('2026-11-04');
+    await t.getByLabel('議事録の本文').fill('置き換えた議事録');
     t.once('dialog', (d) => d.accept());
-    await t.getByRole('button', { name: '削除' }).first().click();
-    await expect(t.getByRole('button', { name: '学生に公開' })).toHaveCount(0);
+    await t.getByRole('button', { name: '置き換えて公開' }).click();
+    await s.reload();
+    await expect(s.getByRole('region', { name: '前回のミーティングの議事録' })).toContainText('置き換えた議事録');
+
+    // 空は公開できない
+    await t.getByLabel('議事録の本文').fill('   ');
+    await expect(t.getByRole('button', { name: /公開/ }).first()).toBeDisabled();
+
+    // 削除
+    t.once('dialog', (d) => d.accept());
+    await t.locator('details > summary').filter({ hasText: '置き換えた議事録' }).click();
+    await t.getByRole('button', { name: '公開をやめる(削除)' }).click();
+    await s.reload();
+    await expect(s.getByRole('region', { name: '前回のミーティングの議事録' })).toHaveCount(0);
   });
 });

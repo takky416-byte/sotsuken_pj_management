@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { MeetingRecords } from './MeetingRecords';
-import { MeetingSummaryEditor } from './MeetingSummaryEditor';
-import { useDrafts } from '../../data/meetingSummaries';
+import { MeetingMinutesEditor } from './MeetingMinutesEditor';
 import { TeacherNotes } from './TeacherNotes';
 import { DailyFeed, DailyMatrix } from '../../components/DailyViews';
 import { TeamBoard } from '../../components/TeamBoard';
@@ -28,8 +27,6 @@ export function TeacherTeam() {
 
 function TeamDetail({ team }: { team: Team }) {
   const [tab, setTab] = useState<'wbs' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
-  const { data: drafts } = useDrafts(team.id);
-  const draftCount = drafts?.length ?? 0;
   return (
     <>
       <Link to="/teacher">← チーム一覧</Link>
@@ -53,7 +50,7 @@ function TeamDetail({ team }: { team: Team }) {
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>PJ分析</button>
         <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>関与</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>作業ログ</button>
-        <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録{draftCount > 0 && <span className="badge draft-count" aria-label={`要旨の下書き ${draftCount}件`}>下書き{draftCount}</span>}</button>
+        <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録</button>
         <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
       </div>
       {tab === 'wbs' && <WbsGantt teamId={team.id} actor="teacher" members={team.members} />}
@@ -62,7 +59,7 @@ function TeamDetail({ team }: { team: Team }) {
       {tab === 'daily' && <TeamDaily team={team} />}
       {tab === 'meetings' && (
         <>
-          <MeetingSummaryEditor teamId={team.id} />
+          <MeetingMinutesEditor teamId={team.id} />
           <MeetingRecords teamId={team.id} members={team.members} />
         </>
       )}

@@ -822,14 +822,11 @@ table.access tr.detail td { background:var(--bg); }
 .home-team > summary { cursor:pointer; list-style:revert; } .home-team > summary h3 { display:inline; margin:0; }
 .home-team-body { margin-top:8px; } .team-sub { margin:12px 0 6px; }
 
-/* ミーティングの要旨 */
+/* ミーティングの議事録 */
 .meeting-summary { border-left:4px solid var(--accent); }
 .meeting-summary h3 { margin-top:0; }
-.ms-summary { font-size:16px; margin:2px 0 8px; }
-.ms-block { margin:6px 0; } .ms-block ul { margin:2px 0; padding-left:20px; list-style:disc; }
+.minutes-text { white-space:pre-wrap; overflow-wrap:anywhere; font-size:16px; line-height:1.7; margin:2px 0 6px; }
 .ms-older { margin-top:8px; } .ms-older summary { cursor:pointer; color:var(--muted); }
 .ms-old { border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
-.summary-editor textarea, .draft-card textarea { width:100%; box-sizing:border-box; }
-.warn-box { background:var(--accent-soft); border-left:4px solid var(--warn); padding:6px 10px; border-radius:6px; }
-.draft-count { margin-left:6px; background:var(--warn); color:#fff; }
-.ok-badge { background:var(--ok); color:#fff; }
+.minutes-editor textarea { width:100%; box-sizing:border-box; }
+.file-btn { cursor:pointer; }
