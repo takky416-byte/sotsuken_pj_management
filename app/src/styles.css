@@ -659,14 +659,29 @@ table.access tr.detail td { background:var(--bg); }
 /* WBSとガントの統合: 行の右に、期間の棒を並べる (広い画面だけ。狭い画面では「ガントを大きく」で見る) */
 
 .w-bar { display:none; }
+.wbs-head .h2 { display:none; }
 .wbs-ms-row { display:none; }
 @media (min-width: 1100px) {
-  .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 124px 104px 100px minmax(260px,1.2fr) 76px; }
-  .wbs.with-timeline .w-bar { display:block; position:relative; height:26px; overflow:hidden; border-left:1px solid var(--line); }
-  .wbs.with-timeline .w-bar .gantt-bar { top:7px; height:12px; }
+  .wbs.with-timeline .wbs-head, .wbs.with-timeline .wbs-row { grid-template-columns:minmax(200px,1fr) 150px minmax(300px,1.4fr) 76px; }
+  .wbs.with-timeline .wbs-ms-row { grid-template-columns:minmax(200px,1fr) 150px minmax(300px,1.4fr) 76px; }
+  .wbs.with-timeline .wbs-ms-row .ms-label { grid-column:1 / 3; }
+  .wbs.with-timeline .wbs-ms-row .ms-track { grid-column:3; }
+  /* タスクの行は上下2段: 左は 名前/担当、中は 期間/状態。右のガントチャートは、2段ぶんの高さを使う */
+  .wbs.with-timeline .wbs-row { grid-template-areas:"title period bar acts" "assign status bar acts"; row-gap:2px; padding:4px 0; }
+  .wbs.with-timeline .w-title { grid-area:title; }
+  .wbs.with-timeline .w-period { grid-area:period; }
+  .wbs.with-timeline .w-assign { grid-area:assign; padding-left:calc(var(--indent) + 30px); }
+  .wbs.with-timeline .w-status { grid-area:status; }
+  .wbs.with-timeline .w-bar:not(.tl-head) { grid-area:bar; align-self:stretch; }
+  .wbs.with-timeline .w-acts { grid-area:acts; }
+  .wbs.with-timeline .wbs-head .h2 { display:inline; }
+  .wbs.with-timeline .wbs-head .h-as, .wbs.with-timeline .wbs-head .h-pe, .wbs.with-timeline .wbs-head .h1 { display:none; }
+  .wbs.with-timeline .w-bar { display:block; position:relative; height:auto; min-height:48px; overflow:hidden; border-left:1px solid var(--line); }
+  .wbs.with-timeline .w-bar.tl-head { min-height:0; height:20px; }
+  .wbs.with-timeline .w-bar .gantt-bar { top:calc(50% - 8px); height:16px; }
   .wbs.with-timeline .w-bar .gantt-grid { position:absolute; top:0; bottom:0; width:1px; background:var(--line); opacity:.6; }
   .wbs.with-timeline .tl-today { position:absolute; top:0; bottom:0; width:2px; background:var(--danger); opacity:.7; }
-  .wbs.with-timeline .wbs-ms-row { display:grid; grid-template-columns:minmax(200px,1fr) 124px 104px 100px minmax(260px,1.2fr) 76px; column-gap:8px; border-bottom:1px solid var(--line); padding:2px 0; align-items:start; }
+  .wbs.with-timeline .wbs-ms-row { display:grid; column-gap:8px; border-bottom:1px solid var(--line); padding:2px 0; align-items:start; }
   .wbs-ms-row .ms-label { grid-column:1 / 5; font-size:13px; font-weight:700; color:var(--warn); padding-top:2px; }
   .wbs-ms-row .ms-track { grid-column:5; position:relative; }
   .wbs.with-timeline .w-bar .tl-ms { position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--warn); opacity:.75; }

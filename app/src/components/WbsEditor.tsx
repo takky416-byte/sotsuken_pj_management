@@ -132,7 +132,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       {rows.length === 0 && orphans.length === 0 && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 
       {rows.length > 0 && (
-        <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>状態</div><div>担当</div><div>期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
+        <div className="wbs-head" aria-hidden="true"><div>タスク<span className="h2">・担当</span></div><div className="h-st"><span className="h1">状態</span><span className="h2">期間・状態</span></div><div className="h-as">担当</div><div className="h-pe">期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
       )}
       {rows.length > 0 && g && (milestones ?? []).length > 0 && (() => {
         const ms = placeMilestones(milestones ?? [], g, 500, 12);

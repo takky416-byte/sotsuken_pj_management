@@ -35,6 +35,8 @@ test.describe.serial('画面の見た目', () => {
     expect((await page.locator('header').boundingBox())!.height).toBeLessThan(80);
     await page.getByRole('link', { name: '作業ログ', exact: true }).click(); await page.waitForTimeout(800);
     await shot(page, 'student-daily-pc');
+    await page.getByRole('link', { name: 'WBS・ガントチャート' }).click(); await page.waitForTimeout(1000);
+    await shot(page, 'student-wbs-pc');
     await page.getByLabel('トーン').selectOption('simple');
     await page.getByRole('link', { name: 'ホーム' }).click(); await page.waitForTimeout(500);
     await shot(page, 'student-home-pc-simple');
