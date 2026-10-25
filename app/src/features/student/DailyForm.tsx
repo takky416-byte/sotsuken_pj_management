@@ -268,7 +268,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         </div>
       )}
       <div className="submit-bar">
-        <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '作業ログを更新する' : '作業ログを入れる'}</button>
+        <button type="button" className="big-btn" disabled={state === 'saving'} onClick={submit}>{submitted ? '作業ログを更新する' : '作業ログを送信'}</button>
         {state === 'saved' && <span className="ok">提出しました。今日のうちは、何度でも直せます。</span>}
         {state !== 'saved' && (
           <span className={problems.length === 0 ? 'ok' : 'hint'}>

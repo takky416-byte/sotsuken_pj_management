@@ -33,3 +33,17 @@ export function formatDate(date: string): string {
   const d = new Date(`${date}T00:00:00Z`);
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()}(${WEEKDAYS[d.getUTCDay()]})`;
 }
+
+/** from から to まで何日か (同じ日は 0、過ぎていれば負) */
+export function daysUntil(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
+}
+
+/** マイルストーンまでの期限の言い方: 「あと3日」「今日」「期間中(あと2日)」 */
+export function untilLabel(today: string, start: string, end?: string | null): string {
+  const last = end && end > start ? end : start;
+  if (today > last) return '終了';
+  if (today >= start && last > start) return today === last ? '今日まで' : `期間中(あと${daysUntil(today, last)}日)`;
+  const n = daysUntil(today, start);
+  return n === 0 ? '今日' : n === 1 ? 'あした' : `あと${n}日`;
+}

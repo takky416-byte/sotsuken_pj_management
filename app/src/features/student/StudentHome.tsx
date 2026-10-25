@@ -20,7 +20,7 @@ import { useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { celebrate } from '../../lib/celebrate';
 import { dailyId } from '../../lib/daily';
-import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
+import { dailyWindowFrom, formatDate, jstDate, untilLabel } from '../../lib/dates';
 import { dailyMissions, weeklyMissions } from '../../lib/missions';
 import {
   dayInfo, doToday, lastNextPlan, myPromises, periodsLabel, unassigned, upcoming, type PlanItem,
@@ -175,11 +175,11 @@ export function StudentHome() {
       <ThanksCard teamId={team.id} sid={sid} members={team.members} tasks={tasks} thanks={thanks} today={today} />
 
       <section className="card plan-card">
-        <h3><Em e="🗓" />予定・企画</h3>
-        {upMs.length === 0 && <p className="hint">予定はありません。</p>}
+        <h3><Em e="🗓" />マイルストーンと企画</h3>
+        {upMs.length === 0 && <p className="hint">マイルストーンは、まだありません。</p>}
         <ul className="plain">
           {upMs.map((m) => (
-            <li key={m.id}><strong>{formatDate(m.date)}{m.endDate && m.endDate !== m.date ? `〜${formatDate(m.endDate)}` : ''}</strong> {m.title}{m.teamId && <span className="badge">チーム</span>}</li>
+            <li key={m.id} className="ms-item"><span className="ms-until">{untilLabel(today, m.date, m.endDate)}</span> <strong>{formatDate(m.date)}{m.endDate && m.endDate !== m.date ? `〜${formatDate(m.endDate)}` : ''}</strong> {m.title}{m.teamId && <span className="badge">チーム</span>}</li>
           ))}
         </ul>
         <div className="plan-project">

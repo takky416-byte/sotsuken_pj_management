@@ -84,7 +84,7 @@ test.describe.serial('チームのようす・ありがとう・約束・演出'
     await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true'); // 今日更新したので、先に入っている
     for (const c of await page.locator('.dcard.on textarea').all()) await c.fill('調べた内容を整理して、共有した');
     await page.getByLabel('次にやること', { exact: true }).fill('続きを進めて、レビューを受ける');
-    await page.getByRole('button', { name: '作業ログを入れる' }).click();
+    await page.getByRole('button', { name: '作業ログを送信' }).click();
     await expect(page.locator('.celebrate-msg')).toContainText('提出しました');
     await d.doc('teams/A/tasks/mine-today').delete();
   });

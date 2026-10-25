@@ -11,8 +11,8 @@ import {
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
-import { jstDate } from '../lib/dates';
-import { buildGantt, nextDates, pct, weekTicks } from '../lib/gantt';
+import { formatDate, jstDate } from '../lib/dates';
+import { buildGantt, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
@@ -134,6 +134,24 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       {rows.length > 0 && (
         <div className="wbs-head" aria-hidden="true"><div>タスク</div><div>状態</div><div>担当</div><div>期間</div>{g && <div className="w-bar tl-head">{ticks.map((d, i) => i % 2 === 0 && <span key={d} style={{ left: `${pct(g, d)}%` }}>{shortDate(d)}</span>)}</div>}<div /></div>
       )}
+      {rows.length > 0 && g && (milestones ?? []).length > 0 && (() => {
+        const ms = placeMilestones(milestones ?? [], g, 500, 12);
+        return (
+          <div className="wbs-ms-row">
+            <div className="ms-label">◆ マイルストーン</div>
+            <div className="ms-track" style={{ height: ms.lanes * 18 + 4 }}>
+              {(milestones ?? []).map((m) => {
+                const pl = ms.places.find((p) => p.id === m.id)!;
+                return (
+                  <span key={m.id} className={`gantt-ms ${pl.align === 'right' ? 'r' : ''}`}
+                    style={{ top: pl.lane * 18, ...(pl.align === 'left' ? { left: `${pct(g, m.date)}%` } : { right: `${100 - pct(g, m.date)}%` }) }}
+                    title={`${formatDate(m.date)} ${m.title}`}>◆<small>{m.title}</small></span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
       {rows.map(({ task: t, hasChildren }) => {
         const status = eff.get(t.id) ?? t.status;
         return (
@@ -244,6 +262,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               return (
                 <div className="w-bar" aria-hidden="true">
                   {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
+                  {(milestones ?? []).map((m) => <i key={m.id} className="tl-ms" style={{ left: `${pct(g, m.date)}%` }} />)}
                   <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
                   {a && b && (
                     <span

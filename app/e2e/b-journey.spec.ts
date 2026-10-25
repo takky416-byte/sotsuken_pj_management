@@ -116,7 +116,7 @@ test.describe.serial('運用の流れ', () => {
     await expect(page.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
 
     // 今日自分が更新したタスク (この流れで作ったもの) は、「進んだ」で先に入っている。説明がまだなので、足りない点が出る
-    const submit = page.getByRole('button', { name: '作業ログを入れる' });
+    const submit = page.getByRole('button', { name: '作業ログを送信' });
     const card = page.locator('.dcard', { hasText: '画面遷移図を描く' });
     await expect(card.getByRole('button', { name: '進んだ' })).toHaveAttribute('aria-pressed', 'true');
     await submit.click();
@@ -262,7 +262,7 @@ test.describe.serial('運用の流れ', () => {
     await page.locator('.preview-head').getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await expect(page.getByRole('button', { name: '編集モードにする' })).toBeDisabled(); // 教員のプレビューでは、編集モードにもできない
     await page.locator('.preview-head').getByRole('link', { name: '作業ログ', exact: true }).click();
-    await expect(page.getByRole('button', { name: /作業ログを(入れる|更新する)/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /作業ログを(送信|更新する)/ })).toBeDisabled();
   });
 
   test('設定: 作業ログのチーム内閲覧をオフにすると、学生は自分の分だけが見える', async ({ browser }) => {

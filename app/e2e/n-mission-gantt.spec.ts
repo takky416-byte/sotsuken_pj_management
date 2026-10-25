@@ -85,7 +85,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     const preselected = page.locator('.dcard.on:not(.adhoc-card):not(.r-kind) .seg-btn.on');
     while (await preselected.count() > 0) await preselected.first().click();
     await page.getByLabel('次にやること', { exact: true }).fill('取引先の回答を待って、API仕様書を更新する。');
-    const submit = page.getByRole('button', { name: /作業ログを(入れる|更新する)/ });
+    const submit = page.getByRole('button', { name: /作業ログを(送信|更新する)/ });
     await submit.click();
     await expect(page.getByText(/提出しました|更新しました/).first()).toBeVisible({ timeout: 15000 });
 
