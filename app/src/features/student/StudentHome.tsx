@@ -10,6 +10,8 @@ import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
 import { useNarrow } from '../../lib/useNarrow';
+import { MeetingSummaryCard } from '../../components/MeetingSummaryView';
+import { useSummaries } from '../../data/meetingSummaries';
 import { ThanksCard } from '../../components/ThanksCard';
 import { useThanks } from '../../data/thanks';
 import { Progress } from '../../components/Progress';
@@ -39,6 +41,7 @@ export function StudentHome() {
   const team = useTeam(me.teamId);
   const today = jstDate();
   const milestones = useMilestones(me.teamId ?? 'none');
+  const { data: summaries } = useSummaries(me.teamId);
   const { data: tasks, error: e1 } = useTasks(me.teamId);
   const { data: meetings, error: e2 } = useMeetings(me.teamId);
   const { data: mine, error: e3 } = useMyDailies(me.teamId, me.sid, dailyWindowFrom(today));
@@ -91,6 +94,7 @@ export function StudentHome() {
       <p className="msg-text">{team.message.text}</p>
     </section>
   ) : null;
+  const summaryCard = summaries && summaries.length > 0 ? <MeetingSummaryCard summaries={summaries} /> : null;
 
   return (
     <>
@@ -116,6 +120,7 @@ export function StudentHome() {
       {err && <p className="error">{err}</p>}
 
       {narrow && notice}
+      {narrow && summaryCard}
       <div className="home-grid">
         <div className="col">
 
@@ -205,6 +210,7 @@ export function StudentHome() {
         </div>
         <div className="col">
         {!narrow && notice}
+        {!narrow && summaryCard}
       <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 
         </div>

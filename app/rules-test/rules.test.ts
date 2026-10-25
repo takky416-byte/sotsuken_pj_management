@@ -460,3 +460,31 @@ describe('タスクの変更履歴 (taskLogs)', () => {
     await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/taskLogs/l9'), log('A1')));
   });
 });
+
+describe('ミーティングの要旨 (下書きは先生だけ。公開した要旨は、チームの学生が読める)', () => {
+  const summary = (over: Record<string, unknown> = {}) => ({
+    date: '2026-10-28', summary: '設計を進める方針を確認した。', decided: ['画面を先に作る'], actions: ['ワイヤーフレームを描く'], concerns: [], publishedAt: 1, ...over,
+  });
+  const draft = { date: '2026-10-28', summary: '下書き', decided: [], actions: [], concerns: [], unclear: ['聞き取れない所'], source: 'recording', createdAt: 1, updatedAt: 1 };
+  test('下書きは、学生は読めない・書けない。先生だけが読み書きできる', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/meetingDrafts/2026-10-28'), draft));
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'teams/A/meetingDrafts/2026-10-28')));
+    await assertFails(getDoc(doc(as(A1), 'teams/A/meetingDrafts/2026-10-28')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/meetingDrafts/2026-10-29'), draft));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/meetingDrafts/2026-10-28')));
+  });
+  test('公開した要旨は、チームの学生が読める。他のチームは読めない。学生は書けない', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/meetingSummaries/2026-10-28'), summary()));
+    await assertSucceeds(getDoc(doc(as(A1), 'teams/A/meetingSummaries/2026-10-28')));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/meetingSummaries/2026-10-28')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/meetingSummaries/2026-10-29'), summary()));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A/meetingSummaries/2026-10-28'), { summary: '改ざん' }));
+    await assertFails(deleteDoc(doc(as(A1), 'teams/A/meetingSummaries/2026-10-28')));
+  });
+  test('先生が公開するときの形の検査 (知らない項目・長すぎる要旨は不可)。削除はできる', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/meetingSummaries/2026-10-28'), summary({ extra: 1 })));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/meetingSummaries/2026-10-28'), summary({ summary: 'あ'.repeat(1201) })));
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/meetingSummaries/2026-10-28'), summary()));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/meetingSummaries/2026-10-28')));
+  });
+});

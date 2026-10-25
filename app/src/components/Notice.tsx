@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const KEY = (email: string) => `notice-ack2:${email}`;
+const KEY = (email: string) => `notice-ack3:${email}`;
 
 /** 初回ログイン時の案内。何が記録され、誰が見られるかを伝える。確認すると、その端末では表示しない。 */
 export function Notice({ email, children }: { email: string; children: React.ReactNode }) {
@@ -23,6 +23,7 @@ export function NoticeBody({ onConfirm }: { onConfirm?: () => void }) {
           <li>先生は、<strong>全チーム・全員の情報</strong>(WBS、作業ログ)を見られます。</li>
           <li>先生は、あなたの入力内容や利用状況を確認できます。作業時間の計測や、順位づけはしません。</li>
           <li>作業ログは、やったタスクの結果を選んで、何をどこまでやったかを書きます。</li>
+          <li>進捗ミーティングは、先生が<strong>録音</strong>して、AIで要旨を作ることがあります。録音は、先生だけが見られる場所に保存します。要旨は、先生が確認してから、チームのホームに出ます。</li>
         </ul>
         <details>
           <summary>くわしく(見える範囲など)</summary>

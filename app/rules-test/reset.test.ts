@@ -40,7 +40,7 @@ describe('試運転データの削除', () => {
 
   test('ドライランは件数を数えるだけで、何も消さない', async () => {
     const r = await resetTeams({ db, teams: ['A'], dryRun: true, log: quiet });
-    expect(r.A).toEqual({ tasks: 2, dailyReports: 1, meetings: 1, comments: 1, thanks: 0, taskLogs: 0, accessLogs: 0 });
+    expect(r.A).toEqual({ tasks: 2, dailyReports: 1, meetings: 1, comments: 1, thanks: 0, taskLogs: 0, meetingDrafts: 0, meetingSummaries: 0, accessLogs: 0 });
     expect(await count('teams/A/tasks')).toBe(2);
   });
 

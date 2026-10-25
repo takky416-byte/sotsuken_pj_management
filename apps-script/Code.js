@@ -42,7 +42,7 @@ function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 
 // 保存先は、ドライブの「バックアップ」フォルダ (ID は、フォルダの URL の末尾)。スクリプト プロパティ BACKUP_FOLDER_ID で変えられる。
 var BACKUP_FOLDER_ID = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP';
 var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'];
-var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'evaluationsPublished'];
+var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'meetingDrafts', 'meetingSummaries', 'evaluationsPublished'];
 
 /** 初回の設定: 毎日 3 時ごろに backupDaily を動かすトリガーを作る。何度実行しても重複しない。 */
 function setupBackup() {
@@ -109,6 +109,122 @@ function pruneBackups_(folder, keep) {
   files.sort(function (a, b) { return a.getName() < b.getName() ? 1 : -1; });
   files.slice(keep).forEach(function (f) { f.setTrashed(true); });
   return Math.max(0, files.length - keep);
+}
+
+// ---- ミーティング録音 → 要旨の下書き ----
+// ドライブの「ミーティング録音」フォルダ (ID は、スクリプト プロパティ MEETING_AUDIO_FOLDER_ID) に、録音ファイル
+// (名前は「A_2026-10-28.m4a」のように、チーム_日付) を入れると、30 分おきに、Gemini で要旨の下書きを作って、アプリに入れる。
+// 下書きは、先生だけが見られる (teams/チーム/meetingDrafts)。先生がアプリで確認して公開すると、学生のホームに出る。
+// 処理した録音は、フォルダの中の「処理済み」に移す (消さない。先生だけが見られる)。
+// スクリプト プロパティ: MEETING_AUDIO_FOLDER_ID (必須) / GEMINI_API_KEY (必須) / GEMINI_MODEL (既定 gemini-2.5-flash) / GEMINI_BASE (試験用)
+var GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+var PROCESSED_FOLDER_NAME = '処理済み';
+var FAILED_MARK = '[要旨づくり失敗]';
+var DONE_MARK = '[要旨づくり済み]';
+
+/** 初回の設定: 30 分おきに summarizeRecordings を動かすトリガーを作る。何度実行しても重複しない。 */
+function setupMeetingSummary() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'summarizeRecordings') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('summarizeRecordings').timeBased().everyMinutes(30).create();
+  Logger.log('要旨づくりのトリガーを作りました (30 分おき)。いま 1 回、実行します。');
+  summarizeRecordings();
+}
+
+/** フォルダの録音を、1 件ずつ、要旨の下書きにする。 */
+function summarizeRecordings() {
+  var props = PropertiesService.getScriptProperties();
+  var me = Session.getEffectiveUser().getEmail();
+  var folder = meetingAudioFolder_();
+  var key = props.getProperty('GEMINI_API_KEY');
+  if (!key) throw new Error('スクリプト プロパティ GEMINI_API_KEY がありません (README の「ミーティング録音」を見てください)');
+  var teams = null;
+  var done = 0;
+  var it = folder.getFiles();
+  while (it.hasNext()) {
+    var file = it.next();
+    var note = String(file.getDescription() || '');
+    if (note.indexOf(FAILED_MARK) === 0 || note.indexOf(DONE_MARK) === 0) continue; // 失敗は、1 回だけ知らせて、そのままにする
+    var name = file.getName();
+    var mime = MeetingSummary.audioMime(name, file.getMimeType());
+    if (!mime) continue;
+    try {
+      var info = MeetingSummary.parseRecordingName(name, Reminder.jstDate(file.getDateCreated().getTime()));
+      if (!info) throw new Error('ファイル名からチームが分かりません。「A_2026-10-28.m4a」のように、チーム_日付 の名前にしてください');
+      if (file.getSize() > MeetingSummary.MAX_BYTES) throw new Error('ファイルが大きすぎます (' + Math.round(file.getSize() / 1048576) + 'MB。上限 15MB)。10 分ほどの m4a か mp3 にしてください');
+      teams = teams || listDocs_('teams');
+      var team = teams.filter(function (t) { return t.id === info.teamId; })[0];
+      if (!team) throw new Error('チーム ' + info.teamId + ' がありません');
+      var base = 'teams/' + info.teamId;
+      if (getDoc_(base + '/meetingDrafts/' + info.date) || getDoc_(base + '/meetingSummaries/' + info.date)) {
+        throw new Error(info.teamId + ' チームの ' + info.date + ' の要旨は、もうあります (上書きしません。先に、アプリで削除してください)');
+      }
+      var names = (team.members || []).map(function (m) { return m.name; });
+      var text = callGemini_(key, MeetingSummary.buildPrompt(info.teamId, info.date, names), mime, file.getBlob());
+      var parsed = MeetingSummary.parseModelText(text);
+      var doc = MeetingSummary.draftDoc(parsed, { date: info.date, file: name, now: Date.now() });
+      writeDoc_(base + '/meetingDrafts/' + info.date, doc);
+      file.setDescription(DONE_MARK + ' ' + info.teamId + ' ' + info.date);
+      processedFolder_(folder).addFile(file);
+      folder.removeFile(file);
+      done++;
+      Logger.log('要旨の下書きを作りました: ' + name + ' → ' + info.teamId + ' ' + info.date);
+      try {
+        MailApp.sendEmail({ to: me, subject: '[卒研PJ管理] 要旨の下書きができました (' + info.teamId + ' ' + info.date + ')', body: 'アプリの「チーム」→ ' + info.teamId + ' →「ミーティング記録」で、内容を確認して「学生に公開」を押してください。\n公開するまで、学生には見えません。', name: '卒研PJ管理(自動送信)' });
+      } catch (e2) { /* メールが送れなくても、下書きはできている */ }
+    } catch (e) {
+      Logger.log('要旨づくりに失敗: ' + name + ' ' + e);
+      file.setDescription(FAILED_MARK + ' ' + String(e).slice(0, 200));
+      try {
+        MailApp.sendEmail({ to: me, subject: '[卒研PJ管理] 録音の要旨づくりに失敗しました (' + name + ')', body: String(e) + '\n\nファイルは、そのまま残しています。直して、ファイルの「説明」(詳細パネル)を空にすると、もう一度試します。', name: '卒研PJ管理(自動送信)' });
+      } catch (e2) { /* 実行ログだけ */ }
+    }
+  }
+  Logger.log('要旨の下書き: ' + done + ' 件');
+  return done;
+}
+
+function meetingAudioFolder_() {
+  var id = PropertiesService.getScriptProperties().getProperty('MEETING_AUDIO_FOLDER_ID');
+  if (!id) throw new Error('スクリプト プロパティ MEETING_AUDIO_FOLDER_ID (録音フォルダの ID) がありません');
+  var folder = DriveApp.getFolderById(id);
+  // 録音には、学生の声が入る。リンクを知っている人や、学校のドメインの全員 (学生を含む) に見えるフォルダは、使わない。
+  var access = String(folder.getSharingAccess());
+  if (access !== 'PRIVATE') {
+    throw new Error('録音フォルダが、共有されています (' + access + ')。ドライブでフォルダの「一般的なアクセス」を「制限付き」に変えてください。');
+  }
+  return folder;
+}
+
+function processedFolder_(parent) {
+  var it = parent.getFoldersByName(PROCESSED_FOLDER_NAME);
+  return it.hasNext() ? it.next() : parent.createFolder(PROCESSED_FOLDER_NAME);
+}
+
+/** 音声を渡して、要旨 (JSON の文字列) を返してもらう。 */
+function callGemini_(apiKey, prompt, mime, blob) {
+  var props = PropertiesService.getScriptProperties();
+  var model = props.getProperty('GEMINI_MODEL') || GEMINI_DEFAULT_MODEL;
+  var base = props.getProperty('GEMINI_BASE') || 'https://generativelanguage.googleapis.com';
+  var res = UrlFetchApp.fetch(base + '/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-goog-api-key': apiKey },
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: Utilities.base64Encode(blob.getBytes()) } }] }],
+      generationConfig: { temperature: 0.2, responseMimeType: 'application/json', responseSchema: MeetingSummary.RESPONSE_SCHEMA },
+    }),
+  });
+  var code = res.getResponseCode();
+  if (code >= 300) throw new Error('Gemini ' + code + ': ' + res.getContentText().slice(0, 300));
+  return MeetingSummary.textOf(JSON.parse(res.getContentText()));
+}
+
+/** ドキュメントを書く (なければ作る。あれば置き換える)。 */
+function writeDoc_(path, obj) {
+  fetchJson_(docsRoot_() + '/' + path, { method: 'patch', contentType: 'application/json', payload: JSON.stringify({ fields: MeetingSummary.encodeFields(obj) }) });
 }
 
 // ---- 本体 ----

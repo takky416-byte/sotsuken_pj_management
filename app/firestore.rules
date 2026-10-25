@@ -120,6 +120,21 @@ service cloud.firestore {
           || (inTeam(teamId) && get(/databases/$(database)/documents/teams/$(teamId)).data.teamMeetingInput == true);
       }
 
+      // ミーティングの要旨。下書き (録音から作る) は先生だけ。公開した要旨は、チームの学生も読める (書けるのは先生だけ)
+      match /meetingDrafts/{date} {
+        allow read, write: if isTeacher();
+      }
+      match /meetingSummaries/{date} {
+        allow read: if canSeeTeam(teamId);
+        allow write: if isTeacher()
+          && (request.method == 'delete' || (
+            request.resource.data.keys().hasOnly(['date', 'summary', 'decided', 'actions', 'concerns', 'publishedAt'])
+            && request.resource.data.summary is string && request.resource.data.summary.size() <= 1200
+            && request.resource.data.decided is list && request.resource.data.decided.size() <= 12
+            && request.resource.data.actions is list && request.resource.data.actions.size() <= 12
+            && request.resource.data.concerns is list && request.resource.data.concerns.size() <= 12));
+      }
+
       // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (書き換え・削除はできない。教員は、バックアップの復元で書ける)
       match /taskLogs/{logId} {
         allow read: if canSeeTeam(teamId);

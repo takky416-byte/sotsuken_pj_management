@@ -67,4 +67,45 @@ test.describe.serial('チームへのお知らせ', () => {
     await page.getByLabel('自分の担当だけ').uncheck();
     await expect(page.locator('.wbs-row')).toHaveCount(all);
   });
+
+  test('ミーティングの要旨: 先生が下書きを直して公開すると、学生のホームに出る。公開をやめると消える。学生には下書きは見えない', async ({ browser }) => {
+    const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await t.goto('/teacher/team/A');
+    await t.getByRole('button', { name: 'ミーティング記録' }).click();
+    await t.getByRole('button', { name: '要旨を自分で書く' }).click();
+    const date = await t.getByLabel('要旨の日付').inputValue();
+    await t.getByLabel(`要旨・本文 ${date}`).fill('設計を進める方針を確認した。');
+    await t.getByLabel(`要旨・決定事項 ${date}`).fill('画面を先に作る\n・検索は後回し');
+    await t.getByLabel(`要旨・次の1週間 ${date}`).fill('氷室: ワイヤーフレームを描く');
+    await t.getByRole('button', { name: '下書きを保存' }).click();
+
+    // 公開前は、学生に見えない
+    const s = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(s, 'a1@trident.ac.jp');
+    await expect(s.getByText('設計を進める方針を確認した。')).toHaveCount(0);
+
+    await t.getByRole('button', { name: '学生に公開' }).click();
+    await expect(t.getByText('公開中')).toBeVisible();
+    await s.reload();
+    const card = s.getByRole('region', { name: '前回のミーティングの要旨' });
+    await expect(card).toContainText('設計を進める方針を確認した。');
+    await expect(card).toContainText('画面を先に作る');
+    await expect(card).toContainText('検索は後回し');
+    await expect(card).toContainText('氷室: ワイヤーフレームを描く');
+
+    // 他のチームの学生には、出ない
+    const o = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(o, 'b1@trident.ac.jp');
+    await expect(o.getByText('設計を進める方針を確認した。')).toHaveCount(0);
+
+    await t.getByRole('button', { name: '公開をやめて、下書きに戻す' }).click();
+    await expect(t.getByRole('button', { name: '学生に公開' })).toBeVisible();
+    await s.reload();
+    await expect(s.getByText('設計を進める方針を確認した。')).toHaveCount(0);
+    // 後片付け
+    t.once('dialog', (d) => d.accept());
+    await t.getByRole('button', { name: '削除' }).first().click();
+    await expect(t.getByRole('button', { name: '学生に公開' })).toHaveCount(0);
+  });
 });

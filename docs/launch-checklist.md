@@ -7,6 +7,7 @@ URL: https://sotsuken-pj.web.app / 教員: yoichiro.takikawa@trident.ac.jp
 - [ ] 試運転(Dチーム)を終える → Actions の **reset-pilot**(teams=D, reset_team=true, **restore_calendar=true**)を、まず dry_run=true で、次に false で実行。試運転データ(pilot-data)で足した過去の授業日(備考「ダミー(試運転)」)を消し、作業ログの運用開始日を 10/28 に戻す。実行後、カレンダーと設定で確認する
 - [ ] FIXER 発表後、企画発表資料(PPTX/PDF)を夕方までに Claude へ渡す(氏名入りの資料はリポジトリにコミットしない)
 - [ ] Claude が16企画の大項目・タスク案を作成 → 内容を確認(10/27夜〜10/28朝)
+- [ ] (使うなら) ミーティング録音の要旨: apps-script/README.md の「ミーティング録音」の手順1〜5 (有料枠の Gemini キーを使う。短い録音で、下書きが出ることを確認 → 手順6)。使わないなら、何もしなくてよい
 - [ ] Apps Script の `setupBackup` を実行 (毎日のバックアップ。apps-script/README.md の手順)
 - [ ] 名簿が28名ぶん登録済みか確認(教員画面 → 設定 → 名簿)。同姓は1文字追加
 - [ ] カレンダー: 授業日とミーティング日(木曜)が正しいか確認。マイルストーン(企画決定 10/28、最終発表など)を登録
