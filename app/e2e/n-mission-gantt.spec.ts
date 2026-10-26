@@ -100,7 +100,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await page.getByRole('link', { name: 'PJ分析', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '概況と分析' })).toBeVisible();
+    await page.locator('details.report-gantt summary').click(); // ふだんは閉じている
     await expect(page.locator('.report .no-print .gantt-row').first()).toBeVisible();
+    await page.locator('.report .no-print details', { hasText: 'WBS' }).last().locator('summary').click();
     await expect(page.locator('.report .no-print .wbs-print tbody tr').first()).toBeVisible();
     await expect(page.locator('.report .no-print .wbs-print').getByText('WBS外の作業(あとから追加)')).toBeVisible();
     const dl = page.waitForEvent('download');

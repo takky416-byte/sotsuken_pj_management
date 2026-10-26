@@ -136,10 +136,11 @@ test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
   test('WBSで「担当が決まっていない項目だけ」に絞り、担当を付けると、「終えた」を押せる。記録される', async ({ browser }) => {
     const s = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     await login(s, 'a1@trident.ac.jp');
-    await s.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
+    // 見直しカードから、編集モード・担当のない項目だけで、WBSが開く
+    await s.getByRole('region', { name: '初期WBSの見直し' }).getByRole('link', { name: '編集モードでWBSを開く' }).click();
     await s.locator('.wbs-row').first().waitFor();
-    await s.getByRole('button', { name: '編集モードにする' }).click();
-    await s.getByLabel('担当が決まっていない項目だけ').check();
+    await expect(s.getByRole('button', { name: '編集モードを終える' })).toBeVisible();
+    await expect(s.getByLabel('担当が決まっていない項目だけ')).toBeChecked();
     // いちばん下の項目に、担当が付くたびに行が減る。付ける人は、自分
     for (let guard = 0; guard < 80; guard++) {
       const btn = s.locator('[aria-label^="担当を変える:"]').first();
@@ -201,8 +202,8 @@ test('PJ分析: 概要はキックオフで自動で入っている。報告書�
   await expect(page.getByLabel('5. 課題と対応')).toHaveCount(0);
   await page.getByLabel('1. プロジェクトの概要').fill('駅の混雑を知らせるアプリを作り、通学の負担を減らす。');
   await page.getByLabel('6. 課題と今後の予定').fill('画面設計が遅れたため、週1回の確認を増やす。来月は実装に入る。');
-  await page.getByRole('button', { name: '保存する' }).click();
-  await expect(page.getByRole('status').filter({ hasText: '保存しました' })).toBeVisible();
+  // 保存ボタンを押さなくても、少しすると自動で保存される
+  await expect(page.getByRole('status').filter({ hasText: '保存しました' })).toBeVisible({ timeout: 15000 });
   await page.getByText('提出用の報告書(プレビュー)').click();
   const doc = page.locator('details .company-report');
   await expect(doc.getByRole('heading', { name: '卒業研究制作 プロジェクト進捗報告書' })).toBeVisible();
@@ -216,4 +217,14 @@ test('PJ分析: 概要はキックオフで自動で入っている。報告書�
   await expect(doc.locator('.gantt-row').first()).toBeVisible();
   await expect(doc.getByText(/担当の数に偏り|WBSにない作業/)).toHaveCount(0);
   await page.screenshot({ path: 'e2e-shots/report-company.png', fullPage: true });
+});
+
+test('教員の一覧: 提出先の設定状況と、提出先の一覧が出る。列は、ミーティングにまとまっている', async ({ page }) => {
+  await login(page, 'teacher@trident.ac.jp');
+  await page.goto('/teacher');
+  await expect(page.getByRole('columnheader', { name: /ミーティング/ })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: '期限超過' })).toHaveCount(0);
+  await expect(page.getByText(/提出先: (設定済み|未設定)/).first()).toBeVisible();
+  await page.getByText('成果物の提出先の一覧').click();
+  await expect(page.getByText(/チームが設定済み/)).toBeVisible();
 });

@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 import {
@@ -30,14 +31,15 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [bolt, setBolt] = useState(true);
   const [onlyMine, setOnlyMine] = useState(false);
-  const [onlyFree, setOnlyFree] = useState(false);
+  const [sp] = useSearchParams();
+  const [onlyFree, setOnlyFree] = useState(() => sp.get('free') === '1'); // 見直しカードから、担当のない項目だけで開く
   const [openId, setOpenId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [addingUnder, setAddingUnder] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [pop, setPop] = useState<{ id: string; kind: 'assign' | 'period' } | null>(null);
   const [showTrash, setShowTrash] = useState(false);
-  const [editMode, setEditMode] = useState(false); // 学生は、ふだんは閲覧モード。「編集モードにする」で編集できる
+  const [editMode, setEditMode] = useState(() => actor !== 'teacher' && sp.get('edit') === '1'); // 学生は、ふだんは閲覧モード。「編集モードにする」で編集できる
   const [err, setErr] = useState('');
   const closeToast = useCallback(() => setToast(null), []);
 

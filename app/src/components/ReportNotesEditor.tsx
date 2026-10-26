@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { saveReportNotes } from '../data/teams';
 import { jstDate } from '../lib/dates';
 import type { Team } from '../types';
@@ -25,6 +25,20 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
     try { await saveReportNotes(team.id, actor, v, n); setState('saved'); }
     catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); setState('idle'); }
   };
+  // 書きかけは、手を止めて少しすると自動で保存する。画面を離れるとき・閉じるときにも、保存する (書いた文章を失わない)
+  const latest = useRef({ v, n, dirty, teamId: team.id, actor });
+  latest.current = { v, n, dirty, teamId: team.id, actor };
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const t = setTimeout(() => { void save(); }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v.summary, v.issues, dirty]);
+  useEffect(() => {
+    const flush = () => { const c = latest.current; if (c.dirty) void saveReportNotes(c.teamId, c.actor, c.v, c.n).catch(() => undefined); };
+    window.addEventListener('beforeunload', flush);
+    return () => { window.removeEventListener('beforeunload', flush); flush(); };
+  }, []);
   return (
     <details className="card no-print report-notes" aria-label="報告書に載せる文章">
       <summary><strong>報告書に載せる文章</strong>{missingSummary && <span className="warn"> (概要が未記入です)</span>}</summary>
@@ -37,7 +51,8 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
         </label>
       ))}
       <div className="row">
-        <button type="button" disabled={!dirty || state === 'saving'} onClick={save}>{state === 'saving' ? '保存中…' : '保存する'}</button>
+        <button type="button" disabled={!dirty || state === 'saving'} onClick={save}>{state === 'saving' ? '保存中…' : '今すぐ保存'}</button>
+        {dirty && state !== 'saving' && <span className="hint">書いたあと、少しすると自動で保存します</span>}
         {state === 'saved' && !dirty && <span className="ok" role="status">保存しました</span>}
         {n && <span className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</span>}
       </div>

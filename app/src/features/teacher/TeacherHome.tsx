@@ -5,6 +5,7 @@ import { Progress } from '../../components/Progress';
 import { useClassDays, useMilestones } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useMeetings } from '../../data/meetings';
+import { isHttpUrl } from '../../data/util';
 import { useTasks } from '../../data/tasks';
 import { updateTeam, useTeams } from '../../data/teams';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
@@ -31,9 +32,15 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
     <tr>
       <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link>{active && <div><Link to={`/teacher/report/${team.id}`} className="hint">PJ分析</Link></div>}</td>
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
-      <td>{active ? team.projectName : <span className="hint">企画検討中</span>}{active && tasks && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}</td>
-      <td>{tasks ? <Progress {...overallProgress(tasks)} /> : '…'}</td>
-      <td className={delayed ? 'warn' : ''}>{delayed || '—'}</td>
+      <td>
+        {active ? team.projectName : <span className="hint">企画検討中</span>}
+        {active && tasks && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}
+        {active && <div className="hint">提出先: {team.submitUrl ? '設定済み' : <span className="warn">未設定</span>}</div>}
+      </td>
+      <td>
+        {tasks ? <Progress {...overallProgress(tasks)} /> : '…'}
+        {delayed > 0 && <div className="warn">期限超過 {delayed}件</div>}
+      </td>
       <td>
         {!active || !flags ? '—' : flags.latestDay
           ? (
@@ -53,8 +60,10 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
           </span>
         ) : '—'}
       </td>
-      <td>{lastMeeting ? formatDate(lastMeeting) : '—'}</td>
-      <td>{next ? `${formatDate(next.date)} ${next.title}` : '—'}</td>
+      <td>
+        <div>前回: {lastMeeting ? formatDate(lastMeeting) : '—'}</div>
+        <div className="hint">次: {next ? `${formatDate(next.date)} ${next.title}` : '—'}</div>
+      </td>
     </tr>
   );
 }
@@ -78,19 +87,41 @@ export function TeacherHome() {
         <StackTable>
           <thead>
             <tr>
-              <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th><th>期限超過</th>
-              <th>作業ログ(直近の授業日)</th><th>要確認</th><th>前回の確認</th><th>次の予定</th>
+              <th>チーム</th><th>メンバー</th><th>企画</th><th>WBS進捗</th>
+              <th>作業ログ(直近の授業日)</th><th>要確認</th><th>ミーティング(前回・次の予定)</th>
             </tr>
           </thead>
           <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} onSeverity={onSeverity} />)}</tbody>
         </StackTable>
       </div>
+      <SubmitList teams={sorted} />
       <Broadcast teams={sorted} />
       <p className="hint">
         「要確認」は目安です。授業日に2回続けて作業ログが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
         評価や単位認定には使いません。
       </p>
     </>
+  );
+}
+
+/** 全チームの、成果物の提出先 (Google ドライブ) を、一覧で確かめる */
+function SubmitList({ teams }: { teams: Team[] }) {
+  const set = teams.filter((t) => t.submitUrl).length;
+  return (
+    <details className="card submit-list">
+      <summary><strong>成果物の提出先の一覧</strong> <span className="hint">({set}/{teams.length}チームが設定済み)</span></summary>
+      <ul className="plain">
+        {teams.map((t) => (
+          <li key={t.id}>
+            <strong>{t.id}チーム</strong>{' '}
+            {t.submitUrl && isHttpUrl(t.submitUrl)
+              ? <a href={t.submitUrl} target="_blank" rel="noreferrer noopener">{t.submitUrl}</a>
+              : <span className="warn">未設定</span>}
+          </li>
+        ))}
+      </ul>
+      <p className="hint">設定は、各チームの詳細(チームへのお知らせ)でします。</p>
+    </details>
   );
 }
 

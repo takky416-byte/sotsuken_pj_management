@@ -39,6 +39,24 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
     catch (e) { setErr(`記録できませんでした: ${(e as Error).message}`); setBusy(false); }
   };
   const step = (done: boolean) => (done ? '✓' : '□');
+  const allSet = s.unassigned.length === 0 && s.noPeriod === 0; // 担当と期間がそろったら、手順は折りたたむ
+  const steps = (
+    <ol className="review-steps">
+      <li>
+        <strong>全部の項目を読む。</strong> 要らないものは<strong>削除</strong>、足りないものは<strong>追加</strong>、言葉や内容は<strong>修正</strong>します。
+      </li>
+      <li className={s.unassigned.length === 0 ? 'ok' : ''}>
+        <strong>{step(s.unassigned.length === 0)} 担当を決める。</strong>{' '}
+        {s.unassigned.length === 0 ? '担当が決まっていない項目は、ありません。' : <>担当が決まっていない項目が <strong>{s.unassigned.length}件</strong> あります。</>}
+      </li>
+      <li className={s.noPeriod === 0 ? 'ok' : ''}>
+        <strong>{step(s.noPeriod === 0)} 期間(いつからいつまで)を確かめる。</strong>{' '}
+        {s.noPeriod === 0 ? '期間は、はじめから入っています。自分たちの進め方に合わせて、ずれている所を直しましょう。' : <>期間のない項目が {s.noPeriod}件あります(目安。まず近い項目から)。</>}
+      </li>
+    </ol>
+  );
+  // 「編集モードで開く」: 担当のない項目があれば、その項目だけに絞って開く
+  const wbsLink = `${base}/wbs?edit=1${s.unassigned.length > 0 ? '&free=1' : ''}`;
   return (
     <section className="card review-card" aria-label="初期WBSの見直し">
       <h3>最初にやること: 初期WBSの見直し</h3>
@@ -46,22 +64,10 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
         先生が用意した叩き台({s.drafts}件)は、まだ「たとえば」の案です。
         チームで1項目ずつ見て、自分たちの企画に合わせて直しましょう。
       </p>
-      <ol className="review-steps">
-        <li>
-          <strong>全部の項目を読む。</strong> 要らないものは<strong>削除</strong>、足りないものは<strong>追加</strong>、言葉や内容は<strong>修正</strong>します。
-        </li>
-        <li className={s.unassigned.length === 0 ? 'ok' : ''}>
-          <strong>{step(s.unassigned.length === 0)} 担当を決める。</strong>{' '}
-          {s.unassigned.length === 0 ? '担当が決まっていない項目は、ありません。' : <>担当が決まっていない項目が <strong>{s.unassigned.length}件</strong> あります。</>}
-        </li>
-        <li className={s.noPeriod === 0 ? 'ok' : ''}>
-          <strong>{step(s.noPeriod === 0)} 期間(いつからいつまで)を確かめる。</strong>{' '}
-          {s.noPeriod === 0 ? '期間は、はじめから入っています。自分たちの進め方に合わせて、ずれている所を直しましょう。' : <>期間のない項目が {s.noPeriod}件あります(目安。まず近い項目から)。</>}
-        </li>
-      </ol>
-      <p className="hint">WBSの画面で「編集モードにする」を押すと直せます。「担当が決まっていない項目だけ」で絞ると、残りが見つかります。</p>
+      {allSet ? <details className="review-steps-fold"><summary>手順を見る(担当・期間は、そろっています)</summary>{steps}</details> : steps}
       <div className="row">
-        <Link className="btn" to={`${base}/wbs`}>WBSを開く</Link>
+        <Link className="btn" to={wbsLink}>編集モードでWBSを開く</Link>
+        {!allSet && <span className="hint">{s.unassigned.length > 0 ? '担当が決まっていない項目だけを、表示します。' : ''}</span>}
       </div>
       <div className="review-confirm">
         <label className="check">

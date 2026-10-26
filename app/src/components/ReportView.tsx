@@ -24,6 +24,8 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
   const [err, setErr] = useState('');
   const [showAssignees, setShowAssignees] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [ganttOpen, setGanttOpen] = useState(false);
+  const [wbsOpen, setWbsOpen] = useState(false);
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
@@ -79,14 +81,14 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
 
       <section className="card"><h3>概況と分析</h3><AnalysisView a={a} detail /></section>
 
-      <section className="card report-gantt">
-        <h3>ガントチャート</h3>
-        <GanttChart teamId={team.id} actor={actor} members={team.members} report />
-      </section>
+      <details className="card report-gantt" onToggle={(e) => setGanttOpen((e.currentTarget as HTMLDetailsElement).open)}>
+        <summary><strong>ガントチャート</strong></summary>
+        {ganttOpen && <GanttChart teamId={team.id} actor={actor} members={team.members} report />}
+      </details>
 
-      <section className="card">
-        <h3>WBS</h3>
-        <table className="wbs-print">
+      <details className="card" onToggle={(e) => setWbsOpen((e.currentTarget as HTMLDetailsElement).open)}>
+        <summary><strong>WBS</strong></summary>
+        {wbsOpen && <table className="wbs-print">
           <thead><tr><th>番号</th><th>タスク</th><th>担当</th><th>状態</th><th>期間</th><th>進捗</th></tr></thead>
           <tbody>
             {rows.map((r) => (
@@ -100,8 +102,8 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
               </tr>
             ))}
           </tbody>
-        </table>
-      </section>
+        </table>}
+      </details>
       </div>
     </div>
   );
