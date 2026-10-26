@@ -45,5 +45,6 @@ export const DELIVERABLES: Deliverable[] = [
   { label: 'アプリ説明用スライド', stage: '卒展', section: '発表・展示準備', re: /アプリ説明.*スライド|説明用スライド/, end: '2027-02-06' },
   { label: 'アプリ説明動画', stage: '卒展', section: '発表・展示準備', re: /アプリ説明.*動画|説明動画/, end: '2027-01-27' },
   { label: '動画のYouTube限定公開', stage: '卒展', section: '発表・展示準備', re: /YouTube|限定公開/, end: '2027-01-27' },
+  { label: 'ソースコード一式', stage: '卒展', section: '発表・展示準備', re: /ソースコード/, end: '2027-02-06', note: '卒展までに提出' },
   { label: '卒展用パネル', stage: '卒展', section: '発表・展示準備', re: /パネル/, end: '2027-02-06' },
 ];
