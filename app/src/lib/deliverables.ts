@@ -11,8 +11,10 @@ export type Deliverable = {
   re: RegExp;
   /** 項目の終了日の期限 (YYYY-MM-DD) */
   end: string;
-  /** 'soft' / 'hard': その種類の企画だけに必要。なければ、どの企画にも必要 */
-  only?: 'soft' | 'hard';
+  /** 'hard': ハード系の企画だけに必要。なければ、どの企画にも必要 */
+  only?: 'hard';
+  /** 当てはまる企画だけに必要 (データを保存するなら、ER図・テーブル定義書など)。なければ、注意として知らせる */
+  optional?: boolean;
   /** 事前送付など */
   note?: string;
 };
@@ -30,8 +32,8 @@ export const DELIVERABLES: Deliverable[] = [
   { label: '画面遷移図', stage: '中間報告', section: '外部設計', re: /画面遷移図/, end: MID_SEND, note: '事前送付' },
   { label: '機能仕様書', stage: '中間報告', section: '外部設計', re: /機能仕様書/, end: MID_SEND, note: '事前送付' },
   { label: 'システム構成図', stage: '中間報告', section: '外部設計', re: /システム構成図/, end: MID_SEND, note: '事前送付' },
-  { label: 'ER図', stage: '中間報告', section: '内部設計・実装', re: /ER図/, end: MID_SEND, only: 'soft', note: '事前送付' },
-  { label: 'テーブル定義書', stage: '中間報告', section: '内部設計・実装', re: /テーブル定義/, end: MID_SEND, only: 'soft', note: '事前送付' },
+  { label: 'ER図', stage: '中間報告', section: '内部設計・実装', re: /ER図/, end: MID_SEND, optional: true, note: '事前送付。データを保存する場合' },
+  { label: 'テーブル定義書', stage: '中間報告', section: '内部設計・実装', re: /テーブル定義/, end: MID_SEND, optional: true, note: '事前送付。データを保存する場合' },
   { label: '回路図', stage: '中間報告', section: '内部設計・実装', re: /回路図/, end: MID_SEND, only: 'hard', note: '事前送付' },
   { label: '設計書類の事前送付', stage: '中間報告', section: '外部設計', re: /事前送付|送付/, end: MID_SEND, note: '中間報告の1週間前' },
   { label: '試作品', stage: '中間報告', section: '内部設計・実装', re: /試作品/, end: MID, note: '中間報告で見せられるもの' },

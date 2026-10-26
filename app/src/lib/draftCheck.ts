@@ -122,9 +122,8 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
     if (!in_('発表・展示準備', /卒展|展示/)) warn('「発表・展示準備」に、卒展 (2/6) の展示の項目がありません');
     // 成果物 (あらかじめ決まっている一覧) は、必ず項目にする
     for (const d of DELIVERABLES) {
-      if (d.only === 'soft' && kind !== 'ソフト') continue;
       if (d.only === 'hard' && kind !== 'ハード') continue;
-      if (!in_(d.section, d.re)) err(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
+      if (!in_(d.section, d.re)) (d.optional ? warn : err)(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
     }
     for (const e of EXPECTED) if (!in_(e.section, e.re)) warn(`「${e.section}」に、${e.label}の項目がありません(${e.why})`);
     if (kind === 'ハード') {
