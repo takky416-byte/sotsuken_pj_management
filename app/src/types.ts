@@ -41,7 +41,11 @@ export type Team = {
   submitUrl?: string;
   /** 初期WBS (叩き台) の見直しを、チームの誰かが「終えた」と記録した時刻と人。なければ未確認 (学生も書ける) */
   wbsReview?: { at: number; by: string } | null;
+  /** 企業に提出する報告書に載せる、チームの文章 (チームの学生と教員が書く) */
+  reportNotes?: ReportNotes | null;
 };
+
+export type ReportNotes = { summary: string; issues: string; next: string; by: string; at: number };
 
 export type Milestone = {
   id: string;

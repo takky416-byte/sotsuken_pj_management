@@ -495,3 +495,16 @@ describe('初期WBSの見直しの記録 (チームの学生が書ける)', () =
     await assertSucceeds(updateDoc(doc(as(TEACHER), 'teams/A'), { wbsReview: null }));
   });
 });
+
+describe('報告書に載せる文章 (reportNotes。チームの学生と教員が書ける)', () => {
+  const notes = (over: Record<string, unknown> = {}) => ({ summary: '概要', issues: '', next: '', by: 'A1', at: 1, ...over });
+  test('自分のチームの学生は書ける。形が違う・名前が違う・長すぎる・他の項目・他のチームは不可', async () => {
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes() }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ by: 'A2' }) }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ x: 1 }) }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 'あ'.repeat(1001) }) }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 1 }) }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes(), projectName: '書き換え' }));
+    await assertFails(updateDoc(doc(as(B1), 'teams/A'), { reportNotes: notes({ by: 'B1' }) }));
+  });
+});

@@ -838,3 +838,19 @@ table.access tr.detail td { background:var(--bg); }
 .review-steps li.ok { color:var(--ok); }
 .review-confirm { margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .review-banner { border-color:var(--accent); background:var(--accent-soft); margin:8px 0; }
+
+/* 企業に提出する報告書 (印刷・PDF。画面ではプレビューだけ) */
+.print-only { display:none; }
+.company-report { font-size:13px; color:#111; }
+.company-report h1 { font-size:20px; margin:0 0 8px; } .company-report h2 { font-size:15px; margin:14px 0 6px; padding-bottom:3px; border-bottom:2px solid var(--accent); }
+.cr-meta, .cr-table { border-collapse:collapse; width:100%; } .cr-meta th, .cr-meta td, .cr-table th, .cr-table td { border:1px solid #bbb; padding:3px 8px; text-align:left; vertical-align:top; }
+.cr-meta th, .cr-table th { background:#f1f1f5; width:1%; white-space:nowrap; } .cr-table thead th { width:auto; }
+.cr-text { white-space:pre-wrap; margin:4px 0; } .cr-none { color:#777; } .cr-phase { color:#555; margin-left:4px; font-size:12px; }
+.cr-judge.j-遅れ { color:#c0392b; } .cr-judge.j-やや遅れ { color:#c77800; } .cr-judge.j-順調 { color:#1e8449; }
+.report-notes label { display:block; margin:8px 0; } .report-notes textarea { width:100%; }
+.analysis-title { margin-top:18px; }
+@media print {
+  .print-only { display:block !important; }
+  .cr-appendix { break-before:page; }
+  .company-report section { break-inside:avoid; } .company-report .cr-appendix { break-inside:auto; }
+}

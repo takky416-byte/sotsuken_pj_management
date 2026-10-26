@@ -63,7 +63,7 @@ describe('試運転データの削除', () => {
     expect(await count('teacherNotes')).toBe(1);
     expect((await db.doc('teacherNotes/nB').get()).exists).toBe(true);
     const a = (await db.doc('teams/A').get()).data()!;
-    expect(a).toMatchObject({ status: 'planning', projectName: '', proposals: [], driveUrl: '', kickoffAt: null, wbsReview: null });
+    expect(a).toMatchObject({ status: 'planning', projectName: '', proposals: [], driveUrl: '', kickoffAt: null, wbsReview: null, reportNotes: null });
     expect(a.members).toHaveLength(1); // メンバー表示は残す
     expect(a.teamMeetingInput).toBe(true);
   });

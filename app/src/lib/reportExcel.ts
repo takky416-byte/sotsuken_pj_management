@@ -1,6 +1,8 @@
-// PJ分析の Excel (.xlsx) をブラウザの中で作る。exceljs は大きいので、使うときだけ読み込む。
+// 企業に提出する進捗報告書の Excel (.xlsx) をブラウザの中で作る。exceljs は大きいので、使うときだけ読み込む。
+// 画面の「チームの分析」(個人別の負荷など) は入れない。
 import type { Milestone, Task, TaskStatus } from '../types';
 import type { ProjectAnalysis } from './analysis';
+import type { CompanyReport } from './companyReport';
 import { mdLabel, milestonesInWeek, overlapsWeek, wbsRows, weekColumns } from './report';
 
 export type ReportInput = {
@@ -11,6 +13,10 @@ export type ReportInput = {
   milestones: Milestone[];
   analysis: ProjectAnalysis;
   today: string;
+  /** 提出用の報告書の中身 (companyReport.ts) */
+  company: CompanyReport;
+  /** WBS・ガントチャートに担当者名を載せるか */
+  showAssignees: boolean;
 };
 
 const FILL: Record<TaskStatus, string> = { todo: 'FF9AA0B5', doing: 'FF6C4CFF', done: 'FF22B573', hold: 'FFD9DCE8' };
@@ -25,52 +31,64 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   wb.created = new Date();
   const nameOf = (sid: string) => input.members.find((m) => m.sid === sid)?.name ?? sid;
   const rows = wbsRows(input.tasks, nameOf);
-  const a = input.analysis;
   const head = (row: import('exceljs').Row) => {
     row.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     row.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEAD } }; c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; });
   };
 
-  // ── 概況
-  const s1 = wb.addWorksheet('概況', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  s1.columns = [{ width: 26 }, { width: 18 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 40 }];
-  s1.addRow([safe(`${input.teamId}チーム プロジェクト概況レポート`)]).font = { bold: true, size: 16 };
-  s1.addRow(['企画', safe(input.projectName)]);
-  s1.addRow(['メンバー', safe(input.members.map((m) => m.name).join('・'))]);
-  s1.addRow(['作成日', input.today]);
+  // ── 報告書 (企業に提出する本体)
+  const c = input.company;
+  const range = (st: string | null, en: string | null) => (st ? `${mdLabel(st)}${en && en !== st ? `〜${mdLabel(en)}` : ''}` : en ? mdLabel(en) : '');
+  const s1 = wb.addWorksheet('報告書', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  s1.columns = [{ width: 30 }, { width: 24 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 30 }];
+  const para = (text: string) => { const r = s1.addRow([safe(text)]); s1.mergeCells(r.number, 1, r.number, 6); r.getCell(1).alignment = { wrapText: true, vertical: 'top' }; r.height = Math.max(18, Math.ceil(text.length / 60) * 17); };
+  const title = (t: string) => { s1.addRow([]); const r = s1.addRow([t]); r.font = { bold: true, size: 12 }; r.eachCell((x) => { x.border = { bottom: { style: 'medium', color: { argb: HEAD } } }; }); s1.mergeCells(r.number, 1, r.number, 6); };
+  s1.addRow([safe(c.title)]).font = { bold: true, size: 16 };
+  s1.addRow(['チーム', `${c.teamId}チーム`]);
+  s1.addRow(['企画名', safe(c.projectName)]);
+  s1.addRow(['報告日', c.today]);
+  s1.addRow(['報告期間', c.from ? `${c.from} 〜 ${c.today}` : c.today]);
+  s1.addRow(['メンバー', safe(c.members.join('・'))]);
+  title('1. プロジェクトの概要');
+  para(c.summary || '(概要・目的を記入してください)');
+  title('2. 進捗状況');
+  s1.addRow(['総合', c.judgement]);
+  s1.addRow(['計画に対する進捗', `計画 ${c.plannedPct}% / 実績 ${c.actualPct}%`]);
+  s1.addRow(['タスク', `全${c.counts.total}件(完了 ${c.counts.done} / 進行中 ${c.counts.doing} / 未着手 ${c.counts.todo}${c.counts.hold > 0 ? ` / 保留 ${c.counts.hold}` : ''})`]);
   s1.addRow([]);
-  head(s1.addRow(['進捗のまとめ', '件数']));
-  for (const [k, v] of [['全タスク', a.total], ['完了', a.done], ['進行中', a.doing], ['未着手', a.todo], ['保留', a.hold]] as const) s1.addRow([k, v]);
-  s1.addRow(['進捗(実績)', `${a.progressPct}%`]);
-  s1.addRow(['進捗(予定)', `${a.plannedPct}%`]);
-  s1.addRow(['期限超過', a.overdue.length]);
-  s1.addRow(['WBS外の作業', a.adhoc.count]);
-  s1.addRow([]);
-  head(s1.addRow(['大項目', '進捗', '完了', '全体', '開始', '終了']));
-  for (const p of a.phases) s1.addRow([safe(p.title), `${p.pct}%`, p.done, p.total, p.start ? mdLabel(p.start) : '', p.end ? mdLabel(p.end) : '']);
-  s1.addRow([]);
-  head(s1.addRow(['メンバー', '担当', '進行中', '完了', '期限超過', '']));
-  for (const m of a.members) s1.addRow([safe(m.name), m.assigned, m.doing, m.done, m.overdue]);
-  s1.addRow([]);
-  head(s1.addRow(['所見(自動分析)', '', '', '', '', '']));
-  for (const f of a.findings) { const r = s1.addRow([safe(f.text)]); s1.mergeCells(r.number, 1, r.number, 6); r.getCell(1).alignment = { wrapText: true, vertical: 'top' }; r.height = 32; }
-  if (a.findings.length === 0) s1.addRow(['(所見はありません)']);
+  head(s1.addRow(['工程', '期間', '完了', '全体', '進捗', '状況']));
+  for (const p of c.phases) s1.addRow([safe(p.title), range(p.start, p.end), p.done, p.total, `${p.pct}%`, p.state]);
+  title('3. マイルストーン');
+  if (c.milestones.length === 0) s1.addRow(['(特記事項なし)']);
+  else { head(s1.addRow(['内容', '日付', '状況', '', '', ''])); for (const m of c.milestones) s1.addRow([safe(m.title), range(m.date, m.endDate), m.state === '済' ? '済' : `予定(あと${m.daysLeft}日)`]); }
+  title('4. 直近の実績(過去2週間に完了したタスク)');
+  if (c.recent.length === 0) s1.addRow(['(特記事項なし)']);
+  for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase)]);
+  title('5. 課題と対応');
+  if (c.overdue.length > 0) { s1.addRow(['計画より遅れているタスク']).font = { bold: true }; for (const t of c.overdue) s1.addRow([safe(t.title), safe(t.phase), `予定 ${mdLabel(t.end)}`]); }
+  if (c.issuesText) para(c.issuesText); else if (c.overdue.length === 0) s1.addRow(['(特記事項なし)']); else s1.addRow(['(対応方針を記入してください)']);
+  title('6. 今後の予定(今後4週間)');
+  if (c.upcoming.length === 0 && !c.nextText) s1.addRow(['(特記事項なし)']);
+  if (c.upcoming.length > 0) { head(s1.addRow(['タスク', '工程', '期間', '', '', ''])); for (const t of c.upcoming) s1.addRow([safe(t.title), safe(t.phase), range(t.start, t.end)]); }
+  if (c.nextText) para(c.nextText);
 
   // ── WBS
   const s2 = wb.addWorksheet('WBS', { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  s2.columns = [{ header: '番号', width: 8 }, { header: 'タスク', width: 44 }, { header: '担当', width: 18 }, { header: '状態', width: 10 }, { header: '開始', width: 9 }, { header: '終了', width: 9 }, { header: '進捗', width: 8 }, { header: '詳細', width: 40 }];
+  const own = input.showAssignees;
+  s2.columns = [{ header: '番号', width: 8 }, { header: 'タスク', width: 44 }, ...(own ? [{ header: '担当', width: 18 }] : []), { header: '状態', width: 10 }, { header: '開始', width: 9 }, { header: '終了', width: 9 }, { header: '進捗', width: 8 }];
   head(s2.getRow(1));
   for (const r of rows) {
-    const row = s2.addRow([r.no, safe(r.title), safe(r.assignees), r.statusLabel, r.start ? mdLabel(r.start) : '', r.end ? mdLabel(r.end) : '', r.progress / 100, safe(r.detail)]);
+    const row = s2.addRow([r.no, safe(r.title), ...(own ? [safe(r.assignees)] : []), r.statusLabel, r.start ? mdLabel(r.start) : '', r.end ? mdLabel(r.end) : '', r.progress / 100]);
+    const st = own ? 4 : 3;
     row.getCell(2).alignment = { indent: (r.depth - 1) * 2, wrapText: true, vertical: 'top' };
-    row.getCell(7).numFmt = '0%';
+    row.getCell(st + 3).numFmt = '0%';
     if (!r.leaf) row.font = { bold: r.depth === 1 };
-    if (r.derived) { row.getCell(5).font = { italic: true, color: { argb: 'FF7A6F92' } }; row.getCell(6).font = { italic: true, color: { argb: 'FF7A6F92' } }; }
-    row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FILL[r.status] } };
-    row.getCell(4).font = { color: { argb: r.status === 'hold' ? 'FF2B2340' : 'FFFFFFFF' }, bold: true };
-    row.getCell(4).alignment = { horizontal: 'center' };
+    if (r.derived) { row.getCell(st + 1).font = { italic: true, color: { argb: 'FF7A6F92' } }; row.getCell(st + 2).font = { italic: true, color: { argb: 'FF7A6F92' } }; }
+    row.getCell(st).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FILL[r.status] } };
+    row.getCell(st).font = { color: { argb: r.status === 'hold' ? 'FF2B2340' : 'FFFFFFFF' }, bold: true };
+    row.getCell(st).alignment = { horizontal: 'center' };
   }
-  s2.autoFilter = { from: 'A1', to: 'H1' };
+  s2.autoFilter = { from: 'A1', to: own ? 'G1' : 'F1' };
 
   // ── ガントチャート
   const weeks = weekColumns(rows, input.milestones, input.today);
@@ -78,7 +96,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   s3.getColumn(1).width = 7; s3.getColumn(2).width = 36; s3.getColumn(3).width = 14;
   weeks.forEach((_, i) => { s3.getColumn(4 + i).width = 4.2; });
   const h1 = s3.getRow(1); const h2 = s3.getRow(2);
-  h1.getCell(1).value = '番号'; h1.getCell(2).value = 'タスク'; h1.getCell(3).value = '担当';
+  h1.getCell(1).value = '番号'; h1.getCell(2).value = 'タスク'; h1.getCell(3).value = input.showAssignees ? '担当' : '';
   weeks.forEach((w, i) => { h1.getCell(4 + i).value = Number(w.slice(5, 7)) + '月'; h2.getCell(4 + i).value = Number(w.slice(8, 10)); });
   head(h1); head(h2);
   const todayIdx = weeks.findIndex((w) => w <= input.today && input.today <= new Date(Date.parse(`${w}T00:00:00Z`) + 6 * 86400000).toISOString().slice(0, 10));
@@ -90,7 +108,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
     if (ms.length > 0) { const c = msRow.getCell(4 + i); c.value = '◆'; c.font = { color: { argb: 'FFE08A00' }, bold: true }; c.alignment = { horizontal: 'center' }; c.note = ms.map((m) => `${mdLabel(m.date)} ${m.title}`).join('\n'); }
   });
   for (const r of rows) {
-    const row = s3.addRow([r.no, safe(r.title), safe(r.assignees)]);
+    const row = s3.addRow([r.no, safe(r.title), input.showAssignees ? safe(r.assignees) : '']);
     row.getCell(2).alignment = { indent: (r.depth - 1) * 2 };
     if (!r.leaf) row.font = { bold: r.depth === 1 };
     weeks.forEach((w, i) => {

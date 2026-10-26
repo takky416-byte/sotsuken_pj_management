@@ -89,6 +89,16 @@ service cloud.firestore {
         && request.resource.data.wbsReview.keys().hasOnly(['at', 'by'])
         && request.resource.data.wbsReview.by == me().sid
         && request.resource.data.wbsReview.at is number;
+      // 企業に提出する報告書に載せる文章 (概要・課題と対応・今後の方針) は、チームの学生も書ける
+      allow update: if inTeam(teamId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportNotes'])
+        && request.resource.data.reportNotes is map
+        && request.resource.data.reportNotes.keys().hasOnly(['summary', 'issues', 'next', 'by', 'at'])
+        && request.resource.data.reportNotes.summary is string && request.resource.data.reportNotes.summary.size() <= 1000
+        && request.resource.data.reportNotes.issues is string && request.resource.data.reportNotes.issues.size() <= 1000
+        && request.resource.data.reportNotes.next is string && request.resource.data.reportNotes.next.size() <= 1000
+        && request.resource.data.reportNotes.by == me().sid
+        && request.resource.data.reportNotes.at is number;
 
       match /tasks/{taskId} {
         allow read: if canSeeTeam(teamId);

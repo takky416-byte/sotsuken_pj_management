@@ -100,9 +100,9 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await page.getByRole('link', { name: 'PJ分析', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '概況と分析' })).toBeVisible();
-    await expect(page.locator('.report .gantt-row').first()).toBeVisible();
-    await expect(page.locator('.wbs-print tbody tr').first()).toBeVisible();
-    await expect(page.locator('.wbs-print').getByText('WBS外の作業(あとから追加)')).toBeVisible();
+    await expect(page.locator('.report .no-print .gantt-row').first()).toBeVisible();
+    await expect(page.locator('.report .no-print .wbs-print tbody tr').first()).toBeVisible();
+    await expect(page.locator('.report .no-print .wbs-print').getByText('WBS外の作業(あとから追加)')).toBeVisible();
     const dl = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Excelで保存(.xlsx)' }).click();
     const file = await dl;

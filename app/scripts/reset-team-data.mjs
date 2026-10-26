@@ -46,7 +46,7 @@ export async function resetTeams({ db, teams, resetTeam = false, includeTeacherN
     if (resetTeam) {
       counts.teamReset = 1;
       if (!dryRun) {
-        await team.update({ status: 'planning', projectName: '', proposals: [], driveUrl: '', kickoffAt: null, wbsReview: null });
+        await team.update({ status: 'planning', projectName: '', proposals: [], driveUrl: '', kickoffAt: null, wbsReview: null, reportNotes: null });
       }
     }
     report[id] = counts;

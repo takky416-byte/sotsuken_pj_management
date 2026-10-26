@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { buildCompanyReport } from '../lib/companyReport';
+import { CompanyReportDoc } from './CompanyReportDoc';
+import { ReportNotesEditor } from './ReportNotesEditor';
 import { useMilestones } from '../data/calendar';
 import { downloadBlob } from '../data/export';
 import { useTasks } from '../data/tasks';
@@ -19,6 +22,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
   const milestones = useMilestones(team.id);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [showAssignees, setShowAssignees] = useState(true);
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
@@ -26,12 +30,13 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
   const a = analyze(tasks, milestones, team.members, today);
   const nameOf = (sid: string) => team.members.find((m) => m.sid === sid)?.name ?? sid;
   const rows = wbsRows(tasks, nameOf);
+  const company = buildCompanyReport(team, tasks, milestones, team.reportNotes, today);
 
   const excel = async () => {
     setBusy(true); setErr('');
     try {
       const { buildReportWorkbook } = await import('../lib/reportExcel');
-      const blob = await buildReportWorkbook({ teamId: team.id, projectName: team.projectName, members: team.members, tasks, milestones, analysis: a, today });
+      const blob = await buildReportWorkbook({ teamId: team.id, projectName: team.projectName, members: team.members, tasks, milestones, analysis: a, today, company, showAssignees });
       downloadBlob(`sotsuken-${team.id}-report-${today}.xlsx`, blob);
     } catch (e) {
       if (isStaleChunkError(e)) {
@@ -47,10 +52,21 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
       <div className="report-actions no-print">
         <button type="button" onClick={excel} disabled={busy}>{busy ? '作成中…' : 'Excelで保存(.xlsx)'}</button>
         <button type="button" className="ghost" onClick={() => window.print()}>PDFで保存(印刷)</button>
-        <span className="hint">PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。Excelには、概況・WBS・ガントチャートの3シートが入ります。</span>
+        <label className="check"><input type="checkbox" checked={showAssignees} onChange={(e) => setShowAssignees(e.target.checked)} />WBSに担当者名を載せる</label>
+        <span className="hint">企業に提出する報告書(下の「提出用の報告書」と同じ内容)が出ます。PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。Excelには、報告書・WBS・ガントチャートの3シートが入ります。下の「チームの分析」は、チーム内の振り返り用で、出力には入りません。</span>
       </div>
+      <ReportNotesEditor team={team} actor={actor} />
+      {company.missing.includes('summary') && <p className="warn no-print">「企画の概要と目的」が未記入です。提出の前に、上の「報告書に載せる文章」に書いてください。</p>}
+      <details className="card no-print">
+        <summary><strong>提出用の報告書(プレビュー)</strong></summary>
+        <CompanyReportDoc r={company} />
+      </details>
       {err && <p className="error no-print">{err}</p>}
 
+      <div className="print-only"><CompanyReportDoc r={company} rows={rows} teamId={team.id} members={team.members} showAssignees={showAssignees} /></div>
+
+      <div className="no-print">
+      <h2 className="analysis-title">チームの分析(チーム内の振り返り用)</h2>
       <header className="report-head">
         <h2>{team.id}チーム プロジェクト概況レポート</h2>
         <div className="report-meta">
@@ -85,6 +101,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
           </tbody>
         </table>
       </section>
+      </div>
     </div>
   );
 }

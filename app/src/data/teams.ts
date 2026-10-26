@@ -1,6 +1,6 @@
 import { collection, doc, onSnapshot, query, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Team } from '../types';
+import type { ReportNotes, Team } from '../types';
 import { countReads } from '../lib/readMeter';
 import { useShared } from './shared';
 import { useQuery } from './util';
@@ -30,3 +30,7 @@ export const confirmWbsReview = (teamId: string, sid: string) =>
 
 /** 教員が、もう一度見直しを求める */
 export const resetWbsReview = (teamId: string) => updateDoc(doc(db, 'teams', teamId), { wbsReview: null });
+
+/** 企業に提出する報告書に載せる文章を保存する (チームの学生も書ける) */
+export const saveReportNotes = (teamId: string, sid: string, n: Pick<ReportNotes, 'summary' | 'issues' | 'next'>) =>
+  updateDoc(doc(db, 'teams', teamId), { reportNotes: { ...n, by: sid, at: Date.now() } });
