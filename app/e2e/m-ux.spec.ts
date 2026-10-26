@@ -20,7 +20,7 @@ test.describe.serial('ホーム (今日・次にやること) と WBS の操作'
     await d.doc(`teams/A/dailyReports/${today()}_A1`).delete().catch(() => undefined);
 
     await login(page, 'a1@trident.ac.jp');
-    await expect(page.getByRole('heading', { name: /こんにちは/ })).toBeVisible();
+    await expect(page.locator('.hero-hello')).toContainText('さん'); // あいさつは、時間帯と乱数で変わる
     await expect(page.getByRole('heading', { name: /今日やること/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /次にやること/ })).toBeVisible();
     const item = (title: string) => page.locator('.todo-item', { hasText: title });

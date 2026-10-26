@@ -28,11 +28,11 @@ describe('buildReportWorkbook', () => {
     rep.eachRow((r) => r.eachCell((c) => texts.push(String(c.value))));
     expect(texts).toContain('卒業研究制作 プロジェクト進捗報告書');
     expect(texts.some((t) => t.includes('=SUM(1)') && t.includes('記入日: 2026/11/05'))).toBe(true); // 数式にならず文字のまま。記入日がつく
-    expect(texts.some((t) => /偏り|WBSにない|メンバー別/.test(t))).toBe(false); // チーム内の分析は入れない
+    expect(texts.some((t) => /偏り|WBSにない|メンバー別|マイルストーン/.test(t))).toBe(false); // チーム内の分析は入れない
     const wbs = wb.getWorksheet('WBS')!;
     expect(wbs.getRow(2).getCell(2).value).toBe('=HYPERLINK("x")');
     expect(wbs.getRow(3).getCell(3).value).toBe('甲');
     const gantt = wb.getWorksheet('ガントチャート')!;
-    expect(gantt.getRow(4).getCell(2).value).toBe('=HYPERLINK("x")');
+    expect(gantt.getRow(3).getCell(2).value).toBe('=HYPERLINK("x")'); // マイルストーンの行は、報告書には入れない
   });
 });

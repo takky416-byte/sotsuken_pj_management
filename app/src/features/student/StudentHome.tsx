@@ -10,6 +10,8 @@ import { DailyNudge } from '../../components/DailyNudge';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
 import { WbsReviewCard } from '../../components/WbsReviewCard';
+import { greetingText, sessionPick } from '../../lib/greeting';
+import { useTone } from '../../lib/tone';
 import { useNarrow } from '../../lib/useNarrow';
 import { MeetingMinutesCard } from '../../components/MeetingMinutesView';
 import { useMinutes } from '../../data/meetingMinutes';
@@ -51,6 +53,7 @@ export function StudentHome() {
   const [err, setErr] = useState('');
   const [openedSubmit, setOpenedSubmit] = useState(false);
   const narrow = useNarrow();
+  const tone = useTone();
 
   if (!me.teamId || !me.sid) return <p>チームが設定されていません。先生に連絡してください。</p>;
   if (team === undefined) return <p>読み込み中…</p>;
@@ -88,8 +91,8 @@ export function StudentHome() {
   });
 
   const notice = team.message && team.message.text ? (
-    <section className="card teacher-msg" aria-label="先生からのメッセージ">
-      <div className="label">先生からのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
+    <section className="card teacher-msg" aria-label={`先生から${team.id}チームへのメッセージ`}>
+      <div className="label">先生から{team.id}チームへのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
       <p className="msg-text">{team.message.text}</p>
     </section>
   ) : null;
@@ -99,7 +102,7 @@ export function StudentHome() {
     <>
       <div className="home-top">
       <section className="hero">
-        <h2 className="hero-hello">こんにちは、{me.name}さん</h2>
+        <h2 className="hero-hello">{greetingText(me.name, tone, new Date(), sessionPick)}</h2>
         <div className="cta hero-actions">
           {team.submitUrl && isHttpUrl(team.submitUrl) && (
             <a className="btn hero-submit" href={team.submitUrl} target="_blank" rel="noreferrer noopener" onClick={() => setOpenedSubmit(true)}>成果物を提出</a>

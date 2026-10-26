@@ -1,4 +1,5 @@
 import { addDays } from './dates';
+import { DELIVERABLES } from './deliverables';
 import { parseOutline, type OutlineNode } from './outline';
 
 /** 叩き台の期間をつくる・確かめるための、授業期間と節目 (docs/decisions.md の共通マイルストーン) */
@@ -26,6 +27,15 @@ export const DEADLINES: { section: string; re: RegExp; end: string; why: string 
   { section: '発表・展示準備', re: /提出/, end: '2027-02-02', why: '提出物の納期(2/2)' },
   { section: '発表・展示準備', re: /卒展|展示/, end: '2027-02-06', why: '卒業研究制作展(2/6)' },
 ];
+
+/** 成果物 (deliverables.ts) の期限も、題名に合う項目の期限にする (上の節目より、あとに合わせる) */
+for (const d of DELIVERABLES) DEADLINES.push({ section: d.section, re: d.re, end: d.end, why: `成果物「${d.label}」の期限(${d.end})` });
+
+/** 題名に合う期限のうち、いちばん早いもの */
+export function deadlineFor(section: string, title: string): { end: string; why: string } | undefined {
+  const hits = DEADLINES.filter((d) => d.section === section && d.re.test(title));
+  return hits.length === 0 ? undefined : hits.reduce((a, b) => (b.end < a.end ? b : a));
+}
 
 /** 機材発注の期限。「発注」と付く項目を順に、1回目・2回目とみなす */
 export const ORDER_DEADLINES = ['2026-11-05', '2026-12-01'];
@@ -61,8 +71,13 @@ export function autoSchedule(nodes: OutlineNode[]): OutlineNode[] {
       let start = addDays(ws, Math.round(k * step));
       let end = addDays(start, len - 1);
       if (end > we) end = we;
-      const limits = [orderEnd, DEADLINES.find((d) => d.section === sec && d.re.test(n.title))?.end].filter((x): x is string => !!x);
+      const natural = end;
+      const limits = [orderEnd, deadlineFor(sec, n.title)?.end].filter((x): x is string => !!x);
       for (const l of limits) if (end > l) end = l;
+      if (end < natural) { // 期限で短くなったときは、期限の前に、長さぶんの期間をとる (時期の始まりより前には出ない)
+        const from = addDays(end, -(len - 1));
+        start = from < ws ? ws : from;
+      }
       if (start > end) start = end;
       n.startDate = start; n.endDate = end;
     });

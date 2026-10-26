@@ -10,7 +10,7 @@ describe('checkDraft', () => {
   test('見本の叩き台は、問題なし', () => {
     const r = checkDraft(example);
     expect(r.issues).toEqual([]);
-    expect(r.total).toBe(50);
+    expect(r.total).toBe(53);
   });
   test('ハード系として見ると、発注の項目がないと誤り', () => {
     expect(errors(example, 'ハード').some((m) => m.includes('機材発注'))).toBe(true);
@@ -58,5 +58,24 @@ describe('期間', () => {
     expect(errors(stripped).length).toBeGreaterThan(40);
     expect(checkDraft(fillPeriods(stripped)).issues).toEqual([]);
     expect(fillPeriods(fillPeriods(stripped))).toBe(fillPeriods(stripped)); // 2回かけても変わらない
+  });
+});
+
+describe('成果物', () => {
+  test('成果物の項目が1つ抜けると、その成果物の名前で誤りになる', () => {
+    for (const [title, label] of [['ER図を描く', 'ER図'], ['卒展用パネルを作る', '卒展用パネル'], ['機能仕様書を書く', '機能仕様書'], ['動画をYouTube限定公開にする', '動画のYouTube限定公開']] as const) {
+      const without = example.replace(new RegExp(`^- ${title}\\n(?: {2}> .*\\n)+`, 'm'), '');
+      expect(errors(without).some((m) => m.includes(`成果物「${label}」`)), label).toBe(true);
+    }
+  });
+  test('ハード系は、回路図が必要。ER図・テーブル定義書は、ソフト系だけ', () => {
+    const e = errors(example, 'ハード');
+    expect(e.some((m) => m.includes('成果物「回路図」'))).toBe(true);
+    expect(e.some((m) => m.includes('成果物「ER図」') || m.includes('成果物「テーブル定義書」'))).toBe(false);
+    expect(errors(example, 'ソフト').some((m) => m.includes('回路図'))).toBe(false);
+  });
+  test('設計書類の期限 (事前送付) を過ぎる期間は誤り', () => {
+    const late = example.replace(/(- ER図を描く\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-05');
+    expect(errors(late).some((m) => m.includes('ER図'))).toBe(true);
   });
 });

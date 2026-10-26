@@ -43,7 +43,7 @@ function Art({ art }: { art: ArtId }) {
           <div className="mk-hero"><span>こんにちは、〇〇さん</span><span className="mk-btn hot">作業ログを書く <N n={1} /></span></div>
           <div className="mk-cols">
             <div className="mk-card"><strong>今日やること <N n={2} /></strong><Line /><Line w={70} dim /></div>
-            <div className="mk-card"><div className="mk-msg">先生からのメッセージ <N n={3} /></div><strong>今日のミッション</strong><Line w={80} /></div>
+            <div className="mk-card"><div className="mk-msg">先生からAチームへのメッセージ <N n={3} /></div><strong>今日のミッション</strong><Line w={80} /></div>
           </div>
         </>
       );

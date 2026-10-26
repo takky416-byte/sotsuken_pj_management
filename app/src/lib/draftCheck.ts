@@ -1,5 +1,6 @@
 import { addDays } from './dates';
-import { DEADLINES, DRAFT_END, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS } from './draftSchedule';
+import { DRAFT_END, deadlineFor, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS } from './draftSchedule';
+import { DELIVERABLES } from './deliverables';
 import { parseOutline, type OutlineNode } from './outline';
 import { TEMPLATE_NODES } from './template';
 
@@ -69,7 +70,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
     if (a > b) err(`${where}: 期間の開始が終了より後です (${a}〜${b})`);
     if (a < DRAFT_START || b > DRAFT_END) err(`${where}: 期間が授業期間(${DRAFT_START}〜${DRAFT_END})の外です (${a}〜${b})`);
     const sec = secOf(n);
-    const dl = DEADLINES.find((d) => d.section === sec && d.re.test(n.title));
+    const dl = deadlineFor(sec, n.title);
     if (dl && b > dl.end) err(`${where}: 終了日 ${b} が、${dl.why} の ${dl.end} より後です`);
     if (/発注/.test(n.title)) {
       const lim = ORDER_DEADLINES[Math.min(orderNo++, ORDER_DEADLINES.length - 1)];
@@ -119,6 +120,12 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
     if (!in_('発表・展示準備', /内覧会/)) warn('「発表・展示準備」に、内覧会 (1/28) の項目がありません');
     if (!in_('発表・展示準備', /提出/)) warn('「発表・展示準備」に、提出物 (2/2納期) の項目がありません');
     if (!in_('発表・展示準備', /卒展|展示/)) warn('「発表・展示準備」に、卒展 (2/6) の展示の項目がありません');
+    // 成果物 (あらかじめ決まっている一覧) は、必ず項目にする
+    for (const d of DELIVERABLES) {
+      if (d.only === 'soft' && kind !== 'ソフト') continue;
+      if (d.only === 'hard' && kind !== 'ハード') continue;
+      if (!in_(d.section, d.re)) err(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
+    }
     if (kind === 'ハード') {
       const orders = (secs.find((s) => s.title === '内部設計・実装')?.items ?? []).filter((n) => /発注/.test(n.title)).length;
       if (orders < 2) err('ハード系の企画に、機材発注 (11/5・12/1) の項目が2つ以上ありません (「内部設計・実装」に入れる)');

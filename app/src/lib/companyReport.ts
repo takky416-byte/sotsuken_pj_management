@@ -3,7 +3,6 @@
 import type { Milestone, ReportNotes, Task, Team } from '../types';
 import { analyze } from './analysis';
 import { addDays, jstDate } from './dates';
-import { daysBetween } from './gantt';
 import { isLeaf, isPlaceholder } from './meetingView';
 import { ADHOC_ROOT_ID } from './adhoc';
 
@@ -21,26 +20,35 @@ export type CompanyReport = {
   /** 各文章の記入日 (YYYY-MM-DD)。文章がないときは空 */
   summaryDate: string;
   issuesDate: string;
-  nextDate: string;
   judgement: Judgement;
   plannedPct: number;
   actualPct: number;
   counts: { total: number; done: number; doing: number; todo: number; hold: number };
   phases: { title: string; start: string | null; end: string | null; done: number; total: number; pct: number; state: string }[];
-  milestones: { date: string; endDate: string | null; title: string; state: '済' | '予定'; daysLeft: number | null }[];
   recent: { title: string; phase: string }[];
   /** 計画より遅れているタスク (期限を過ぎて未完了) */
   overdue: { title: string; phase: string; end: string }[];
+  /** 課題と今後の方針 (チームの文章) */
   issuesText: string;
   upcoming: { title: string; phase: string; start: string | null; end: string | null }[];
-  nextText: string;
   /** 文章が空の項目 (画面で、書くよう促す) */
-  missing: ('summary' | 'issues' | 'next')[];
+  missing: ('summary' | 'issues')[];
 };
 
 const RECENT_DAYS = 14;
 const UPCOMING_DAYS = 28;
 const MAX_LIST = 10;
+
+/**
+ * プロジェクトの概要の初期の文章。キックオフで、初期WBSと同時に作る (あとから、チームが直せる)。
+ * 企画名・体制・期間・初期計画の大きさだけから作る (中身を推測して書かない)。
+ */
+export function defaultSummary(team: { id: string; projectName: string; members: unknown[] }, taskCount: number): string {
+  const n = team.members.length;
+  return `${team.id}チーム${n > 0 ? `(${n}名)` : ''}は、卒業研究制作として「${team.projectName}」に取り組みます。`
+    + '2026年10月から、企画の具体化・要件定義・外部設計・内部設計・実装・テスト・検証の順に進め、2027年2月6日の卒業研究制作展で成果を発表します。'
+    + `初期の計画は、${taskCount}件のタスクで構成し、進めながら見直します。`;
+}
 
 export const REPORT_TITLE = '卒業研究制作 プロジェクト進捗報告書';
 
@@ -83,17 +91,13 @@ export function buildCompanyReport(
     const ms = n?.[`${k}At`] ?? n?.at;
     return text(n?.[k]) && ms !== undefined && Number.isFinite(ms) ? jstDate(new Date(ms)) : '';
   };
-  const missing = (['summary', 'issues', 'next'] as const).filter((k) => !text(notes?.[k]));
+  const missing = (['summary', 'issues'] as const).filter((k) => !text(notes?.[k]));
   return {
     title: REPORT_TITLE, teamId: team.id, projectName: team.projectName, members: team.members.map((m) => m.name), today,
     from: team.kickoffAt ? jstDate(new Date(team.kickoffAt)) : null,
-    summary: text(notes?.summary), summaryDate: dateOf(notes, 'summary'), issuesDate: dateOf(notes, 'issues'), nextDate: dateOf(notes, 'next'), judgement, plannedPct: a.plannedPct, actualPct: a.progressPct,
+    summary: text(notes?.summary), summaryDate: dateOf(notes, 'summary'), issuesDate: dateOf(notes, 'issues') || dateOf(notes, 'next'), judgement, plannedPct: a.plannedPct, actualPct: a.progressPct,
     counts: { total: a.total, done: a.done, doing: a.doing, todo: a.todo, hold: a.hold },
     phases,
-    milestones: [...milestones].sort((x, y) => x.date.localeCompare(y.date)).map((m) => {
-      const end = m.endDate ?? m.date;
-      return { date: m.date, endDate: m.endDate ?? null, title: m.title, state: end < today ? '済' as const : '予定' as const, daysLeft: end < today ? null : Math.max(0, daysBetween(today, m.date)) };
-    }),
-    recent, overdue, issuesText: text(notes?.issues), upcoming, nextText: text(notes?.next), missing,
+    recent, overdue, issuesText: [text(notes?.issues), text(notes?.next)].filter(Boolean).join('\n'), upcoming, missing,
   };
 }

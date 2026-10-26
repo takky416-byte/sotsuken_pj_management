@@ -6,26 +6,28 @@ import type { Team } from '../types';
 const MAX = 1000;
 const fmtDate = (ms: number) => jstDate(new Date(ms)).replace(/-/g, '/');
 const FIELDS = [
-  { key: 'summary', label: '1. 企画の概要と目的', hint: '何を、誰のために、何のために作るか(2〜4文)。' },
-  { key: 'issues', label: '5. 課題と対応', hint: '遅れや困りごとと、その対応方針。なければ空欄でかまいません。' },
-  { key: 'next', label: '6. 今後の方針', hint: 'これから1か月の進め方(任意)。' },
+  { key: 'summary', label: '1. プロジェクトの概要', hint: '何を、誰のために、何のために作るか。キックオフで自動で作られた文章を、あとから直せます。' },
+  { key: 'issues', label: '6. 課題と今後の予定', hint: '遅れや困りごとへの対応と、これからの進め方。なければ空欄でかまいません。' },
 ] as const;
 
 /** 企業に提出する報告書に載せる、チームの文章。チームの学生と教員が書ける。 */
 export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }) {
   const n = team.reportNotes;
-  const [v, setV] = useState({ summary: n?.summary ?? '', issues: n?.issues ?? '', next: n?.next ?? '' });
+  // 以前の保存にある「今後の方針」(next) は、「課題と今後の予定」(issues) に統合して見せる
+  const base = { summary: n?.summary ?? '', issues: [n?.issues, n?.next].filter((x) => x && x.trim()).join('\n'), next: '' };
+  const [v, setV] = useState(base);
+  const missingSummary = !(n?.summary ?? '').trim();
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
-  const dirty = v.summary !== (n?.summary ?? '') || v.issues !== (n?.issues ?? '') || v.next !== (n?.next ?? '');
+  const dirty = v.summary !== base.summary || v.issues !== base.issues;
   const save = async () => {
     setState('saving'); setErr('');
     try { await saveReportNotes(team.id, actor, v, n); setState('saved'); }
     catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); setState('idle'); }
   };
   return (
-    <section className="card no-print report-notes" aria-label="報告書に載せる文章">
-      <h3>報告書に載せる文章</h3>
+    <details className="card no-print report-notes" aria-label="報告書に載せる文章">
+      <summary><strong>報告書に載せる文章</strong>{missingSummary && <span className="warn"> (概要が未記入です)</span>}</summary>
       <p className="hint">企業に提出する報告書(Excel・PDF)に載ります。文章を書き換えて保存すると、その文章の「記入日」が、今日の日付に変わって報告書に載ります。数字や一覧は自動で入るので、ここには、チームの言葉で書くところだけを書きます。</p>
       {FIELDS.map((f) => (
         <label key={f.key}>{f.label} <span className="hint">{f.hint}</span>
@@ -40,6 +42,6 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
         {n && <span className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</span>}
       </div>
       {err && <p className="error">{err}</p>}
-    </section>
+    </details>
   );
 }

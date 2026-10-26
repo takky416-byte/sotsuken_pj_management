@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { createTasks, newTaskId, useTasks } from '../../data/tasks';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
+import { defaultSummary } from '../../lib/companyReport';
 import { checkDraft } from '../../lib/draftCheck';
 import { autoSchedule, fillPeriods } from '../../lib/draftSchedule';
 import { planImport } from '../../lib/importPlan';
@@ -57,7 +58,13 @@ function KickoffForm({ team }: { team: Team }) {
       const templ = real.created.filter((n) => n.depth === 1 && TEMPLATE_TITLES.has(n.title));
       await createTasks(team.id, 'teacher', templ, 'user');
       await createTasks(team.id, 'teacher', drafts, 'draft');
+      // プロジェクトの概要の初期の文章を、初期WBSと同時に作る (すでに書かれていれば、そのまま。あとから直せる)
+      const notes = team.reportNotes;
+      const hasSummary = !!notes?.summary?.trim();
+      const taskCount = real.created.filter((n) => !(n.depth === 1)).length + tasks.filter((t) => !t.deleted && t.depth > 1).length;
+      const now = Date.now();
       await updateTeam(team.id, {
+        ...(hasSummary ? {} : { reportNotes: { summary: defaultSummary({ id: team.id, projectName: projectName.trim(), members: team.members }, taskCount), issues: notes?.issues ?? '', next: notes?.next ?? '', by: 'teacher', at: now, summaryAt: now, ...(notes?.issuesAt ? { issuesAt: notes.issuesAt } : {}), ...(notes?.nextAt ? { nextAt: notes.nextAt } : {}) } }),
         status: 'active',
         projectName: projectName.trim(),
         proposals: [

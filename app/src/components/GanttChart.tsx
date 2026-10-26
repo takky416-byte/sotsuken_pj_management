@@ -147,7 +147,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
             {ticks.map((d) => <span key={d} className="gantt-tick" style={{ left: pos(d) }}>{formatDate(d).replace(/\(.*\)/, '')}</span>)}
           </div>
         </div>
-        <div className="gantt-row ms-row" style={{ height: msH }}>
+        {!report && <div className="gantt-row ms-row" style={{ height: msH }}>
           <div className="gantt-name ms-label">マイルストーン</div>
           <div className="gantt-track" style={{ height: ms.lanes * LANE_PX + 2 }}>
             {milestones.map((m) => {
@@ -159,7 +159,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
               );
             })}
           </div>
-        </div>
+        </div>}
         {g.rows.map((r) => {
           const leaf = !parents.has(r.task.id);
           const live1 = direct && leaf;

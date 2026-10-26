@@ -3,7 +3,7 @@
 import type { Milestone, Task, TaskStatus } from '../types';
 import type { ProjectAnalysis } from './analysis';
 import type { CompanyReport } from './companyReport';
-import { mdLabel, milestonesInWeek, overlapsWeek, wbsRows, weekColumns } from './report';
+import { mdLabel, overlapsWeek, wbsRows, weekColumns } from './report';
 
 export type ReportInput = {
   teamId: string;
@@ -58,19 +58,17 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   s1.addRow([]);
   head(s1.addRow(['工程', '期間', '完了', '全体', '進捗', '状況']));
   for (const p of c.phases) s1.addRow([safe(p.title), range(p.start, p.end), p.done, p.total, `${p.pct}%`, p.state]);
-  title('3. マイルストーン');
-  if (c.milestones.length === 0) s1.addRow(['(特記事項なし)']);
-  else { head(s1.addRow(['内容', '日付', '状況', '', '', ''])); for (const m of c.milestones) s1.addRow([safe(m.title), range(m.date, m.endDate), m.state === '済' ? '済' : `予定(あと${m.daysLeft}日)`]); }
-  title('4. 直近の実績(過去2週間に完了したタスク)');
+  title('3. ガントチャート / 4. WBS');
+  s1.addRow(['シート「ガントチャート」と、シート「WBS」を参照してください。']);
+  title('5. 直近の実績(過去2週間に完了したタスク)');
   if (c.recent.length === 0) s1.addRow(['(特記事項なし)']);
   for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase)]);
-  title('5. 課題と対応');
+  title('6. 課題と今後の予定');
   if (c.overdue.length > 0) { s1.addRow(['計画より遅れているタスク']).font = { bold: true }; for (const t of c.overdue) s1.addRow([safe(t.title), safe(t.phase), `予定 ${mdLabel(t.end)}`]); }
-  if (c.issuesText) para(c.issuesText, c.issuesDate); else if (c.overdue.length === 0) s1.addRow(['(特記事項なし)']); else s1.addRow(['(対応方針を記入してください)']);
-  title('6. 今後の予定(今後4週間)');
-  if (c.upcoming.length === 0 && !c.nextText) s1.addRow(['(特記事項なし)']);
-  if (c.upcoming.length > 0) { head(s1.addRow(['タスク', '工程', '期間', '', '', ''])); for (const t of c.upcoming) s1.addRow([safe(t.title), safe(t.phase), range(t.start, t.end)]); }
-  if (c.nextText) para(c.nextText, c.nextDate);
+  if (c.upcoming.length > 0) { s1.addRow(['今後4週間の予定']).font = { bold: true }; head(s1.addRow(['タスク', '工程', '期間', '', '', ''])); for (const t of c.upcoming) s1.addRow([safe(t.title), safe(t.phase), range(t.start, t.end)]); }
+  if (c.issuesText) para(c.issuesText, c.issuesDate);
+  else if (c.overdue.length === 0 && c.upcoming.length === 0) s1.addRow(['(特記事項なし)']);
+  else s1.addRow(['(課題への対応と今後の方針を記入してください)']);
 
   // ── WBS
   const s2 = wb.addWorksheet('WBS', { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
@@ -91,7 +89,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   s2.autoFilter = { from: 'A1', to: own ? 'G1' : 'F1' };
 
   // ── ガントチャート
-  const weeks = weekColumns(rows, input.milestones, input.today);
+  const weeks = weekColumns(rows, [], input.today); // 報告書には、マイルストーンを載せない
   const s3 = wb.addWorksheet('ガントチャート', { views: [{ state: 'frozen', xSplit: 3, ySplit: 2 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   s3.getColumn(1).width = 7; s3.getColumn(2).width = 36; s3.getColumn(3).width = 14;
   weeks.forEach((_, i) => { s3.getColumn(4 + i).width = 4.2; });
@@ -101,12 +99,6 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   head(h1); head(h2);
   const todayIdx = weeks.findIndex((w) => w <= input.today && input.today <= new Date(Date.parse(`${w}T00:00:00Z`) + 6 * 86400000).toISOString().slice(0, 10));
   if (todayIdx >= 0) { const c = h2.getCell(4 + todayIdx); c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5484D' } }; }
-  const msRow = s3.addRow(['', 'マイルストーン', '']);
-  msRow.font = { bold: true };
-  weeks.forEach((w, i) => {
-    const ms = milestonesInWeek(input.milestones, w);
-    if (ms.length > 0) { const c = msRow.getCell(4 + i); c.value = '◆'; c.font = { color: { argb: 'FFE08A00' }, bold: true }; c.alignment = { horizontal: 'center' }; c.note = ms.map((m) => `${mdLabel(m.date)} ${m.title}`).join('\n'); }
-  });
   for (const r of rows) {
     const row = s3.addRow([r.no, safe(r.title), input.showAssignees ? safe(r.assignees) : '']);
     row.getCell(2).alignment = { indent: (r.depth - 1) * 2 };

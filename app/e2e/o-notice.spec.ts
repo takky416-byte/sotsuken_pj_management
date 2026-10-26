@@ -113,6 +113,7 @@ test.describe.serial('チームへのお知らせ', () => {
 });
 
 test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
+  test.setTimeout(180_000); // 担当を1件ずつ付けるので、時間がかかる
   test('学生のホームに案内が出る。担当のない項目がある間は「終えた」を押せない。ほかの画面にも案内が出る', async ({ browser }) => {
     const s = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     await login(s, 'a1@trident.ac.jp');
@@ -181,24 +182,38 @@ test('教員のメニュー「PJ分析」: チームを選ぶと、学生と同�
   await expect(page).toHaveURL(/\/teacher\/report\/[A-H]$/);
 });
 
-test('PJ分析: 報告書に載せる文章を書いて保存でき、提出用の報告書のプレビューに出る。チーム内の分析は出力に入らない', async ({ page }) => {
+test('PJ分析: 概要はキックオフで自動で入っている。報告書に載せる文章は、閉じていて、開いて直して保存できる。出力に、ガントチャート・WBSが入り、マイルストーンは入らない', async ({ page, browser }) => {
+  // 教員がキックオフ(反映)すると、プロジェクトの概要が、初期WBSと同時に作られる
+  const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+  await login(t, 'teacher@trident.ac.jp');
+  await t.goto('/teacher/kickoff/A');
+  await expect(t.getByLabel('採用する企画名')).not.toHaveValue('');
+  await t.getByRole('button', { name: '反映する' }).click();
+  await expect(t.getByText(/キックオフしました/)).toBeVisible();
+
   await login(page, 'a1@trident.ac.jp');
   await page.getByRole('link', { name: 'PJ分析', exact: true }).click();
-  await expect(page.getByText('「企画の概要と目的」が未記入です')).toBeVisible();
-  await page.getByLabel('1. 企画の概要と目的').fill('駅の混雑を知らせるアプリを作り、通学の負担を減らす。');
-  await page.getByLabel('5. 課題と対応').fill('画面設計が遅れたため、週1回の確認を増やす。');
+  await expect(page.getByText(/概要が未記入/)).toHaveCount(0); // キックオフで、初期WBSと同時に作られている
+  const notes = page.locator('details.report-notes');
+  await expect(notes).not.toHaveAttribute('open', ''); // 初期は閉じている
+  await notes.locator('summary').click();
+  await expect(page.getByLabel('1. プロジェクトの概要')).toHaveValue(/に取り組みます/);
+  await expect(page.getByLabel('5. 課題と対応')).toHaveCount(0);
+  await page.getByLabel('1. プロジェクトの概要').fill('駅の混雑を知らせるアプリを作り、通学の負担を減らす。');
+  await page.getByLabel('6. 課題と今後の予定').fill('画面設計が遅れたため、週1回の確認を増やす。来月は実装に入る。');
   await page.getByRole('button', { name: '保存する' }).click();
   await expect(page.getByRole('status').filter({ hasText: '保存しました' })).toBeVisible();
-  await expect(page.getByText('「企画の概要と目的」が未記入です')).toHaveCount(0);
   await page.getByText('提出用の報告書(プレビュー)').click();
   const doc = page.locator('details .company-report');
   await expect(doc.getByRole('heading', { name: '卒業研究制作 プロジェクト進捗報告書' })).toBeVisible();
   await expect(doc.getByText('駅の混雑を知らせるアプリ')).toBeVisible();
   await expect(doc.getByText('画面設計が遅れたため')).toBeVisible();
-  await expect(doc.getByText(/記入日: \d{4}\/\d{2}\/\d{2}/)).toHaveCount(2); // 書いた2つの文章に、記入日が出る (書いていない「今後の方針」には出ない)
-  await expect(doc.getByRole('heading', { name: '6. 今後の予定(今後4週間)' })).toBeVisible();
+  await expect(doc.getByText(/記入日: \d{4}\/\d{2}\/\d{2}/)).toHaveCount(2);
+  await expect(doc.getByRole('heading', { name: '3. ガントチャート' })).toBeVisible();
+  await expect(doc.getByRole('heading', { name: '4. WBS' })).toBeVisible();
+  await expect(doc.getByRole('heading', { name: '6. 課題と今後の予定' })).toBeVisible();
+  await expect(doc.getByText('マイルストーン')).toHaveCount(0);
+  await expect(doc.locator('.gantt-row').first()).toBeVisible();
   await expect(doc.getByText(/担当の数に偏り|WBSにない作業/)).toHaveCount(0);
-  // 印刷用の本体 (画面では隠れている) には、付録も付く
-  await expect(page.locator('.print-only .company-report h2', { hasText: '付録2. WBS' })).toBeAttached();
   await page.screenshot({ path: 'e2e-shots/report-company.png', fullPage: true });
 });

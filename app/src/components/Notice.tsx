@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const KEY = (email: string) => `notice-ack2:${email}`;
+const KEY = (email: string) => `notice-ack3:${email}`;
 
 /** 初回ログイン時の案内。何が記録され、誰が見られるかを伝える。確認すると、その端末では表示しない。 */
 export function Notice({ email, children }: { email: string; children: React.ReactNode }) {
@@ -20,9 +20,9 @@ export function NoticeBody({ onConfirm }: { onConfirm?: () => void }) {
       <div className="card form">
         <p>このアプリは、卒業研究の進み具合を、チームと先生が一緒に確認するためのものです。</p>
         <ul>
-          <li>先生は、<strong>全チーム・全員の情報</strong>(WBS、作業ログ)を見られます。</li>
-          <li>先生は、あなたの入力内容や利用状況を確認できます。作業時間の計測や、順位づけはしません。</li>
-          <li>作業ログは、やったタスクの結果を選んで、何をどこまでやったかを書きます。</li>
+          <li>先生は、<strong>全チーム・全員の情報や入力内容や利用状況</strong>を見ることができます。</li>
+          <li>日々計画の見直しを行いながら、各日の授業の終わりまでに「<strong>作業ログ</strong>」を必ず入力しましょう。</li>
+          <li>先生は、みなさんが入力した内容をもとに、進捗を把握します。入力がないと「取り組んだ作業なし、進捗なし」と判断しますので、ご留意ください。</li>
         </ul>
         <details>
           <summary>くわしく(見える範囲など)</summary>

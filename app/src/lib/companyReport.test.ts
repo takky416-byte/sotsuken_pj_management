@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { buildCompanyReport } from './companyReport';
+import { buildCompanyReport, defaultSummary } from './companyReport';
 
 const T = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [], startDate: null, endDate: null,
@@ -23,7 +23,7 @@ describe('文章の記入日', () => {
   const at = (d: string) => Date.parse(`${d}T03:00:00Z`);
   test('文章ごとの記入日が出る。文章のないものは空。古い保存 (日付なし) は、最後に保存した日', () => {
     const r = buildCompanyReport(team, tasks, ms, { summary: '概要', issues: '課題', next: '', by: 'A1', at: at('2026-11-19'), summaryAt: at('2026-11-01'), issuesAt: at('2026-11-15') }, TODAY);
-    expect([r.summaryDate, r.issuesDate, r.nextDate]).toEqual(['2026-11-01', '2026-11-15', '']);
+    expect([r.summaryDate, r.issuesDate]).toEqual(['2026-11-01', '2026-11-15']);
     const old = buildCompanyReport(team, tasks, ms, { summary: '概要', issues: '', next: '', by: 'A1', at: at('2026-11-19') }, TODAY);
     expect(old.summaryDate).toBe('2026-11-19');
   });
@@ -47,16 +47,30 @@ describe('buildCompanyReport', () => {
     expect(r.upcoming.map((x) => x.title)).toContain('来週やる');
     expect(r.upcoming.map((x) => x.title)).not.toContain('ずっと先');
   });
-  test('マイルストーンは日付順。過ぎたものは「済」、先のものは残り日数', () => {
-    expect(r.milestones.map((m) => [m.title, m.state, m.daysLeft])).toEqual([['企画決定', '済', null], ['外部設計レビュー', '予定', 5]]);
+  test('マイルストーンは、報告書に載せない', () => {
+    expect(JSON.stringify(r)).not.toMatch(/外部設計レビュー|企画決定/);
+  });
+  test('「課題」と以前の「今後の方針」は、ひとつの文章にまとまる', () => {
+    const m = buildCompanyReport(team, tasks, ms, { summary: 's', issues: '課題A', next: '方針B', by: 'A1', at: 1 }, TODAY);
+    expect(m.issuesText).toBe('課題A\n方針B');
   });
   test('未記入の文章を知らせる。WBS外の作業の数や、個人別の負荷は、報告書の中身に入らない', () => {
-    expect(r.missing).toEqual(['issues', 'next']);
+    expect(r.missing).toEqual(['issues']);
     const json = JSON.stringify(r);
     expect(json).not.toMatch(/adhoc|skew|偏り|assigned/);
   });
   test('進み具合の総合判定', () => {
     expect(['順調', 'やや遅れ', '遅れ']).toContain(r.judgement);
     expect(buildCompanyReport(team, [], [], null, TODAY).judgement).toBe('集計中');
+  });
+});
+
+describe('defaultSummary', () => {
+  test('企画名・人数・件数だけから作る', () => {
+    const t = defaultSummary({ id: 'A', projectName: '駅の混雑アプリ', members: [1, 2, 3] }, 52);
+    expect(t).toContain('Aチーム(3名)');
+    expect(t).toContain('「駅の混雑アプリ」');
+    expect(t).toContain('2027年2月6日');
+    expect(t).toContain('52件');
   });
 });

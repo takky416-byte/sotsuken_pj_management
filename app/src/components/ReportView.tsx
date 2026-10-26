@@ -23,6 +23,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [showAssignees, setShowAssignees] = useState(true);
+  const [previewOpen, setPreviewOpen] = useState(false);
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
@@ -53,13 +54,13 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
         <button type="button" onClick={excel} disabled={busy}>{busy ? '作成中…' : 'Excelで保存(.xlsx)'}</button>
         <button type="button" className="ghost" onClick={() => window.print()}>PDFで保存(印刷)</button>
         <label className="check"><input type="checkbox" checked={showAssignees} onChange={(e) => setShowAssignees(e.target.checked)} />WBSに担当者名を載せる</label>
-        <span className="hint">企業に提出する報告書(下の「提出用の報告書」と同じ内容)が出ます。PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。Excelには、報告書・WBS・ガントチャートの3シートが入ります。下の「チームの分析」は、チーム内の振り返り用で、出力には入りません。</span>
+        <span className="hint">企業に提出する報告書(下の「提出用の報告書」と同じ内容)が出ます。PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。報告書には、概要・進捗・ガントチャート・WBS・実績・課題と今後の予定が入ります(Excelは、報告書・WBS・ガントチャートの3シート)。下の「チームの分析」は、チーム内の振り返り用で、出力には入りません。</span>
       </div>
       <ReportNotesEditor team={team} actor={actor} />
-      {company.missing.includes('summary') && <p className="warn no-print">「企画の概要と目的」が未記入です。提出の前に、上の「報告書に載せる文章」に書いてください。</p>}
-      <details className="card no-print">
+      {company.missing.includes('summary') && <p className="warn no-print">「企画の概要と目的」が未記入です。提出の前に、「報告書に載せる文章」を開いて書いてください。</p>}
+      <details className="card no-print" onToggle={(e) => setPreviewOpen((e.currentTarget as HTMLDetailsElement).open)}>
         <summary><strong>提出用の報告書(プレビュー)</strong></summary>
-        <CompanyReportDoc r={company} />
+        {previewOpen && <CompanyReportDoc r={company} rows={rows} teamId={team.id} members={team.members} showAssignees={showAssignees} />}
       </details>
       {err && <p className="error no-print">{err}</p>}
 
