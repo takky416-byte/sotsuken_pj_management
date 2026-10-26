@@ -500,6 +500,8 @@ describe('報告書に載せる文章 (reportNotes。チームの学生と教員
   const notes = (over: Record<string, unknown> = {}) => ({ summary: '概要', issues: '', next: '', by: 'A1', at: 1, ...over });
   test('自分のチームの学生は書ける。形が違う・名前が違う・長すぎる・他の項目・他のチームは不可', async () => {
     await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes() }));
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summaryAt: 5, issuesAt: 6 }) }));
+    await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summaryAt: 'きのう' }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ by: 'A2' }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ x: 1 }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 'あ'.repeat(1001) }) }));

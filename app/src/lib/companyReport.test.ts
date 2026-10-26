@@ -19,6 +19,16 @@ const tasks = [
 ];
 const ms = [{ id: 'm1', title: '外部設計レビュー', date: '2026-11-25', teamId: null }, { id: 'm0', title: '企画決定', date: '2026-10-28', teamId: null }];
 
+describe('文章の記入日', () => {
+  const at = (d: string) => Date.parse(`${d}T03:00:00Z`);
+  test('文章ごとの記入日が出る。文章のないものは空。古い保存 (日付なし) は、最後に保存した日', () => {
+    const r = buildCompanyReport(team, tasks, ms, { summary: '概要', issues: '課題', next: '', by: 'A1', at: at('2026-11-19'), summaryAt: at('2026-11-01'), issuesAt: at('2026-11-15') }, TODAY);
+    expect([r.summaryDate, r.issuesDate, r.nextDate]).toEqual(['2026-11-01', '2026-11-15', '']);
+    const old = buildCompanyReport(team, tasks, ms, { summary: '概要', issues: '', next: '', by: 'A1', at: at('2026-11-19') }, TODAY);
+    expect(old.summaryDate).toBe('2026-11-19');
+  });
+});
+
 describe('buildCompanyReport', () => {
   const r = buildCompanyReport(team, tasks, ms, { summary: ' 概要です ', issues: '', next: '', by: 'A1', at: 1 }, TODAY);
   test('表題・期間・体制', () => {

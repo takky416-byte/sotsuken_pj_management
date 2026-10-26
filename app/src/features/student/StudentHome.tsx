@@ -27,12 +27,11 @@ import { dailyId } from '../../lib/daily';
 import { dailyWindowFrom, formatDate, jstDate, untilLabel } from '../../lib/dates';
 import { dailyMissions, weeklyMissions } from '../../lib/missions';
 import {
-  dayInfo, doToday, lastNextPlan, myPromises, periodsLabel, unassigned, upcoming, type PlanItem,
+  dayInfo, doToday, lastNextPlan, myPromises, unassigned, upcoming, type PlanItem,
 } from '../../lib/todayPlan';
 import { overallProgress, periodLabel } from '../../lib/wbs';
 import type { Task } from '../../types';
 
-const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
 const REASON: Record<PlanItem['reason'], string> = { overdue: '期限を過ぎています', doing: '進行中', period: '今が予定の期間' };
 
 /** 学生のホーム: 開いたら、今日何をやるか・次に何をやるかが分かる画面。 */
@@ -78,7 +77,6 @@ export function StudentHome() {
   const promises = myPromises(meetings, sid);
   const lastNext = lastNextPlan(mine);
   const upMs = (milestones ?? []).filter((m) => (m.endDate ?? m.date) >= today).slice(0, 3);
-  const d = new Date(`${today}T00:00:00Z`);
   const canEditMeeting = team.teamMeetingInput;
 
   const takeOver = (t: Task) => run(() => updateTaskArray(team.id, sid, t.id, 'assignees', 'add', sid));
@@ -101,19 +99,14 @@ export function StudentHome() {
     <>
       <div className="home-top">
       <section className="hero">
-        <div className="hero-text">
-          <div className="hero-date">{d.getUTCMonth() + 1}月{d.getUTCDate()}日({WEEK[d.getUTCDay()]})</div>
-          <h2 className="hero-hello">こんにちは、{me.name}さん</h2>
-          <p className="hero-sub">
-            {info.isClassDay ? <>今日は<strong>授業日</strong>です({info.periods ? periodsLabel(info.periods) : ''})。</>
-              : info.next ? <>次の授業日は <strong>{formatDate(info.next.date)}</strong> です。</> : '授業日の予定は、まだありません。'}
-          </p>
+        <h2 className="hero-hello">こんにちは、{me.name}さん</h2>
+        <div className="cta hero-actions">
           {team.submitUrl && isHttpUrl(team.submitUrl) && (
             <a className="btn hero-submit" href={team.submitUrl} target="_blank" rel="noreferrer noopener" onClick={() => setOpenedSubmit(true)}>成果物を提出</a>
           )}
-          {openedSubmit && <span className="hero-note" role="status">Googleドライブが開きます。入れたら、チームのみんなに声をかけましょう。</span>}
+          <Link to={`${base}/daily`} className="btn big-btn">{info.status === 'submitted' ? '作業ログを見直す' : '作業ログを書く'}</Link>
         </div>
-        <DailyCta status={info.status} base={base} isClassDay={info.isClassDay} started={info.started} />
+        {openedSubmit && <span className="hero-note" role="status">Googleドライブが開きます。入れたら、チームのみんなに声をかけましょう。</span>}
       </section>
       <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
       <BookmarkPrompt email={me.email} />
@@ -232,20 +225,3 @@ export function StudentHome() {
   );
 }
 
-function DailyCta({ status, base, isClassDay, started }: { status: 'submitted' | 'missing' | 'absent' | 'free'; base: string; isClassDay: boolean; started: boolean }) {
-  if (status === 'absent') return <div className="cta cta-done">今日は「欠席」として記録されています。</div>;
-  if (status === 'submitted') {
-    return (
-      <div className="cta cta-done">
-        <span><Em e="✅" />今日の作業ログは提出済みです</span>
-        <Link to={`${base}/daily`} className="btn ghost-btn">見直す・直す</Link>
-      </div>
-    );
-  }
-  return (
-    <div className={`cta ${status === 'missing' ? 'cta-todo' : ''}`}>
-      <span>{status === 'missing' ? '今日の作業ログが、まだ出ていません' : !started ? '作業ログは、運用開始日から始まります(それまでは、試しに書けます)' : isClassDay ? '' : '作業ログは、授業日に書きます(書きたいときは、いつでも)'}</span>
-      <Link to={`${base}/daily`} className="btn big-btn">作業ログを書く</Link>
-    </div>
-  );
-}

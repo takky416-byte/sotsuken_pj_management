@@ -18,6 +18,10 @@ export type CompanyReport = {
   /** 報告の対象期間 (キックオフの日〜報告日) */
   from: string | null;
   summary: string;
+  /** 各文章の記入日 (YYYY-MM-DD)。文章がないときは空 */
+  summaryDate: string;
+  issuesDate: string;
+  nextDate: string;
   judgement: Judgement;
   plannedPct: number;
   actualPct: number;
@@ -74,11 +78,16 @@ export function buildCompanyReport(
   }));
 
   const text = (s: string | undefined) => (s ?? '').trim();
+  // 記入日: 文章ごとの日時。なければ (古い保存) 最後に保存した日時
+  const dateOf = (n: ReportNotes | null | undefined, k: 'summary' | 'issues' | 'next'): string => {
+    const ms = n?.[`${k}At`] ?? n?.at;
+    return text(n?.[k]) && ms !== undefined && Number.isFinite(ms) ? jstDate(new Date(ms)) : '';
+  };
   const missing = (['summary', 'issues', 'next'] as const).filter((k) => !text(notes?.[k]));
   return {
     title: REPORT_TITLE, teamId: team.id, projectName: team.projectName, members: team.members.map((m) => m.name), today,
     from: team.kickoffAt ? jstDate(new Date(team.kickoffAt)) : null,
-    summary: text(notes?.summary), judgement, plannedPct: a.plannedPct, actualPct: a.progressPct,
+    summary: text(notes?.summary), summaryDate: dateOf(notes, 'summary'), issuesDate: dateOf(notes, 'issues'), nextDate: dateOf(notes, 'next'), judgement, plannedPct: a.plannedPct, actualPct: a.progressPct,
     counts: { total: a.total, done: a.done, doing: a.doing, todo: a.todo, hold: a.hold },
     phases,
     milestones: [...milestones].sort((x, y) => x.date.localeCompare(y.date)).map((m) => {

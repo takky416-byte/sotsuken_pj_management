@@ -4,6 +4,7 @@ import { mdLabel, type WbsRow } from '../lib/report';
 import type { Member } from '../types';
 import { GanttChart } from './GanttChart';
 
+const wrote = (d: string) => (d ? <p className="cr-wrote">記入日: {d.replace(/-/g, '/')}</p> : null);
 const range = (s: string | null, e: string | null) => (s ? `${mdLabel(s)}${e && e !== s ? `〜${mdLabel(e)}` : ''}` : e ? mdLabel(e) : '');
 
 /**
@@ -29,7 +30,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
 
       <section>
         <h2>1. プロジェクトの概要</h2>
-        {r.summary ? <p className="cr-text">{r.summary}</p> : <p className="cr-none">(概要・目的を記入してください)</p>}
+        {r.summary ? <><p className="cr-text">{r.summary}</p>{wrote(r.summaryDate)}</> : <p className="cr-none">(概要・目的を記入してください)</p>}
       </section>
 
       <section>
@@ -78,7 +79,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
             <ul>{r.overdue.map((t) => <li key={t.title + t.end}>{t.title}<span className="cr-phase">({t.phase}。予定 {mdLabel(t.end)})</span></li>)}</ul>
           </>
         )}
-        {r.issuesText ? <p className="cr-text">{r.issuesText}</p> : r.overdue.length === 0 ? none : <p className="cr-none">(対応方針を記入してください)</p>}
+        {r.issuesText ? <><p className="cr-text">{r.issuesText}</p>{wrote(r.issuesDate)}</> : r.overdue.length === 0 ? none : <p className="cr-none">(対応方針を記入してください)</p>}
       </section>
 
       <section>
@@ -89,7 +90,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
             <tbody>{r.upcoming.map((t) => <tr key={t.title + t.phase}><td>{t.title}</td><td>{t.phase}</td><td>{range(t.start, t.end)}</td></tr>)}</tbody>
           </table>
         )}
-        {r.nextText && <p className="cr-text">{r.nextText}</p>}
+        {r.nextText && <><p className="cr-text">{r.nextText}</p>{wrote(r.nextDate)}</>}
       </section>
 
       {rows && teamId && members && (

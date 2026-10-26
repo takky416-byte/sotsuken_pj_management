@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { saveReportNotes } from '../data/teams';
+import { jstDate } from '../lib/dates';
 import type { Team } from '../types';
 
 const MAX = 1000;
+const fmtDate = (ms: number) => jstDate(new Date(ms)).replace(/-/g, '/');
 const FIELDS = [
   { key: 'summary', label: '1. 企画の概要と目的', hint: '何を、誰のために、何のために作るか(2〜4文)。' },
   { key: 'issues', label: '5. 課題と対応', hint: '遅れや困りごとと、その対応方針。なければ空欄でかまいません。' },
@@ -18,15 +20,16 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
   const dirty = v.summary !== (n?.summary ?? '') || v.issues !== (n?.issues ?? '') || v.next !== (n?.next ?? '');
   const save = async () => {
     setState('saving'); setErr('');
-    try { await saveReportNotes(team.id, actor, v); setState('saved'); }
+    try { await saveReportNotes(team.id, actor, v, n); setState('saved'); }
     catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); setState('idle'); }
   };
   return (
     <section className="card no-print report-notes" aria-label="報告書に載せる文章">
       <h3>報告書に載せる文章</h3>
-      <p className="hint">企業に提出する報告書(Excel・PDF)に載ります。数字や一覧は自動で入るので、ここには、チームの言葉で書くところだけを書きます。</p>
+      <p className="hint">企業に提出する報告書(Excel・PDF)に載ります。文章を書き換えて保存すると、その文章の「記入日」が、今日の日付に変わって報告書に載ります。数字や一覧は自動で入るので、ここには、チームの言葉で書くところだけを書きます。</p>
       {FIELDS.map((f) => (
         <label key={f.key}>{f.label} <span className="hint">{f.hint}</span>
+          {n?.[`${f.key}At`] && n[f.key] === v[f.key] && <span className="hint"> 記入日: {fmtDate(n[`${f.key}At`] as number)}(報告書に出ます)</span>}
           <textarea rows={3} maxLength={MAX} value={v[f.key]} aria-label={f.label}
             onChange={(e) => { setV({ ...v, [f.key]: e.target.value }); setState('idle'); }} />
         </label>

@@ -31,6 +31,19 @@ export const confirmWbsReview = (teamId: string, sid: string) =>
 /** 教員が、もう一度見直しを求める */
 export const resetWbsReview = (teamId: string) => updateDoc(doc(db, 'teams', teamId), { wbsReview: null });
 
-/** 企業に提出する報告書に載せる文章を保存する (チームの学生も書ける) */
-export const saveReportNotes = (teamId: string, sid: string, n: Pick<ReportNotes, 'summary' | 'issues' | 'next'>) =>
-  updateDoc(doc(db, 'teams', teamId), { reportNotes: { ...n, by: sid, at: Date.now() } });
+/**
+ * 企業に提出する報告書に載せる文章を保存する (チームの学生も書ける)。
+ * 文章ごとの記入日時は、その文章を書き換えたときだけ更新する (書き換えていない文章は、前の日時のまま)。
+ */
+export const saveReportNotes = (
+  teamId: string, sid: string, n: Pick<ReportNotes, 'summary' | 'issues' | 'next'>, prev?: ReportNotes | null,
+) => {
+  const now = Date.now();
+  const stamp = (k: 'summary' | 'issues' | 'next'): number | undefined => {
+    if (!n[k].trim()) return undefined; // 空にしたら、日付も消す
+    return n[k] === (prev?.[k] ?? '') ? (prev?.[`${k}At`] ?? prev?.at ?? now) : now;
+  };
+  const at = { summaryAt: stamp('summary'), issuesAt: stamp('issues'), nextAt: stamp('next') };
+  const clean = Object.fromEntries(Object.entries(at).filter(([, v]) => v !== undefined));
+  return updateDoc(doc(db, 'teams', teamId), { reportNotes: { ...n, ...clean, by: sid, at: now } });
+};

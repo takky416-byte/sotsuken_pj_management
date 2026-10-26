@@ -195,6 +195,7 @@ test('PJ分析: 報告書に載せる文章を書いて保存でき、提出用�
   await expect(doc.getByRole('heading', { name: '卒業研究制作 プロジェクト進捗報告書' })).toBeVisible();
   await expect(doc.getByText('駅の混雑を知らせるアプリ')).toBeVisible();
   await expect(doc.getByText('画面設計が遅れたため')).toBeVisible();
+  await expect(doc.getByText(/記入日: \d{4}\/\d{2}\/\d{2}/)).toHaveCount(2); // 書いた2つの文章に、記入日が出る (書いていない「今後の方針」には出ない)
   await expect(doc.getByRole('heading', { name: '6. 今後の予定(今後4週間)' })).toBeVisible();
   await expect(doc.getByText(/担当の数に偏り|WBSにない作業/)).toHaveCount(0);
   // 印刷用の本体 (画面では隠れている) には、付録も付く

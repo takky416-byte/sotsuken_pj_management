@@ -45,7 +45,11 @@ export type Team = {
   reportNotes?: ReportNotes | null;
 };
 
-export type ReportNotes = { summary: string; issues: string; next: string; by: string; at: number };
+/** 各文章の記入日時 (summaryAt など) は、その文章を書き換えたときだけ更新する。at は最後に保存した時刻 */
+export type ReportNotes = {
+  summary: string; issues: string; next: string; by: string; at: number;
+  summaryAt?: number; issuesAt?: number; nextAt?: number;
+};
 
 export type Milestone = {
   id: string;

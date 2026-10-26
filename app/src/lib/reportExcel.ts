@@ -41,7 +41,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   const range = (st: string | null, en: string | null) => (st ? `${mdLabel(st)}${en && en !== st ? `〜${mdLabel(en)}` : ''}` : en ? mdLabel(en) : '');
   const s1 = wb.addWorksheet('報告書', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   s1.columns = [{ width: 30 }, { width: 24 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 30 }];
-  const para = (text: string) => { const r = s1.addRow([safe(text)]); s1.mergeCells(r.number, 1, r.number, 6); r.getCell(1).alignment = { wrapText: true, vertical: 'top' }; r.height = Math.max(18, Math.ceil(text.length / 60) * 17); };
+  const para = (text: string, date = '') => { text = date ? `${text}\n(記入日: ${date.replace(/-/g, '/')})` : text;  const r = s1.addRow([safe(text)]); s1.mergeCells(r.number, 1, r.number, 6); r.getCell(1).alignment = { wrapText: true, vertical: 'top' }; r.height = Math.max(18, Math.ceil(text.length / 60) * 17 + (date ? 17 : 0)); };
   const title = (t: string) => { s1.addRow([]); const r = s1.addRow([t]); r.font = { bold: true, size: 12 }; r.eachCell((x) => { x.border = { bottom: { style: 'medium', color: { argb: HEAD } } }; }); s1.mergeCells(r.number, 1, r.number, 6); };
   s1.addRow([safe(c.title)]).font = { bold: true, size: 16 };
   s1.addRow(['チーム', `${c.teamId}チーム`]);
@@ -50,7 +50,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   s1.addRow(['報告期間', c.from ? `${c.from} 〜 ${c.today}` : c.today]);
   s1.addRow(['メンバー', safe(c.members.join('・'))]);
   title('1. プロジェクトの概要');
-  para(c.summary || '(概要・目的を記入してください)');
+  para(c.summary || '(概要・目的を記入してください)', c.summary ? c.summaryDate : '');
   title('2. 進捗状況');
   s1.addRow(['総合', c.judgement]);
   s1.addRow(['計画に対する進捗', `計画 ${c.plannedPct}% / 実績 ${c.actualPct}%`]);
@@ -66,11 +66,11 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase)]);
   title('5. 課題と対応');
   if (c.overdue.length > 0) { s1.addRow(['計画より遅れているタスク']).font = { bold: true }; for (const t of c.overdue) s1.addRow([safe(t.title), safe(t.phase), `予定 ${mdLabel(t.end)}`]); }
-  if (c.issuesText) para(c.issuesText); else if (c.overdue.length === 0) s1.addRow(['(特記事項なし)']); else s1.addRow(['(対応方針を記入してください)']);
+  if (c.issuesText) para(c.issuesText, c.issuesDate); else if (c.overdue.length === 0) s1.addRow(['(特記事項なし)']); else s1.addRow(['(対応方針を記入してください)']);
   title('6. 今後の予定(今後4週間)');
   if (c.upcoming.length === 0 && !c.nextText) s1.addRow(['(特記事項なし)']);
   if (c.upcoming.length > 0) { head(s1.addRow(['タスク', '工程', '期間', '', '', ''])); for (const t of c.upcoming) s1.addRow([safe(t.title), safe(t.phase), range(t.start, t.end)]); }
-  if (c.nextText) para(c.nextText);
+  if (c.nextText) para(c.nextText, c.nextDate);
 
   // ── WBS
   const s2 = wb.addWorksheet('WBS', { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });

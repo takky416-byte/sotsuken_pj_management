@@ -18,7 +18,7 @@ describe('buildReportWorkbook', () => {
     ];
     const members = [{ sid: 's1', name: '甲' }];
     const ms = [{ id: 'm', title: '中間報告', date: '2026-11-25', teamId: null }];
-    const company = buildCompanyReport({ id: 'A', projectName: '企画', members, kickoffAt: null }, tasks, ms, { summary: '=SUM(1)', issues: '', next: '', by: 's1', at: 1 }, '2026-11-10');
+    const company = buildCompanyReport({ id: 'A', projectName: '企画', members, kickoffAt: null }, tasks, ms, { summary: '=SUM(1)', issues: '', next: '', by: 's1', at: 1, summaryAt: Date.parse('2026-11-05T03:00:00Z') }, '2026-11-10');
     const blob = await buildReportWorkbook({ teamId: 'A', projectName: '企画', members, tasks, milestones: ms, analysis: analyze(tasks, ms, members, '2026-11-10'), today: '2026-11-10', company, showAssignees: true });
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(await blob.arrayBuffer());
@@ -27,7 +27,7 @@ describe('buildReportWorkbook', () => {
     const texts: string[] = [];
     rep.eachRow((r) => r.eachCell((c) => texts.push(String(c.value))));
     expect(texts).toContain('卒業研究制作 プロジェクト進捗報告書');
-    expect(texts).toContain('=SUM(1)'); // 数式にならず、文字のまま
+    expect(texts.some((t) => t.includes('=SUM(1)') && t.includes('記入日: 2026/11/05'))).toBe(true); // 数式にならず文字のまま。記入日がつく
     expect(texts.some((t) => /偏り|WBSにない|メンバー別/.test(t))).toBe(false); // チーム内の分析は入れない
     const wbs = wb.getWorksheet('WBS')!;
     expect(wbs.getRow(2).getCell(2).value).toBe('=HYPERLINK("x")');
