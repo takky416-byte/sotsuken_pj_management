@@ -15,8 +15,8 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
   test.beforeAll(async () => {
     const ref = db().doc('teams/B');
     const d = (await ref.get()).data() ?? {};
-    before = { status: d.status ?? 'planning', kickoffAt: d.kickoffAt ?? null };
-    await ref.update({ status: 'planning', kickoffAt: null });
+    before = { status: d.status ?? 'planning', kickoffAt: d.kickoffAt ?? null, projectName: d.projectName ?? '', proposals: d.proposals ?? [] };
+    await ref.update({ status: 'planning', kickoffAt: null, projectName: '', proposals: [] });
   });
   test.afterAll(async () => { await db().doc('teams/B').update(before); });
 

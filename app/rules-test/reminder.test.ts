@@ -275,6 +275,7 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
       const manual = loadScript({ ...baseProps, BACKUP_FULL_DAY: String((weekday + 1) % 7), LAST_FULL_BACKUP: '2026-01-01' });
       expect(manual.call('backupFull').full).toBe(true);
       expect(file().collections.accessLogs).toHaveLength(1);
+      await db.doc('accessLogs/2026-10-28_A1').delete(); // ほかのテストに、残さない
     });
 
     test('同じ日に 2 回実行しても、ファイルは 1 つ。古いものは、指定した日数ぶんだけ残す', async () => {
