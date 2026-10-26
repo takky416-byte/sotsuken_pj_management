@@ -9,6 +9,8 @@
  *   LAST_SENT     二重送信の防止 (自動で設定される)
  *   BACKUP_KEEP   バックアップを残す日数 (既定 60)
  *   LAST_BACKUP   最後にバックアップした日 (自動)
+ *   BACKUP_FULL_DAY   アクセス履歴も入れる「全部入り」のバックアップをする曜日 (0=日〜6=土。既定 1=月曜)。ほかの日は、アクセス履歴を除く (読み取り回数を減らすため)
+ *   LAST_FULL_BACKUP  最後に全部入りでバックアップした日 (自動)
  */
 
 var SLOT_LABEL = { morning: '午前 (木曜 1-2限)', afternoon: '午後 (火・水 3-4限)' };
@@ -51,6 +53,8 @@ function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 
 // 保存先は、ドライブの「バックアップ」フォルダ (ID は、フォルダの URL の末尾)。スクリプト プロパティ BACKUP_FOLDER_ID で変えられる。
 var BACKUP_FOLDER_ID = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP';
 var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'];
+/** 件数が多く (学生 1 人 × 1 日 1 件)、増え続けるので、毎日は読まず、週 1 回の全部入りのときだけ入れる (Firestore の読み取りを、約 4 割減らす) */
+var HEAVY_COLLECTIONS = ['accessLogs'];
 var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'meetingMinutes', 'evaluationsPublished'];
 
 /** 初回の設定: 毎日 3 時ごろに backupDaily を動かすトリガーを作る。何度実行しても重複しない。 */
@@ -63,19 +67,31 @@ function setupBackup() {
   backupDaily();
 }
 
-/** 全データを読み込んで、ドライブに JSON で保存する。アプリの「書き出し」のバックアップと同じ形式。 */
+/** 毎日 (トリガー): 全部入りの曜日 (既定は月曜) だけ、アクセス履歴も入れる。ほかの日は、アクセス履歴を除く。まだ全部入りがないときも、全部入りにする。 */
 function backupDaily() {
+  var props = PropertiesService.getScriptProperties();
+  var day = props.getProperty('BACKUP_FULL_DAY');
+  var fullDay = day === null || day === '' ? 1 : Number(day);
+  var weekday = new Date(Date.now() + 9 * 3600 * 1000).getUTCDay();
+  return runBackup_(weekday === fullDay || !props.getProperty('LAST_FULL_BACKUP'));
+}
+
+/** 手動: アクセス履歴も入れた、全部入りのバックアップ */
+function backupFull() { return runBackup_(true); }
+
+/** 全データを読み込んで、ドライブに JSON で保存する。アプリの「書き出し」のバックアップと同じ形式。full=false のときは、アクセス履歴を除く (meta.excluded に書く)。 */
+function runBackup_(full) {
   var props = PropertiesService.getScriptProperties();
   var me = Session.getEffectiveUser().getEmail();
   try {
     var today = Reminder.jstDate(Date.now());
     var collections = {};
-    TOP_COLLECTIONS.forEach(function (p) { collections[p] = listDocs_(p); });
+    TOP_COLLECTIONS.forEach(function (p) { if (full || HEAVY_COLLECTIONS.indexOf(p) < 0) collections[p] = listDocs_(p); });
     collections.teams.forEach(function (t) {
       TEAM_SUBCOLLECTIONS.forEach(function (sub) { collections['teams/' + t.id + '/' + sub] = listDocs_('teams/' + t.id + '/' + sub); });
     });
     var backup = {
-      meta: { app: 'sotsuken-pj', version: 1, exportedAt: new Date().toISOString(), includesTeacherNotes: true },
+      meta: { app: 'sotsuken-pj', version: 1, exportedAt: new Date().toISOString(), includesTeacherNotes: true, excluded: full ? [] : HEAVY_COLLECTIONS },
       collections: collections,
     };
     var folder = backupFolder_();
@@ -86,9 +102,10 @@ function backupDaily() {
     else folder.createFile(name, content, 'application/json');
     var removed = pruneBackups_(folder, Number(props.getProperty('BACKUP_KEEP')) || 60);
     props.setProperty('LAST_BACKUP', today);
+    if (full) props.setProperty('LAST_FULL_BACKUP', today);
     var n = Object.keys(collections).reduce(function (a, k) { return a + collections[k].length; }, 0);
-    Logger.log('バックアップしました: ' + name + ' (' + n + '件)。古いバックアップを ' + removed + ' 件、ごみ箱に移しました。');
-    return { name: name, docs: n };
+    Logger.log('バックアップしました: ' + name + ' (' + n + '件' + (full ? '、全部入り' : '、アクセス履歴を除く') + ')。古いバックアップを ' + removed + ' 件、ごみ箱に移しました。');
+    return { name: name, docs: n, full: full };
   } catch (e) {
     Logger.log('バックアップに失敗: ' + e);
     try {

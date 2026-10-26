@@ -244,6 +244,39 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
       expect(s.store.LAST_BACKUP).toBe(today);
     });
 
+    test('アクセス履歴は、全部入りの曜日だけ入れる (ほかの日は除いて、読み取りを減らす)。除いたことは meta に書く。最初の1回は、全部入り', async () => {
+      await db.doc('accessLogs/2026-10-28_A1').set({ sid: 'A1', teamId: 'A', date: '2026-10-28', firstAt: 1, lastAt: 2, visits: 1, views: 3, screens: { home: 3 } });
+      const weekday = new Date(Date.now() + JST).getUTCDay();
+      const file = () => parseBackup(driveFolders.get(FOLDER)!.get(`sotsuken-backup-${today}.json`)!.content);
+
+      // 別の曜日が全部入りの日で、全部入りのバックアップが済んでいる → アクセス履歴を除く
+      const light = loadScript({ ...baseProps, BACKUP_FULL_DAY: String((weekday + 1) % 7), LAST_FULL_BACKUP: '2026-01-01' });
+      const r1 = light.call('backupDaily');
+      expect(r1.full).toBe(false);
+      expect(file().collections.accessLogs).toBeUndefined();
+      expect(file().collections.roster).toBeTruthy();
+      expect((file().meta as { excluded?: string[] }).excluded).toEqual(['accessLogs']);
+      expect(light.store.LAST_FULL_BACKUP).toBe('2026-01-01'); // 全部入りの記録は、変わらない
+      expect(light.logs.join('\n')).toContain('アクセス履歴を除く');
+
+      // 今日が全部入りの曜日 → アクセス履歴も入る
+      const full = loadScript({ ...baseProps, BACKUP_FULL_DAY: String(weekday), LAST_FULL_BACKUP: '2026-01-01' });
+      expect(full.call('backupDaily').full).toBe(true);
+      expect(file().collections.accessLogs.map((d) => d.id)).toEqual(['2026-10-28_A1']);
+      expect((file().meta as { excluded?: string[] }).excluded).toEqual([]);
+      expect(full.store.LAST_FULL_BACKUP).toBe(today);
+
+      // 全部入りがまだないとき (最初の1回) は、曜日が違っても全部入り
+      const first = loadScript({ ...baseProps, BACKUP_FULL_DAY: String((weekday + 1) % 7) });
+      expect(first.call('backupDaily').full).toBe(true);
+      expect(file().collections.accessLogs).toHaveLength(1);
+
+      // 手動の全部入り
+      const manual = loadScript({ ...baseProps, BACKUP_FULL_DAY: String((weekday + 1) % 7), LAST_FULL_BACKUP: '2026-01-01' });
+      expect(manual.call('backupFull').full).toBe(true);
+      expect(file().collections.accessLogs).toHaveLength(1);
+    });
+
     test('同じ日に 2 回実行しても、ファイルは 1 つ。古いものは、指定した日数ぶんだけ残す', async () => {
       const m = new Map<string, { content: string; trashed: boolean }>();
       for (const d of ['2026-01-01', '2026-01-02', '2026-01-03']) m.set(`sotsuken-backup-${d}.json`, { content: '{}', trashed: false });
