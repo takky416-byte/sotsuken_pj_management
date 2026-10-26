@@ -4,13 +4,14 @@ import { checkDraft } from './draftCheck';
 import { fillPeriods } from './draftSchedule';
 
 const example = readFileSync(new URL('../../../docs/wbs-drafts/example-soft.md', import.meta.url), 'utf8');
+const exampleHard = readFileSync(new URL('../../../docs/wbs-drafts/example-hard.md', import.meta.url), 'utf8');
 const errors = (t: string, k?: 'ソフト' | 'ハード') => checkDraft(t, k).issues.filter((i) => i.level === 'error').map((i) => i.message);
 
 describe('checkDraft', () => {
   test('見本の叩き台は、問題なし', () => {
     const r = checkDraft(example);
     expect(r.issues).toEqual([]);
-    expect(r.total).toBe(54);
+    expect(r.total).toBe(56);
   });
   test('ハード系として見ると、発注の項目がないと誤り', () => {
     expect(errors(example, 'ハード').some((m) => m.includes('機材発注'))).toBe(true);
@@ -77,5 +78,18 @@ describe('成果物', () => {
   test('設計書類の期限 (事前送付) を過ぎる期間は誤り', () => {
     const late = example.replace(/(- ER図を描く\n {2}> 期間: )[^\n]*/, '$12026-11-16〜2026-11-19');
     expect(errors(late).some((m) => m.includes('ER図'))).toBe(true);
+  });
+});
+
+describe('ハード系の見本・記入サンプルから足した確認', () => {
+  test('ハード系の見本は、ハード系として問題なし', () => {
+    expect(checkDraft(exampleHard, 'ハード').issues).toEqual([]);
+  });
+  test('ペルソナ・費用の見積もり・今後の展望がないと、注意が出る (誤りではない)', () => {
+    const r = checkDraft(example.replace(/^- 想定する利用者像\(ペルソナ\)を作る\n(?: {2}> .*\n)+/m, '').replace(/^- 費用を見積もる.*\n(?: {2}> .*\n)+/m, ''));
+    const warns = r.issues.filter((i) => i.level === 'warn').map((i) => i.message);
+    expect(warns.some((m) => m.includes('ペルソナ'))).toBe(true);
+    expect(warns.some((m) => m.includes('費用の見積もり'))).toBe(true);
+    expect(r.issues.some((i) => i.level === 'error' && (i.message.includes('ペルソナ') || i.message.includes('費用')))).toBe(false);
   });
 });

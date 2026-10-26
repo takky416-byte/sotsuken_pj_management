@@ -1,6 +1,6 @@
 import { addDays } from './dates';
 import { DRAFT_END, deadlineFor, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS } from './draftSchedule';
-import { DELIVERABLES } from './deliverables';
+import { DELIVERABLES, EXPECTED } from './deliverables';
 import { parseOutline, type OutlineNode } from './outline';
 import { TEMPLATE_NODES } from './template';
 
@@ -77,7 +77,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
       if (b > lim) err(`${where}: 発注の終了日 ${b} が、機材発注の期限 ${lim} より後です`);
     }
     const win = SECTION_WINDOWS[sec];
-    if (win && (a < addDays(win[0], -7) || b > addDays(win[1], 7))) warn(`${where}: 期間 ${a}〜${b} が、「${sec}」の時期 (${win[0]}〜${win[1]}) から外れています`);
+    if (win && !/発注/.test(n.title) && (a < addDays(win[0], -7) || b > addDays(win[1], 7))) warn(`${where}: 期間 ${a}〜${b} が、「${sec}」の時期 (${win[0]}〜${win[1]}) から外れています`);
     if ((Date.parse(b) - Date.parse(a)) / 86400000 > 45) warn(`${where}: 期間が45日より長いです。項目を分けられませんか`);
   };
   const siblings = new Map<string, number>();
@@ -126,6 +126,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
       if (d.only === 'hard' && kind !== 'ハード') continue;
       if (!in_(d.section, d.re)) err(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
     }
+    for (const e of EXPECTED) if (!in_(e.section, e.re)) warn(`「${e.section}」に、${e.label}の項目がありません(${e.why})`);
     if (kind === 'ハード') {
       const orders = (secs.find((s) => s.title === '内部設計・実装')?.items ?? []).filter((n) => /発注/.test(n.title)).length;
       if (orders < 2) err('ハード系の企画に、機材発注 (11/5・12/1) の項目が2つ以上ありません (「内部設計・実装」に入れる)');

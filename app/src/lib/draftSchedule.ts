@@ -76,7 +76,8 @@ export function autoSchedule(nodes: OutlineNode[]): OutlineNode[] {
       for (const l of limits) if (end > l) end = l;
       if (end < natural) { // 期限で短くなったときは、期限の前に、長さぶんの期間をとる (時期の始まりより前には出ない)
         const from = addDays(end, -(len - 1));
-        start = from < ws ? ws : from;
+        const floor = hasOrder ? DRAFT_START : ws; // 機材の発注は、設計の時期より前に済ませる必要がある
+        start = from < floor ? floor : from;
       }
       if (start > end) start = end;
       n.startDate = start; n.endDate = end;
