@@ -7,7 +7,7 @@ import { defaultSummary } from '../../lib/companyReport';
 import { checkDraft } from '../../lib/draftCheck';
 import { autoSchedule, fillPeriods } from '../../lib/draftSchedule';
 import { planImport } from '../../lib/importPlan';
-import { parseOutline } from '../../lib/outline';
+import { outlineProjectName, parseOutline } from '../../lib/outline';
 import { TEMPLATE_NODES } from '../../lib/template';
 import type { Team } from '../../types';
 
@@ -32,11 +32,22 @@ function KickoffForm({ team }: { team: Team }) {
   const [adopted, setAdopted] = useState<1 | 2>(team.proposals.find((p) => p.adopted)?.no === 2 ? 2 : 1);
   const [driveUrl, setDriveUrl] = useState(team.driveUrl);
   const [outline, setOutline] = useState('');
+  const [autoName, setAutoName] = useState('');
   const [hard, setHard] = useState(false);
   const [fill, setFill] = useState(true);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [err, setErr] = useState('');
+
+  /** 叩き台の先頭の「企画名: …」(仮の企画名)を、企画名の欄に入れる。欄が空か、前に自動で入れたままのときだけ (先生が直したあとは、上書きしない) */
+  const changeOutline = (text: string) => {
+    setOutline(text);
+    const name = outlineProjectName(text);
+    if (name && (!projectName.trim() || projectName === autoName)) {
+      setProjectName(name); setAutoName(name);
+      setTitles((t) => (t[adopted - 1].trim() ? t : (adopted === 1 ? [name, t[1]] : [t[0], name])));
+    }
+  };
 
   const plan = useMemo(() => {
     if (!tasks) return null;
@@ -104,18 +115,19 @@ function KickoffForm({ team }: { team: Team }) {
             />
           </div>
         ))}
-        <label>共有フォルダのURL (任意)
+        <label>共有フォルダのURL (任意。チームの資料置き場。学生のホームの「共有フォルダ」)
           <input value={driveUrl} placeholder="https://drive.google.com/..." onChange={(e) => setDriveUrl(e.target.value)} />
           {!urlOk && <span className="error">http(s) のURLを入力してください</span>}
         </label>
+        <p className="hint">成果物の提出先(学生のホームの「成果物を提出」)は、別のURLです。キックオフのあと、チーム詳細で設定します。</p>
         <label>叩き台のタスク (任意。アウトライン形式)
           <textarea
-            rows={10} value={outline} onChange={(e) => setOutline(e.target.value)}
+            rows={10} value={outline} onChange={(e) => changeOutline(e.target.value)}
             placeholder={'# 要件定義\n- 機能一覧を作る\n  > 必須機能と追加機能に分ける\n# 外部設計\n- 画面遷移図を作る'}
           />
         </label>
         <p className="hint">
-          「# 」は大項目、「- 」はタスク(インデントで階層)、「{'>'} 」は詳細です。雛形の6大項目は自動で作ります。
+          先頭に「企画名: 〇〇」の行があれば、企画名の欄に入ります(仮の名前。あとから直せます)。「# 」は大項目、「- 」はタスク(インデントで階層)、「{'>'} 」は詳細です。雛形の6大項目は自動で作ります。
           同じ名前の項目がすでにあれば作り直さないので、何度実行しても増えません。
         </p>
         <label className="chip">
@@ -143,6 +155,18 @@ function KickoffForm({ team }: { team: Team }) {
           <p className="card">
             実行すると、タスクを<strong>{plan.created.length}件</strong>作成します(既にある{plan.reused}件は、そのまま使います)。
           </p>
+        )}
+        {outline.trim() && (
+          <details className="card" aria-label="取り込む叩き台の一覧">
+            <summary><strong>取り込む叩き台の中身を見る</strong>({draftNodes(outline, fill).length}項目。期間は、自動で入れた分も含みます)</summary>
+            <ul className="kickoff-preview">
+              {draftNodes(outline, fill).map((n, i) => (
+                <li key={i} style={{ marginLeft: (n.depth - 1) * 16, fontWeight: n.depth === 1 ? 700 : 400 }}>
+                  {n.title}{n.startDate && n.endDate ? <span className="hint">  {n.startDate.slice(5).replace('-', '/')}〜{n.endDate.slice(5).replace('-', '/')}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
         {err && <p className="error">{err}</p>}
         {result && <p className="ok">{result}</p>}

@@ -4,18 +4,31 @@ export type OutlineNode = { depth: 1 | 2 | 3; title: string; detail: string; sta
 
 const clamp = (n: number): 1 | 2 | 3 => (Math.min(Math.max(n, 1), 3) as 1 | 2 | 3);
 
+const NAME_LINE = /^\s*企画名[:：]\s*(.+?)\s*$/;
+
+/** アウトラインの先頭の「企画名: …」の行 (叩き台に、仮の企画名を入れておく)。なければ空。 */
+export function outlineProjectName(text: string): string {
+  for (const raw of text.replace(/\r\n?/g, '\n').split('\n')) {
+    if (raw.trim() === '') continue;
+    return NAME_LINE.exec(raw)?.[1] ?? '';
+  }
+  return '';
+}
+
 /**
  * アウトライン形式のテキストを平らなリストにする。
  *   # 大項目         → 見出し。# の数が階層 (# = 1)
  *   - タスク         → 直前の見出しの1つ下。インデント2スペース(またはタブ)ごとに1階層下
  *     > 詳細         → 直前のタスクの詳細 (複数行可)
  * 見出しがない場合、先頭の項目の階層は baseDepth (既定 1)。4階層以上は3階層にまとめる。
+ * 先頭の「企画名: …」の行は、項目にしない (outlineProjectName で読む)。
  */
 export function parseOutline(text: string, baseDepth: 1 | 2 | 3 = 1): OutlineNode[] {
   const nodes: OutlineNode[] = [];
   let headingDepth = baseDepth - 1;
   for (const raw of text.replace(/\r\n?/g, '\n').split('\n')) {
     if (raw.trim() === '') continue;
+    if (nodes.length === 0 && NAME_LINE.test(raw)) continue;
     const detail = /^\s*>\s?(.*)$/.exec(raw);
     if (detail) {
       const last = nodes[nodes.length - 1];
