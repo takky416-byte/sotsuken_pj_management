@@ -75,7 +75,7 @@ describe('成果物', () => {
     expect(errors(example, 'ソフト').some((m) => m.includes('回路図'))).toBe(false);
   });
   test('設計書類の期限 (事前送付) を過ぎる期間は誤り', () => {
-    const late = example.replace(/(- ER図を描く\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-05');
+    const late = example.replace(/(- ER図を描く\n {2}> 期間: )[^\n]*/, '$12026-11-16〜2026-11-19');
     expect(errors(late).some((m) => m.includes('ER図'))).toBe(true);
   });
 });

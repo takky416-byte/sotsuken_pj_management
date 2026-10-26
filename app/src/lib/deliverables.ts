@@ -1,5 +1,5 @@
 // 卒研の成果物 (あらかじめ決まっている「これをつくる」の一覧)。叩き台 (初期WBS) に、必ず項目として入れる。
-// 出典: 教員から共有された成果物の一覧 (2026-10-26)。中間報告 = 外部設計レビュー (11/25) とみなしている (要確認)。
+// 出典: 教員から共有された成果物の一覧 (2026-10-26)。中間報告 = 外部設計レビュー (11/25)、最終報告 = 最終レビュー (1/26) とみなしている (要確認)。事前送付は、報告の1週間前 (11/18・1/19)。
 export type Stage = '中間報告' | '最終報告' | '卒展';
 
 export type Deliverable = {
@@ -19,22 +19,25 @@ export type Deliverable = {
 
 export const MID = '2026-11-25'; // 中間報告 (対面レビュー)
 export const FINAL = '2027-01-26'; // 最終報告 (プレゼン)
+/** 事前送付は、報告の1週間前 */
+export const MID_SEND = '2026-11-18';
+export const FINAL_SEND = '2027-01-19';
 
 export const DELIVERABLES: Deliverable[] = [
   // 中間報告までの成果物 (対面レビュー)。設計書類は事前送付
-  { label: '要件定義書', stage: '中間報告', section: '要件定義', re: /要件定義書/, end: '2026-11-20', note: '事前送付' },
-  { label: '画面レイアウト', stage: '中間報告', section: '外部設計', re: /画面レイアウト/, end: '2026-11-20', note: '事前送付' },
-  { label: '画面遷移図', stage: '中間報告', section: '外部設計', re: /画面遷移図/, end: '2026-11-20', note: '事前送付' },
-  { label: '機能仕様書', stage: '中間報告', section: '外部設計', re: /機能仕様書/, end: '2026-11-20', note: '事前送付' },
-  { label: 'システム構成図', stage: '中間報告', section: '外部設計', re: /システム構成図/, end: '2026-11-20', note: '事前送付' },
-  { label: 'ER図', stage: '中間報告', section: '内部設計・実装', re: /ER図/, end: '2026-11-20', only: 'soft', note: '事前送付' },
-  { label: 'テーブル定義書', stage: '中間報告', section: '内部設計・実装', re: /テーブル定義/, end: '2026-11-20', only: 'soft', note: '事前送付' },
-  { label: '回路図', stage: '中間報告', section: '内部設計・実装', re: /回路図/, end: '2026-11-20', only: 'hard', note: '事前送付' },
-  { label: '設計書類の事前送付', stage: '中間報告', section: '外部設計', re: /事前送付|送付/, end: MID },
+  { label: '要件定義書', stage: '中間報告', section: '要件定義', re: /要件定義書/, end: MID_SEND, note: '事前送付' },
+  { label: '画面レイアウト', stage: '中間報告', section: '外部設計', re: /画面レイアウト/, end: MID_SEND, note: '事前送付' },
+  { label: '画面遷移図', stage: '中間報告', section: '外部設計', re: /画面遷移図/, end: MID_SEND, note: '事前送付' },
+  { label: '機能仕様書', stage: '中間報告', section: '外部設計', re: /機能仕様書/, end: MID_SEND, note: '事前送付' },
+  { label: 'システム構成図', stage: '中間報告', section: '外部設計', re: /システム構成図/, end: MID_SEND, note: '事前送付' },
+  { label: 'ER図', stage: '中間報告', section: '内部設計・実装', re: /ER図/, end: MID_SEND, only: 'soft', note: '事前送付' },
+  { label: 'テーブル定義書', stage: '中間報告', section: '内部設計・実装', re: /テーブル定義/, end: MID_SEND, only: 'soft', note: '事前送付' },
+  { label: '回路図', stage: '中間報告', section: '内部設計・実装', re: /回路図/, end: MID_SEND, only: 'hard', note: '事前送付' },
+  { label: '設計書類の事前送付', stage: '中間報告', section: '外部設計', re: /事前送付|送付/, end: MID_SEND, note: '中間報告の1週間前' },
   { label: '試作品', stage: '中間報告', section: '内部設計・実装', re: /試作品/, end: MID, note: '中間報告で見せられるもの' },
   // 最終報告までに用意するもの (プレゼン方式)
-  { label: '発表スライド', stage: '最終報告', section: '発表・展示準備', re: /発表スライド/, end: FINAL, note: '事前送付' },
-  { label: '最新化した設計書類', stage: '最終報告', section: '発表・展示準備', re: /最新化|設計書類/, end: FINAL, note: '事前送付' },
+  { label: '発表スライド', stage: '最終報告', section: '発表・展示準備', re: /発表スライド/, end: FINAL_SEND, note: '事前送付(最終報告の1週間前)' },
+  { label: '最新化した設計書類', stage: '最終報告', section: '発表・展示準備', re: /最新化|設計書類/, end: FINAL_SEND, note: '事前送付(最終報告の1週間前)' },
   { label: 'デモの準備(デモ動画)', stage: '最終報告', section: '発表・展示準備', re: /デモ/, end: FINAL, note: '当日デモを見せられない場合は、デモ動画' },
   // 卒展までに用意するもの
   { label: '操作説明書', stage: '卒展', section: '発表・展示準備', re: /操作説明書/, end: '2027-02-06' },
