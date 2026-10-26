@@ -164,3 +164,19 @@ test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
     await expect(s.getByRole('region', { name: '初期WBSの見直し' })).toBeVisible();
   });
 });
+
+test('教員のメニュー「PJ分析」: チームを選ぶと、学生と同じPJ分析と報告書 (Excel・PDF) が出る', async ({ page }) => {
+  await login(page, 'teacher@trident.ac.jp');
+  await page.getByRole('navigation').getByRole('link', { name: 'PJ分析', exact: true }).click();
+  await expect(page.getByText('チームを選ぶと、そのチームのPJ分析')).toBeVisible();
+  await page.getByRole('button', { name: /^A チーム|^Aチーム/ }).click();
+  await expect(page).toHaveURL(/\/teacher\/report\/A$/);
+  await expect(page.getByRole('button', { name: 'Excelで保存(.xlsx)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PDFで保存(印刷)' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Aチーム プロジェクト概況レポート' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ミーティング画面' })).toBeVisible();
+  // 一覧からも行ける
+  await page.goto('/teacher');
+  await page.locator('tbody a[href^="/teacher/report/"]').first().click();
+  await expect(page).toHaveURL(/\/teacher\/report\/[A-H]$/);
+});

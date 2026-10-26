@@ -72,7 +72,7 @@ test.describe.serial('読み取り回数', () => {
   test('教員: ダッシュボード → チーム詳細 → ミーティング → ダッシュボードに戻る (再読み込みなし)', async ({ page }) => {
     await login(page, 'teacher@trident.ac.jp');
     const first = await measure(page, '教員: ダッシュボード (初回)', async () => { await page.getByRole('link', { name: 'チーム', exact: true }).click(); await page.getByRole('heading', { name: 'チーム一覧' }).waitFor(); });
-    const detail = await measure(page, '教員: Cチーム詳細 (WBS)', async () => { await page.locator('tr', { has: page.getByRole('link', { name: 'C', exact: true }) }).getByRole('link').click(); await page.getByRole('button', { name: 'WBS・ガントチャート' }).waitFor(); });
+    const detail = await measure(page, '教員: Cチーム詳細 (WBS)', async () => { await page.locator('tr', { has: page.getByRole('link', { name: 'C', exact: true }) }).getByRole('link', { name: 'C', exact: true }).click(); await page.getByRole('button', { name: 'WBS・ガントチャート' }).waitFor(); });
     const daily = await measure(page, '教員: Cチーム 作業ログタブ', async () => { await page.getByRole('button', { name: '作業ログ' }).click(); await page.getByText('提出状況').waitFor(); });
     await measure(page, '教員: ミーティング画面 (最初のチーム)', async () => { await page.getByRole('link', { name: 'ミーティング', exact: true }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });
     await measure(page, '教員: 次のチームのミーティング', async () => { await page.getByRole('link', { name: /^[A-H] →$/ }).click(); await page.getByRole('heading', { name: '進捗確認会議の進め方' }).waitFor(); });

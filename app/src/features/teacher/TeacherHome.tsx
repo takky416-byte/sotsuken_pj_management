@@ -29,7 +29,7 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
   useEffect(() => { onSeverity(team.id, severity); }, [team.id, severity, onSeverity]);
   return (
     <tr>
-      <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link></td>
+      <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link>{active && <div><Link to={`/teacher/report/${team.id}`} className="hint">PJ分析</Link></div>}</td>
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
       <td>{active ? team.projectName : <span className="hint">企画検討中</span>}{active && tasks && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}</td>
       <td>{tasks ? <Progress {...overallProgress(tasks)} /> : '…'}</td>

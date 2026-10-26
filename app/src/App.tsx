@@ -16,6 +16,7 @@ import { CalendarPage } from './features/teacher/CalendarPage';
 import { Kickoff } from './features/teacher/Kickoff';
 import { Preview } from './features/teacher/Preview';
 import { Settings } from './features/teacher/Settings';
+import { TeacherReport } from './features/teacher/TeacherReport';
 import { TeacherHome } from './features/teacher/TeacherHome';
 import { TeacherTeam } from './features/teacher/TeacherTeam';
 
@@ -40,6 +41,7 @@ function Shell() {
         {teacher ? (
           <nav>
             <NavLink to="/teacher" end>チーム</NavLink>
+            <NavLink to="/teacher/report">PJ分析</NavLink>
             <NavLink to="/meeting">ミーティング</NavLink>
             <NavLink to="/teacher/attendance">欠席</NavLink>
             <NavLink to="/teacher/access">アクセス</NavLink>
@@ -65,6 +67,8 @@ function Shell() {
             <Route path="/meeting" element={<MeetingIndex />} />
             <Route path="/meeting/:teamId" element={<MeetingPage />} />
             <Route path="/teacher/team/:id" element={<TeacherTeam />} />
+            <Route path="/teacher/report" element={<TeacherReport />} />
+            <Route path="/teacher/report/:id" element={<TeacherReport />} />
             <Route path="/teacher/kickoff/:id" element={<Kickoff />} />
             <Route path="/teacher/preview" element={<Preview />} />
             <Route path="/teacher/preview/:sid/*" element={<Preview />} />
