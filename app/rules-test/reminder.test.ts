@@ -163,6 +163,27 @@ describe('作業ログリマインド (Apps Script) × Firestore エミュレー
     expect(s2.sent).toEqual([]);
   });
 
+  test('MODE=off (当面やめる): 何も送らない (先生宛の試験メールも)。予行演習のログは出せる。setup で戻る', async () => {
+    const s = loadScript({ ...baseProps, MODE: 'off' });
+    const r = s.call('remindAfternoon');
+    expect(r.skip).toBe('off');
+    expect(s.sent).toEqual([]);
+    expect(s.logs.join('\n')).toContain('止めています');
+    const d = loadScript({ ...baseProps, MODE: 'off' });
+    d.call('dryRunAfternoon');
+    expect(d.logs.join('\n')).toContain('対象: 1名');
+  });
+
+  test('stopReminder: リマインドのトリガーだけを消し、MODE を off にする', async () => {
+    const deleted: string[] = [];
+    const triggers = ['remindMorning', 'remindAfternoon', 'backupDaily', 'exportProgressDaily'].map((h) => ({ getHandlerFunction: () => h }));
+    const s = loadScript({ ...baseProps, MODE: 'live' });
+    Object.assign(s.ctx.ScriptApp as object, { getProjectTriggers: () => triggers, deleteTrigger: (t: { getHandlerFunction: () => string }) => deleted.push(t.getHandlerFunction()) });
+    s.call('stopReminder');
+    expect(deleted).toEqual(['remindMorning', 'remindAfternoon']);
+    expect(s.store.MODE).toBe('off');
+  });
+
   test('Firestore に接続できないときは、エラーにして送らない', async () => {
     const s = loadScript({ ...baseProps, MODE: 'live', FIRESTORE_BASE: 'http://127.0.0.1:1' });
     expect(() => s.call('remindAfternoon')).toThrow();

@@ -3,7 +3,7 @@
  * 設定・手順は README.md。判定のロジックは core.js (Reminder)。
  *
  * スクリプトのプロパティ:
- *   MODE          'test' (既定: 先生にだけ送る) / 'live' (学生に送る)
+ *   MODE          'test' (既定: 先生にだけ送る) / 'live' (学生に送る) / 'off' (何も送らない。当面の運用)
  *   PROJECT_ID    Firebase のプロジェクト ID (既定 'sotsuken-pj')
  *   DATE_OVERRIDE 予行演習用の日付 (YYYY-MM-DD)。空なら今日。設定されていると、必ず試験モード (先生宛だけ)。
  *   LAST_SENT     二重送信の防止 (自動で設定される)
@@ -32,10 +32,19 @@ function setup() {
   ScriptApp.newTrigger('remindMorning').timeBased().inTimezone('Asia/Tokyo').atHour(10).nearMinute(45).everyDays(1).create();
   ScriptApp.newTrigger('remindAfternoon').timeBased().inTimezone('Asia/Tokyo').atHour(16).nearMinute(30).everyDays(1).create();
   var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty('MODE')) props.setProperty('MODE', 'test');
+  // MODE が off のときも、setup を実行すれば、試験モードに戻して再開する
+  if (!props.getProperty('MODE') || props.getProperty('MODE') === 'off') props.setProperty('MODE', 'test');
   Logger.log('トリガーを作りました。MODE=' + props.getProperty('MODE'));
 }
 function goLive() { PropertiesService.getScriptProperties().setProperty('MODE', 'live'); Logger.log('本番モードにしました。学生にメールが届きます。'); }
+/** リマインドを止める: トリガー (remindMorning・remindAfternoon) を削除し、MODE を 'off' にする。バックアップ・進捗報告のトリガーには触れない。 */
+function stopReminder() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (['remindMorning', 'remindAfternoon'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+  });
+  PropertiesService.getScriptProperties().setProperty('MODE', 'off');
+  Logger.log('リマインドを止めました (トリガーを削除し、MODE=off)。再開するときは setup を実行して、goTest / goLive で選びます。');
+}
 function goTest() { PropertiesService.getScriptProperties().setProperty('MODE', 'test'); Logger.log('試験モードにしました。先生にだけ送ります。'); }
 
 // ---- 毎日のバックアップ (あなたの Google ドライブ「卒研PJ バックアップ」フォルダに、JSON を保存する) ----
@@ -116,6 +125,11 @@ function runReminder_(slot, opts) {
   var props = PropertiesService.getScriptProperties();
   // DATE_OVERRIDE があるときは予行演習。MODE にかかわらず、必ず試験モード (先生宛だけ) にし、
   // 「送信済み」の記録も残さない (残すと、本番の同じ日に送られなくなる。消し忘れて学生に送る事故も防ぐ)。
+  // MODE が off のときは、何もしない (先生宛の試験メールも送らない)。予行演習 (dryRun) だけは、ログに出せる。
+  if (props.getProperty('MODE') === 'off' && !opts.dryRun) {
+    Logger.log('リマインドは止めています (MODE=off)。再開するには setup を実行します。');
+    return { skip: 'off' };
+  }
   var rehearsal = !!props.getProperty('DATE_OVERRIDE');
   var mode = !rehearsal && props.getProperty('MODE') === 'live' ? 'live' : 'test';
   var today = props.getProperty('DATE_OVERRIDE') || Reminder.jstDate(Date.now());
