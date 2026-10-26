@@ -1,11 +1,25 @@
 import { expect, test } from '@playwright/test';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { login } from './helpers';
 
 const TEACHER = 'teacher@trident.ac.jp';
 
 const body = (name: string, task: string) => `企画名: ${name}\n# 要件定義\n- ${task}\n  > やること: 決める\n  > できあがり: 一覧がある`;
 
+const db = () => getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
+
 test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
+  // 前のテストで、Bチームが使われていることがあるので、キックオフ前の状態にして、終わったら戻す
+  let before: Record<string, unknown> = {};
+  test.beforeAll(async () => {
+    const ref = db().doc('teams/B');
+    const d = (await ref.get()).data() ?? {};
+    before = { status: d.status ?? 'planning', kickoffAt: d.kickoffAt ?? null };
+    await ref.update({ status: 'planning', kickoffAt: null });
+  });
+  test.afterAll(async () => { await db().doc('teams/B').update(before); });
+
   test('設定で、2案を登録する。キックオフ画面で、案を選ぶと、企画名と叩き台が入る', async ({ page }) => {
     await login(page, TEACHER);
     await page.goto('/teacher/settings?tab=drafts');

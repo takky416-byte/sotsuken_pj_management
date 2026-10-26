@@ -15,10 +15,10 @@ describe('checkDraft', () => {
   });
   test('ハード系として見ると、発注の項目がないと誤り', () => {
     expect(errors(example, 'ハード').some((m) => m.includes('機材発注'))).toBe(true);
-    const withOrders = example.replace('# テスト・検証', [
+    const withOrders = example.replace('# 動作確認・改善', [
       '- 部品を発注する(1回目)', '  > やること: 11/5までに、部品の一覧を教員に出す。', '  > できあがり: 発注の控えが共有フォルダにある。',
       '- 追加の部品を発注する(2回目)', '  > やること: 12/1までに、足りない部品を出す。', '  > できあがり: 発注の控えが共有フォルダにある。',
-      '# テスト・検証'].join('\n'));
+      '# 動作確認・改善'].join('\n'));
     expect(errors(withOrders, 'ハード').some((m) => m.includes('機材発注'))).toBe(false);
   });
   test('詳細がない・やること/できあがりがない・ヒントがある', () => {
@@ -36,7 +36,7 @@ describe('checkDraft', () => {
   });
   test('大項目の欠け・順序違い・件数の過不足', () => {
     expect(errors(example.replace('# 要件定義', '# 要件')).some((m) => m.includes('6つ'))).toBe(true);
-    const few = example.split('# 内部設計・実装')[0] + '# 内部設計・実装\n- a\n  > やること: x\n  > できあがり: yyyyyyy\n# テスト・検証\n# 発表・展示準備\n';
+    const few = example.split('# 内部設計・実装')[0] + '# 内部設計・実装\n- a\n  > やること: x\n  > できあがり: yyyyyyy\n# 動作確認・改善\n# 発表・展示準備\n';
     expect(errors(few).some((m) => m.includes('50〜60件'))).toBe(true);
   });
   test('日程の節目 (外部設計レビューなど) が抜けると、注意', () => {

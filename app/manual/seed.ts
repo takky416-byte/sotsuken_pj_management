@@ -46,7 +46,7 @@ export default async function seed() {
     { id: 't3a', title: 'トップ画面を作る', parent: 't3', s: 'doing', a: ['A1'], from: -4, to: 8 },
     { id: 't3b', title: 'イベント一覧を作る', parent: 't3', s: 'doing', a: ['A3', 'A4'], from: 0, to: 14 },
     { id: 't3c', title: '検索機能を作る', parent: 't3', s: 'todo', a: [], from: 10, to: 24 },
-    { id: 't4', title: 'テスト・検証', from: 20, to: 32 },
+    { id: 't4', title: '動作確認・改善', from: 20, to: 32 },
     { id: 't4a', title: '操作テストをする', parent: 't4', s: 'todo', a: ['A2'], from: 20, to: 32 },
     { id: 't5', title: '発表準備', from: 28, to: 38 },
     { id: 't5a', title: 'スライドを作る', parent: 't5', s: 'todo', a: ['A4'], from: 28, to: 38 },
