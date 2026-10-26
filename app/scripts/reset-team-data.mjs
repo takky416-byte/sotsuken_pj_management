@@ -44,9 +44,10 @@ export async function resetTeams({ db, teams, resetTeam = false, includeTeacherN
     counts.accessLogs = access.size;
     if (!dryRun) await Promise.all(access.docs.map((d) => d.ref.delete()));
     if (resetTeam) {
+      // 提出先・共有フォルダのURL (driveUrl, submitUrl) は、そのまま残す
       counts.teamReset = 1;
       if (!dryRun) {
-        await team.update({ status: 'planning', projectName: '', proposals: [], driveUrl: '', kickoffAt: null, wbsReview: null, reportNotes: null });
+        await team.update({ status: 'planning', projectName: '', proposals: [], kickoffAt: null, wbsReview: null, reportNotes: null });
       }
     }
     report[id] = counts;
