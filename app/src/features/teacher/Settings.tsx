@@ -7,9 +7,10 @@ import { setSetting } from '../../data/calendar';
 import { useSettings } from '../../data/daily';
 import { updateTeam, useTeams } from '../../data/teams';
 import { Export } from './Export';
+import { KickoffDrafts } from './KickoffDrafts';
 import { Roster } from './Roster';
 
-const TABS = [['basic', '基本設定'], ['roster', '名簿'], ['export', '書き出し・バックアップ']] as const;
+const TABS = [['basic', '基本設定'], ['roster', '名簿'], ['drafts', '叩き台の登録'], ['export', '書き出し・バックアップ']] as const;
 
 /** 設定: 基本設定・名簿・書き出し/バックアップ/復元を、ひとつの画面にまとめる */
 export function Settings() {
@@ -25,6 +26,7 @@ export function Settings() {
       </div>
       {tab === 'basic' && <BasicSettings />}
       {tab === 'roster' && <Roster />}
+      {tab === 'drafts' && <KickoffDrafts />}
       {tab === 'export' && <Export />}
     </>
   );

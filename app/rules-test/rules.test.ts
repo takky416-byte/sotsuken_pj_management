@@ -480,6 +480,28 @@ describe('ミーティングの議事録 (先生がアップ。チームの学�
   });
 });
 
+describe('キックオフの叩き台 (先生だけが読み書きできる)', () => {
+  const draft = (no: number, over: Record<string, unknown> = {}) => ({ no, title: '立たせる椅子(仮)', outline: '# 企画の具体化\n- 困りごとを決める', updatedAt: 1, ...over });
+  test('先生は登録・読み取り・削除できる。学生(自分のチームでも)は、読めない・書けない・消せない', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1)));
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1')));
+    await assertFails(getDoc(doc(as(A1), 'teams/A/kickoffDrafts/1')));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/kickoffDrafts/1')));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/kickoffDrafts/2'), draft(2)));
+    await assertFails(deleteDoc(doc(as(A1), 'teams/A/kickoffDrafts/1')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1')));
+  });
+  test('形の検査: 案は1か2だけ。番号の食い違い・空・長すぎる・知らない項目は不可', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/3'), draft(3)));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(2)));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1, { title: '' })));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1, { outline: '' })));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1, { outline: 'あ'.repeat(30001) })));
+    await assertFails(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1, { extra: 1 })));
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/2'), draft(2)));
+  });
+});
+
 describe('初期WBSの見直しの記録 (チームの学生が書ける)', () => {
   test('自分のチームの学生は、wbsReview だけ書ける。形が違う・名前が違う・他の項目・他のチームは不可', async () => {
     await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { wbsReview: { at: 1, by: 'A1' } }));

@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useKickoffDrafts } from '../../data/kickoffDrafts';
 import { createTasks, newTaskId, useTasks } from '../../data/tasks';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
@@ -26,6 +27,7 @@ export function Kickoff() {
 
 function KickoffForm({ team }: { team: Team }) {
   const { data: tasks } = useTasks(team.id);
+  const { data: drafts } = useKickoffDrafts(team.id);
   const [projectName, setProjectName] = useState(team.projectName);
   const [titles, setTitles] = useState<[string, string]>([
     team.proposals.find((p) => p.no === 1)?.title ?? '', team.proposals.find((p) => p.no === 2)?.title ?? '']);
@@ -38,6 +40,30 @@ function KickoffForm({ team }: { team: Team }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [err, setErr] = useState('');
+
+  // 登録済みの叩き台 (設定 > 叩き台の登録) があれば、採用する案を選ぶだけ: 案を選ぶと、企画名と叩き台が入る
+  const draftOf = (no: 1 | 2) => (drafts ?? []).find((d) => d.no === no);
+  const loaded = useRef(false);
+  const shownTitle = useRef('');
+  const pickDraft = (no: 1 | 2) => {
+    const d = draftOf(no);
+    if (!d) return;
+    setOutline(d.outline);
+    // 企画名は、空か、前の案の名前のままのときだけ入れ替える (先生が直したあとは、そのまま)
+    const prev = shownTitle.current; // setState の関数は、あとで呼ばれるので、いまの値を控えておく
+    setProjectName((cur) => (!cur.trim() || cur === prev ? d.title : cur));
+    shownTitle.current = d.title;
+    setTitles((t) => (no === 1 ? [t[0] || d.title, t[1]] : [t[0], t[1] || d.title]));
+  };
+  useEffect(() => {
+    if (loaded.current || !drafts || drafts.length === 0 || team.status === 'active') return;
+    loaded.current = true;
+    const first = (team.proposals.find((p) => p.adopted)?.no as 1 | 2 | undefined) ?? (draftOf(1) ? 1 : 2);
+    setAdopted(first);
+    setTitles((t) => [t[0] || draftOf(1)?.title || '', t[1] || draftOf(2)?.title || '']);
+    pickDraft(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts]);
 
   /** 叩き台の先頭の「企画名: …」(仮の企画名)を、企画名の欄に入れる。欄が空か、前に自動で入れたままのときだけ (先生が直したあとは、上書きしない) */
   const changeOutline = (text: string) => {
@@ -102,11 +128,14 @@ function KickoffForm({ team }: { team: Team }) {
         <label>採用する企画名
           <input value={projectName} maxLength={100} onChange={(e) => setProjectName(e.target.value)} />
         </label>
+        {drafts && drafts.length > 0 && team.status !== 'active' && (
+          <p className="card hint" aria-label="登録済みの叩き台">登録済みの叩き台があります({drafts.length}案)。採用する企画を選ぶと、企画名と叩き台が入ります。そのまま「キックオフする」を押せます(直すこともできます)。</p>
+        )}
         <div className="label">企画の記録 (名前だけ。採用しなかった企画も残します)</div>
         {([0, 1] as const).map((i) => (
           <div className="row" key={i}>
             <label className="chip">
-              <input type="radio" name="adopted" checked={adopted === i + 1} onChange={() => setAdopted((i + 1) as 1 | 2)} />
+              <input type="radio" name="adopted" checked={adopted === i + 1} onChange={() => { setAdopted((i + 1) as 1 | 2); pickDraft((i + 1) as 1 | 2); }} />
               企画{i === 0 ? '①' : '②'}(採用)
             </label>
             <input

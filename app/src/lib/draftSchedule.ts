@@ -1,6 +1,6 @@
 import { addDays } from './dates';
 import { DELIVERABLES } from './deliverables';
-import { parseOutline, type OutlineNode } from './outline';
+import { NAME_LINE, parseOutline, type OutlineNode } from './outline';
 
 /** 叩き台の期間をつくる・確かめるための、授業期間と節目 (docs/decisions.md の共通マイルストーン) */
 export const DRAFT_START = '2026-10-28';
@@ -98,6 +98,7 @@ export function fillPeriods(text: string): string {
   const insert = new Map<number, string>();
   lines.forEach((raw, ln) => {
     if (raw.trim() === '' || /^\s*>/.test(raw)) return;
+    if (k === -1 && NAME_LINE.test(raw)) return; // 先頭の「企画名: …」は、項目ではない
     k++;
     const before = nodes[k], after = filled[k];
     if (before && after && !(before.startDate && before.endDate) && after.startDate && after.endDate) {

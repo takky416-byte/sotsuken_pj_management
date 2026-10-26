@@ -11,7 +11,7 @@ describe('checkDraft', () => {
   test('見本の叩き台は、問題なし', () => {
     const r = checkDraft(example);
     expect(r.issues).toEqual([]);
-    expect(r.total).toBe(56);
+    expect(r.total).toBe(53);
   });
   test('ハード系として見ると、発注の項目がないと誤り', () => {
     expect(errors(example, 'ハード').some((m) => m.includes('機材発注'))).toBe(true);
@@ -87,11 +87,12 @@ describe('ハード系の見本・記入サンプルから足した確認', () =
   test('ハード系の見本は、ハード系として問題なし', () => {
     expect(checkDraft(exampleHard, 'ハード').issues).toEqual([]);
   });
-  test('ペルソナ・費用の見積もり・今後の展望がないと、注意が出る (誤りではない)', () => {
-    const r = checkDraft(example.replace(/^- 想定する利用者像\(ペルソナ\)を作る\n(?: {2}> .*\n)+/m, '').replace(/^- 費用を見積もる.*\n(?: {2}> .*\n)+/m, ''));
-    const warns = r.issues.filter((i) => i.level === 'warn').map((i) => i.message);
-    expect(warns.some((m) => m.includes('ペルソナ'))).toBe(true);
-    expect(warns.some((m) => m.includes('費用の見積もり'))).toBe(true);
-    expect(r.issues.some((i) => i.level === 'error' && (i.message.includes('ペルソナ') || i.message.includes('費用')))).toBe(false);
+  test('今後の展望がないと、注意が出る (誤りではない)。ペルソナ・費用は、企画発表の資料を使うので、項目がなくても注意しない', () => {
+    const noPersona = example.replace(/^- 想定する利用者像\(ペルソナ\)を作る\n(?: {2}> .*\n)+/m, '').replace(/^- 費用を見積もる.*\n(?: {2}> .*\n)+/m, '');
+    expect(noPersona).not.toContain('ペルソナ)を作る');
+    expect(checkDraft(noPersona).issues.filter((i) => i.message.includes('ペルソナ') || i.message.includes('費用の見積もり'))).toEqual([]);
+    const r = checkDraft(example.replace(/^- 発表スライドの構成を決める.*\n(?: {2}> .*\n)+/m, ''));
+    expect(r.issues.some((i) => i.level === 'warn' && i.message.includes('今後の展望'))).toBe(true);
+    expect(r.issues.some((i) => i.level === 'error' && i.message.includes('展望'))).toBe(false);
   });
 });

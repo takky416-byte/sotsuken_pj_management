@@ -140,6 +140,19 @@ service cloud.firestore {
           || (inTeam(teamId) && get(/databases/$(database)/documents/teams/$(teamId)).data.teamMeetingInput == true);
       }
 
+      // キックオフの叩き台 (2案)。先生だけが読み書きできる (学生には見えない)
+      match /kickoffDrafts/{no} {
+        allow read: if isTeacher();
+        allow write: if isTeacher()
+          && (request.method == 'delete' || (
+            (no == '1' || no == '2')
+            && request.resource.data.keys().hasOnly(['no', 'title', 'outline', 'updatedAt'])
+            && request.resource.data.no is int && request.resource.data.no == int(no)
+            && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+            && request.resource.data.outline is string && request.resource.data.outline.size() > 0 && request.resource.data.outline.size() <= 30000
+            && request.resource.data.updatedAt is int));
+      }
+
       // ミーティングの議事録。先生がアップロードして公開する。チームの学生は読める (書けるのは先生だけ)
       match /meetingMinutes/{date} {
         allow read: if canSeeTeam(teamId);

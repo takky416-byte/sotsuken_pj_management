@@ -4,7 +4,7 @@ export type OutlineNode = { depth: 1 | 2 | 3; title: string; detail: string; sta
 
 const clamp = (n: number): 1 | 2 | 3 => (Math.min(Math.max(n, 1), 3) as 1 | 2 | 3);
 
-const NAME_LINE = /^\s*企画名[:：]\s*(.+?)\s*$/;
+export const NAME_LINE = /^\s*企画名[:：]\s*(.+?)\s*$/;
 
 /** アウトラインの先頭の「企画名: …」の行 (叩き台に、仮の企画名を入れておく)。なければ空。 */
 export function outlineProjectName(text: string): string {
