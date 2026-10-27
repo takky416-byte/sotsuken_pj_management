@@ -109,7 +109,8 @@ service cloud.firestore {
           && (isTeacher() || request.resource.data.createdBy == actor());
         allow update: if canSeeTeam(teamId) && validTask(request.resource.data)
           && request.resource.data.createdBy == resource.data.createdBy;
-        allow delete: if false; // 削除は deleted フラグ (ソフトデリート)
+        // 削除は deleted フラグ (ソフトデリート)。教員だけ、キックオフの「最初からやり直す」で、完全に消せる
+        allow delete: if isTeacher();
       }
 
       match /dailyReports/{reportId} {
@@ -131,7 +132,7 @@ service cloud.firestore {
               && request.resource.data.dayKey == resource.data.dayKey
               && resource.data.absent == false
               && request.resource.data.absent == false);
-        allow delete: if false;
+        allow delete: if isTeacher(); // 教員だけ (キックオフの「最初からやり直す」)
       }
 
       match /meetings/{date} {
@@ -164,12 +165,12 @@ service cloud.firestore {
             && request.resource.data.publishedAt is int));
       }
 
-      // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (書き換え・削除はできない。教員は、バックアップの復元で書ける)
+      // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (学生は、書き換え・削除はできない。教員は、バックアップの復元で書け、「最初からやり直す」で消せる)
       match /taskLogs/{logId} {
         allow read: if canSeeTeam(teamId);
         allow create: if canSeeTeam(teamId) && validTaskLog(request.resource.data);
         allow update: if isTeacher() && validTaskLog(request.resource.data);
-        allow delete: if false;
+        allow delete: if isTeacher(); // 教員だけ (キックオフの「最初からやり直す」)
       }
 
       // ありがとう (感謝スタンプ)。送った人だけが取り消せる。内容は変えられない

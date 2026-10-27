@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { login } from './helpers';
+import { login, row } from './helpers';
 
 const TEACHER = 'teacher@trident.ac.jp';
 
@@ -18,7 +18,7 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     before = { status: d.status ?? 'planning', kickoffAt: d.kickoffAt ?? null, projectName: d.projectName ?? '', proposals: d.proposals ?? [] };
     await ref.update({ status: 'planning', kickoffAt: null, projectName: '', proposals: [] });
   });
-  test.afterAll(async () => { await db().doc('teams/B').update(before); });
+  test.afterAll(async () => { await db().doc('teams/B').update(before); await db().recursiveDelete(db().collection('teams/B/tasks')); await db().recursiveDelete(db().collection('teams/B/taskLogs')); });
 
   test('設定で、2案を登録する。キックオフ画面で、案を選ぶと、企画名と叩き台が入る', async ({ page }) => {
     await login(page, TEACHER);
@@ -45,6 +45,33 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     await expect(page.getByLabel(/叩き台のタスク/)).toHaveValue(new RegExp('案2のタスク'));
     await expect(page.getByText('取り込む叩き台の中身を見る')).toBeVisible();
     // キックオフはしない (ほかのテストが、Bチームは企画検討中のままであることを前提にしている)
+  });
+
+  test('キックオフ済みのチームを、「最初からやり直す」で、作り直せる。件数の内訳が出る', async ({ page }) => {
+    await login(page, TEACHER);
+    await page.goto('/teacher/kickoff/B');
+    await page.getByLabel('採用する企画名').fill('やり直しの確認');
+    await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 旧タスク');
+    await expect(page.getByText('タスクを7件作成します(雛形の大項目 6件 + 叩き台の項目 1件')).toBeVisible();
+    await page.getByRole('button', { name: 'キックオフする' }).click();
+    await expect(page.getByText(/キックオフしました。タスクを7件作成しました\(雛形の大項目 6件 \+ 叩き台の項目 1件/)).toBeVisible();
+
+    // やり直す: 古いタスクは、完全に消える (「やり直す」の前は、「反映する」)
+    await expect(page.getByRole('button', { name: '反映する' })).toBeVisible();
+    await page.getByLabel(/最初からやり直す/).check();
+    await expect(page.getByRole('button', { name: '消して、最初から作り直す' })).toBeVisible();
+    await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 新タスク');
+    page.once('dialog', (d) => { expect(d.message()).toContain('元には戻せません'); void d.accept(); });
+    await page.getByRole('button', { name: '消して、最初から作り直す' }).click();
+    await expect(page.getByText(/最初からやり直しました。タスクを7件作成しました/)).toBeVisible();
+    await page.goto('/teacher/team/B');
+    await expect(row(page, '新タスク')).toBeVisible();
+    await expect(row(page, '旧タスク')).toHaveCount(0);
+    // 消えたものは、ごみ箱にも残らない (完全に消えている)
+    const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
+    const titles = (await db.collection('teams/B/tasks').get()).docs.map((d) => d.data().title);
+    expect(titles).toContain('新タスク');
+    expect(titles).not.toContain('旧タスク');
   });
 
   test('先生が企画名を直したあとは、案を切り替えても上書きしない。登録は消せる', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, query, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, onSnapshot, query, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ReportNotes, Team } from '../types';
 import { countReads } from '../lib/readMeter';
@@ -47,3 +47,26 @@ export const saveReportNotes = (
   const clean = Object.fromEntries(Object.entries(at).filter(([, v]) => v !== undefined));
   return updateDoc(doc(db, 'teams', teamId), { reportNotes: { ...n, ...clean, by: sid, at: now } });
 };
+
+/** キックオフの「最初からやり直す」で消すもの (チームの下の、タスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録) */
+export const WIPE_COLLECTIONS = ['tasks', 'dailyReports', 'taskLogs', 'meetings', 'comments', 'thanks', 'meetingMinutes'] as const;
+
+/**
+ * チームを、キックオフ前の状態に戻す (教員だけ)。WIPE_COLLECTIONS をすべて消し、チームを「企画検討中」にして、
+ * 企画名・企画の記録・見直しの記録・報告書の文章を空にする。共有フォルダ・成果物の提出先・先生のメッセージ・登録した叩き台・アクセス履歴は、そのまま。
+ * 元には戻せない。返り値は、消した件数。
+ */
+export async function wipeTeamForRestart(teamId: string): Promise<number> {
+  let n = 0;
+  for (const name of WIPE_COLLECTIONS) {
+    const snap = await getDocs(collection(db, 'teams', teamId, name));
+    for (let i = 0; i < snap.docs.length; i += 400) {
+      const batch = writeBatch(db);
+      snap.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+    n += snap.size;
+  }
+  await updateDoc(doc(db, 'teams', teamId), { status: 'planning', projectName: '', proposals: [], kickoffAt: null, wbsReview: null, reportNotes: null });
+  return n;
+}

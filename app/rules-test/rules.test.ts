@@ -155,7 +155,7 @@ describe('タスク', () => {
     await assertSucceeds(updateDoc(doc(as(A1), 'teams/A/tasks/t1'),
       { deleted: true, deletedAt: 2, updatedBy: 'A1' }));
     await assertFails(deleteDoc(doc(as(A1), 'teams/A/tasks/t1')));
-    await assertFails(deleteDoc(doc(as(TEACHER), 'teams/A/tasks/t1')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/tasks/t1'))); // 教員だけ、「最初からやり直す」で消せる
   });
   test('不正な値は拒否 (状態、階層、タイトル長、未知の項目)', async () => {
     const db = as(A1);
@@ -444,7 +444,7 @@ describe('タスクの変更履歴 (taskLogs)', () => {
     await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l4'), log('A1')));
     await assertFails(updateDoc(doc(as(A1), 'teams/A/taskLogs/l4'), { title: '改ざん' }));
     await assertFails(deleteDoc(doc(as(A1), 'teams/A/taskLogs/l4')));
-    await assertFails(deleteDoc(doc(as(TEACHER), 'teams/A/taskLogs/l4')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/taskLogs/l4'))); // 教員だけ
     await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l5'), log('A1', { kind: 'hack' })));
     await assertFails(setDoc(doc(as(A1), 'teams/A/taskLogs/l6'), log('A1', { extra: 1 })));
   });
@@ -477,6 +477,17 @@ describe('ミーティングの議事録 (先生がアップ。チームの学�
     await assertFails(setDoc(doc(as(TEACHER), 'teams/A/meetingMinutes/2026-10-28'), minutes({ text: 'あ'.repeat(10001) })));
     await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/meetingMinutes/2026-10-28'), minutes()));
     await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/meetingMinutes/2026-10-28')));
+  });
+});
+
+describe('キックオフの「最初からやり直す」: 教員だけが、タスク・作業ログ・変更履歴を消せる', () => {
+  test('学生は消せない (自分のチームでも)。教員は消せる', async () => {
+    const ref = (path: string) => doc(as(A1), path);
+    const daily = `teams/A/dailyReports/${jstDate()}_A2`; // 試験の準備で、A2 の作業ログがある
+    await assertFails(deleteDoc(ref(daily)));
+    await assertFails(deleteDoc(ref('teams/A/tasks/t1')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), daily)));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/tasks/t1')));
   });
 });
 

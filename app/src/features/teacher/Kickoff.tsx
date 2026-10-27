@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useKickoffDrafts } from '../../data/kickoffDrafts';
 import { createTasks, newTaskId, useTasks } from '../../data/tasks';
-import { updateTeam, useTeam } from '../../data/teams';
+import { updateTeam, useTeam, wipeTeamForRestart } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { defaultSummary } from '../../lib/companyReport';
 import { checkDraft } from '../../lib/draftCheck';
@@ -37,6 +37,7 @@ function KickoffForm({ team }: { team: Team }) {
   const [autoName, setAutoName] = useState('');
   const [hard, setHard] = useState(false);
   const [fill, setFill] = useState(true);
+  const [restart, setRestart] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [err, setErr] = useState('');
@@ -78,8 +79,13 @@ function KickoffForm({ team }: { team: Team }) {
   const plan = useMemo(() => {
     if (!tasks) return null;
     const nodes = [...TEMPLATE_NODES, ...draftNodes(outline, fill)];
-    return planImport(tasks, nodes, () => `preview-${Math.random()}`);
-  }, [tasks, outline, fill]);
+    return planImport(restart ? [] : tasks, nodes, () => `preview-${Math.random()}`);
+  }, [tasks, outline, fill, restart]);
+  /** 作成する件数の内訳: 雛形の大項目と、叩き台の項目 */
+  const split = (created: { depth: number; title: string }[]) => {
+    const heads = created.filter((n) => n.depth === 1 && TEMPLATE_TITLES.has(n.title)).length;
+    return { heads, items: created.length - heads };
+  };
 
   const report = useMemo(() => (outline.trim() ? checkDraft(fill ? fillPeriods(outline) : outline, hard ? 'ハード' : 'ソフト') : null), [outline, hard, fill]);
 
@@ -88,17 +94,24 @@ function KickoffForm({ team }: { team: Team }) {
 
   const run = async () => {
     if (!tasks) return;
+    if (restart && !window.confirm(`${team.id}チームの、いまのタスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録を、すべて消して、最初から作り直します。元には戻せません。よろしいですか。`)) return;
     setBusy(true); setErr(''); setResult('');
     try {
-      const real = planImport(tasks, [...TEMPLATE_NODES, ...draftNodes(outline, fill)], () => newTaskId(team.id));
+      let existing = tasks;
+      let notesNow = team.reportNotes;
+      if (restart) {
+        await wipeTeamForRestart(team.id);
+        existing = []; notesNow = null;
+      }
+      const real = planImport(existing, [...TEMPLATE_NODES, ...draftNodes(outline, fill)], () => newTaskId(team.id));
       const drafts = real.created.filter((n) => !(n.depth === 1 && TEMPLATE_TITLES.has(n.title)));
       const templ = real.created.filter((n) => n.depth === 1 && TEMPLATE_TITLES.has(n.title));
       await createTasks(team.id, 'teacher', templ, 'user');
       await createTasks(team.id, 'teacher', drafts, 'draft');
       // プロジェクトの概要の初期の文章を、初期WBSと同時に作る (すでに書かれていれば、そのまま。あとから直せる)
-      const notes = team.reportNotes;
+      const notes = notesNow;
       const hasSummary = !!notes?.summary?.trim();
-      const taskCount = real.created.filter((n) => !(n.depth === 1)).length + tasks.filter((t) => !t.deleted && t.depth > 1).length;
+      const taskCount = real.created.filter((n) => !(n.depth === 1)).length + existing.filter((t) => !t.deleted && t.depth > 1).length;
       const now = Date.now();
       await updateTeam(team.id, {
         ...(hasSummary ? {} : { reportNotes: { summary: defaultSummary({ id: team.id, projectName: projectName.trim(), members: team.members }, taskCount), issues: notes?.issues ?? '', next: notes?.next ?? '', by: 'teacher', at: now, summaryAt: now, ...(notes?.issuesAt ? { issuesAt: notes.issuesAt } : {}), ...(notes?.nextAt ? { nextAt: notes.nextAt } : {}) } }),
@@ -109,10 +122,11 @@ function KickoffForm({ team }: { team: Team }) {
           { no: 2, title: titles[1].trim(), adopted: adopted === 2 },
         ].filter((p) => p.title),
         driveUrl: driveUrl.trim(),
-        kickoffAt: team.kickoffAt ?? Date.now(),
+        kickoffAt: restart ? Date.now() : team.kickoffAt ?? Date.now(),
       });
-      setResult(`キックオフしました。タスクを${real.created.length}件作成しました(既にあった${real.reused}件は、そのまま使いました)。学生のホームに「初期WBSの見直し」が出ます。`);
-      setOutline('');
+      const sp = split(real.created);
+      setResult(`${restart ? '最初からやり直しました。' : 'キックオフしました。'}タスクを${real.created.length}件作成しました(雛形の大項目 ${sp.heads}件 + 叩き台の項目 ${sp.items}件。既にあった${real.reused}件は、そのまま使いました)。学生のホームに「初期WBSの見直し」が出ます。`);
+      setOutline(''); setRestart(false);
     } catch (e) {
       setErr(`できませんでした: ${(e as Error).message}`);
     } finally {
@@ -180,14 +194,20 @@ function KickoffForm({ team }: { team: Team }) {
             <p className="hint">点検は目安です。このまま取り込むこともできます。</p>
           </div>
         )}
+        {team.status === 'active' && (
+          <label className="card chip restart-box">
+            <input type="checkbox" checked={restart} onChange={(e) => setRestart(e.target.checked)} />
+            <span><strong>最初からやり直す</strong>(いまのタスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録を、すべて消して、上の叩き台から作り直します。共有フォルダ・成果物の提出先・先生のメッセージ・登録した叩き台は、そのまま。<strong>元には戻せません</strong>)</span>
+          </label>
+        )}
         {plan && (
           <p className="card">
-            実行すると、タスクを<strong>{plan.created.length}件</strong>作成します(既にある{plan.reused}件は、そのまま使います)。
+            実行すると、タスクを<strong>{plan.created.length}件</strong>作成します(雛形の大項目 {split(plan.created).heads}件 + 叩き台の項目 {split(plan.created).items}件。既にある{plan.reused}件は、そのまま使います)。
           </p>
         )}
         {outline.trim() && (
           <details className="card" aria-label="取り込む叩き台の一覧">
-            <summary><strong>取り込む叩き台の中身を見る</strong>({draftNodes(outline, fill).length}項目。期間は、自動で入れた分も含みます)</summary>
+            <summary><strong>取り込む叩き台の中身を見る</strong>({draftNodes(outline, fill).filter((n) => n.depth > 1).length}項目。期間は、自動で入れた分も含みます)</summary>
             <ul className="kickoff-preview">
               {draftNodes(outline, fill).map((n, i) => (
                 <li key={i} style={{ marginLeft: (n.depth - 1) * 16, fontWeight: n.depth === 1 ? 700 : 400 }}>
@@ -200,7 +220,7 @@ function KickoffForm({ team }: { team: Team }) {
         {err && <p className="error">{err}</p>}
         {result && <p className="ok">{result}</p>}
         <div className="row">
-          <button disabled={!canRun} onClick={run}>{team.status === 'active' ? '反映する' : 'キックオフする'}</button>
+          <button disabled={!canRun} onClick={run}>{restart ? '消して、最初から作り直す' : team.status === 'active' ? '反映する' : 'キックオフする'}</button>
           {result && <Link to={`/teacher/team/${team.id}`} className="btn ghost-btn">WBSを見る</Link>}
         </div>
       </div>
