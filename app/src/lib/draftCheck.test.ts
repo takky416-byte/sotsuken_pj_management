@@ -40,7 +40,7 @@ describe('checkDraft', () => {
     expect(errors(few).some((m) => m.includes('50〜60件'))).toBe(true);
   });
   test('日程の節目 (外部設計レビューなど) が抜けると、注意', () => {
-    const r = checkDraft(example.replace('外部設計レビューの説明スライドを作る', '外部設計の説明を作る').replace('外部設計レビューの指摘を整理して、対応を決める', '外部設計の指摘を整理する'));
+    const r = checkDraft(example.replace('外部設計レビューの当日の説明を準備する', '外部設計の説明を作る').replace('外部設計レビューの指摘を整理して、対応を決める', '外部設計の指摘を整理する'));
     expect(r.issues.some((i) => i.level === 'warn' && i.message.includes('外部設計レビュー'))).toBe(true);
   });
 });
@@ -55,7 +55,7 @@ describe('期間', () => {
     expect(errors(example.replace(first, `期間: 2026-11-07〜2026-11-08`)).some((m) => m.includes('授業日ではありません'))).toBe(true); // 土・日
     expect(errors(example.replace(first, `期間: 2026-12-26〜2027-01-05`)).some((m) => m.includes('授業日ではありません'))).toBe(true); // 冬休み
     void a;
-    const late = example.replace(/(- 外部設計レビューの説明スライドを作る\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-02');
+    const late = example.replace(/(- 外部設計レビューの当日の説明を準備する\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-02');
     expect(errors(late).some((m) => m.includes('外部設計レビュー'))).toBe(true);
   });
   test('自動で入れると、誤りがなくなる (見本から期間を外して入れ直す)', () => {
