@@ -28,7 +28,7 @@ describe('アウトラインの期間', () => {
 });
 
 describe('autoSchedule', () => {
-  const nodes = parseOutline('# 外部設計\n- a\n- b\n- 外部設計レビューの資料を作る\n# 内部設計・実装\n- 部品を発注する\n- 部品を追加で発注する\n- c');
+  const nodes = parseOutline('# 外部設計\n- a\n- b\n- 外部設計レビューの説明スライドを作る\n# 内部設計・実装\n- 部品を発注する\n- 部品を追加で発注する\n- c');
   const out = autoSchedule(nodes);
   const of = (t: string) => out.find((n) => n.title === t)!;
   test('どの項目にも期間が入り、開始は終了以前', () => {
@@ -37,7 +37,7 @@ describe('autoSchedule', () => {
     }
   });
   test('節目の期限と、機材発注の期限を越えない。大項目には入れない', () => {
-    expect(of('外部設計レビューの資料を作る').endDate! <= '2026-11-25').toBe(true);
+    expect(of('外部設計レビューの説明スライドを作る').endDate! <= '2026-11-25').toBe(true);
     expect(of('部品を発注する').endDate! <= '2026-11-05').toBe(true);
     expect(of('部品を追加で発注する').endDate! <= '2026-12-01').toBe(true);
     expect(of('外部設計').startDate).toBeUndefined();
