@@ -68,9 +68,9 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     await page.goto('/teacher/kickoff/B');
     await page.getByLabel('採用する企画名').fill('やり直しの確認');
     await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 旧タスク');
-    await expect(page.getByText('タスクを7件作成します(雛形の大項目 6件 + 叩き台の項目 1件')).toBeVisible();
+    await expect(page.getByText('タスクを6件作成します(雛形の大項目 5件 + 叩き台の項目 1件')).toBeVisible();
     await page.getByRole('button', { name: 'キックオフする' }).click();
-    await expect(page.getByText(/キックオフしました。タスクを7件作成しました\(雛形の大項目 6件 \+ 叩き台の項目 1件/)).toBeVisible();
+    await expect(page.getByText(/キックオフしました。タスクを6件作成しました\(雛形の大項目 5件 \+ 叩き台の項目 1件/)).toBeVisible();
 
     // やり直す: 古いタスクは、完全に消える (「やり直す」の前は、「反映する」)
     await expect(page.getByRole('button', { name: '反映する' })).toBeVisible();
@@ -79,7 +79,7 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 新タスク');
     page.once('dialog', (d) => { expect(d.message()).toContain('元には戻せません'); void d.accept(); });
     await page.getByRole('button', { name: '消して、最初から作り直す' }).click();
-    await expect(page.getByText(/最初からやり直しました。タスクを7件作成しました/)).toBeVisible();
+    await expect(page.getByText(/最初からやり直しました。タスクを6件作成しました/)).toBeVisible();
     await page.goto('/teacher/team/B');
     await expect(row(page, '新タスク')).toBeVisible();
     await expect(row(page, '旧タスク')).toHaveCount(0);

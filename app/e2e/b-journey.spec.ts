@@ -22,9 +22,9 @@ test.describe.serial('運用の流れ', () => {
     await page.goto('/teacher/kickoff/A');
     await page.getByLabel('採用する企画名').fill('テスト企画');
     await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 機能一覧を作る\n  > 必須機能と追加機能に分ける');
-    await expect(page.getByText('タスクを7件作成します')).toBeVisible();
+    await expect(page.getByText('タスクを6件作成します')).toBeVisible();
     await page.getByRole('button', { name: 'キックオフする' }).click();
-    await expect(page.getByText(/タスクを7件作成しました/)).toBeVisible();
+    await expect(page.getByText(/タスクを6件作成しました/)).toBeVisible();
 
     // 2回目 (同じ内容) は、新しく作られない
     await page.getByLabel(/叩き台のタスク/).fill('# 要件定義\n- 機能一覧を作る');

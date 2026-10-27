@@ -464,7 +464,8 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .finding { padding:6px 10px; border-radius:10px; background:var(--bg); }
 .finding.warn { background:#fff3e0; }
 .phases { display:flex; flex-direction:column; gap:6px; }
-.phase { display:grid; grid-template-columns:minmax(90px,200px) 1fr 100px auto; gap:10px; align-items:center; }
+.phase { display:grid; grid-template-columns:minmax(90px,200px) 1fr 120px 112px; gap:10px; align-items:center; }
+.phase-pct, .phase-period { text-align:right; white-space:nowrap; }
 .phase-bar { height:12px; background:var(--line); border-radius:999px; overflow:hidden; } .phase-bar span { display:block; height:100%; background:var(--ok, #22b573); }
 .phase-pct small { color:var(--muted); }
 .analysis-table, .wbs-print { border-collapse:collapse; width:100%; font-size:14px; }
