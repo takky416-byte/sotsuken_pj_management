@@ -51,8 +51,8 @@ export const SECTION_WINDOWS: Record<string, [string, string]> = {
 
 /** 題名に合う節目の期限 (終了日がこれ以前)。上から先に合ったものを使う。section: その大項目の中だけ */
 export const DEADLINES: { section: string; re: RegExp; end: string; why: string }[] = [
-  { section: '外部設計', re: /レビュー.*指摘|指摘.*レビュー/, end: '2026-12-04', why: '外部設計レビュー(11/25)の指摘の対応' },
-  { section: '外部設計', re: /レビュー/, end: '2026-11-25', why: '外部設計レビュー(11/25)' },
+  { section: '外部設計', re: /中間報告の指摘/, end: '2026-12-04', why: '中間報告(11/25)の指摘の対応' },
+  { section: '外部設計', re: /中間報告の(当日の)?説明/, end: '2026-11-25', why: '中間報告(11/25)' },
   { section: '発表・展示準備', re: /最終レビュー.*指摘|指摘.*最終レビュー/, end: '2027-02-02', why: '提出物の納期(2/2)' },
   { section: '発表・展示準備', re: /最終レビュー/, end: '2027-01-26', why: '最終レビュー(1/26)' },
   { section: '発表・展示準備', re: /動画/, end: '2027-01-27', why: 'YouTube動画の締切(1/27)' },
