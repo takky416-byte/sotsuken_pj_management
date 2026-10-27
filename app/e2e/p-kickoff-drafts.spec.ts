@@ -47,6 +47,22 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     // キックオフはしない (ほかのテストが、Bチームは企画検討中のままであることを前提にしている)
   });
 
+  test('先生が企画名を直したあとは、案を切り替えても上書きしない。登録は消せる', async ({ page }) => {
+    await login(page, TEACHER);
+    await page.goto('/teacher/kickoff/B');
+    await page.getByLabel('採用する企画名').fill('先生が決めた名前');
+    await page.getByLabel(/企画①/).check();
+    await expect(page.getByLabel('採用する企画名')).toHaveValue('先生が決めた名前');
+    await expect(page.getByLabel(/叩き台のタスク/)).toHaveValue(new RegExp('案1のタスク'));
+
+    await page.goto('/teacher/settings?tab=drafts');
+    page.on('dialog', (d) => void d.accept());
+    const b = page.getByRole('row', { name: /^B / });
+    await b.getByRole('button', { name: '消す' }).first().click();
+    await b.getByRole('button', { name: '消す' }).first().click();
+    await expect(b.getByText('未登録')).toHaveCount(2);
+  });
+
   test('キックオフ済みのチームを、「最初からやり直す」で、作り直せる。件数の内訳が出る', async ({ page }) => {
     await login(page, TEACHER);
     await page.goto('/teacher/kickoff/B');
@@ -72,21 +88,5 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
     const titles = (await db.collection('teams/B/tasks').get()).docs.map((d) => d.data().title);
     expect(titles).toContain('新タスク');
     expect(titles).not.toContain('旧タスク');
-  });
-
-  test('先生が企画名を直したあとは、案を切り替えても上書きしない。登録は消せる', async ({ page }) => {
-    await login(page, TEACHER);
-    await page.goto('/teacher/kickoff/B');
-    await page.getByLabel('採用する企画名').fill('先生が決めた名前');
-    await page.getByLabel(/企画①/).check();
-    await expect(page.getByLabel('採用する企画名')).toHaveValue('先生が決めた名前');
-    await expect(page.getByLabel(/叩き台のタスク/)).toHaveValue(new RegExp('案1のタスク'));
-
-    await page.goto('/teacher/settings?tab=drafts');
-    page.on('dialog', (d) => void d.accept());
-    const b = page.getByRole('row', { name: /^B / });
-    await b.getByRole('button', { name: '消す' }).first().click();
-    await b.getByRole('button', { name: '消す' }).first().click();
-    await expect(b.getByText('未登録')).toHaveCount(2);
   });
 });
