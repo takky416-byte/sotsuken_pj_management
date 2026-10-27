@@ -60,10 +60,10 @@ const shotHtml = (s, sec) => {
 const html = (withVideo) => `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.title)} ${esc(c.subtitle)}</title><style>${css}</style></head><body><main>
 <section class="cover"><h1>${esc(c.title)}</h1><div class="sub">${esc(c.subtitle)}</div><p>${esc(c.lead)}</p></section>
 <section class="intro"><h2>まずはこの4つ</h2><div class="steps">${c.start.map((s) => `<div class="step"><b>${esc(s.t)}</b>${esc(s.d)}</div>`).join('')}</div>
-<h3>目次</h3><div class="toc">${c.sections.map((s) => `<div><a href="#${s.id}">${esc(s.title)}</a></div>`).join('')}<div><a href="#videos">9. 操作デモ動画</a></div><div><a href="#faq">10. 困ったとき</a></div></div></section>
+<h3>目次</h3><div class="toc">${c.sections.map((s) => `<div><a href="#${s.id}">${esc(s.title)}</a></div>`).join('')}<div><a href="#videos">10. 操作デモ動画</a></div><div><a href="#faq">11. 困ったとき</a></div></div></section>
 ${c.sections.map((sec) => `<section id="${sec.id}"><h2>${esc(sec.title)}</h2><p class="lead">${esc(sec.lead)}</p>${sec.shots.map((s) => shotHtml(s, sec)).join('')}${sec.notes ? `<ul class="notes">${sec.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}</section>`).join('')}
-<section id="videos"><h2>9. 操作デモ動画</h2><p class="lead">${withVideo ? 'このマニュアルと同じフォルダの動画です。字幕つき・音声なしです。' : '同じフォルダの動画ファイル(MP4)です。字幕つき・音声なしです。'}</p><div class="vids">${videos.map((v) => `<div class="vid"><b>${esc(v.t)}</b>${withVideo ? `<video controls preload="none" src="${v.mp4}"></video>` : ''}<div>${esc(v.d)}</div><div class="file">${v.mp4}</div></div>`).join('')}</div></section>
-<section id="faq"><h2>10. 困ったとき</h2><dl class="faq">${c.faq.map((f) => `<dt>${esc(f.q)}</dt><dd>${esc(f.a)}</dd>`).join('')}</dl></section>
+<section id="videos"><h2>10. 操作デモ動画</h2><p class="lead">${withVideo ? 'このマニュアルと同じフォルダの動画です。字幕つき・音声なしです。' : '同じフォルダの動画ファイル(MP4)です。字幕つき・音声なしです。'}</p><div class="vids">${videos.map((v) => `<div class="vid"><b>${esc(v.t)}</b>${withVideo ? `<video controls preload="none" src="${v.mp4}"></video>` : ''}<div>${esc(v.d)}</div><div class="file">${v.mp4}</div></div>`).join('')}</div></section>
+<section id="faq"><h2>11. 困ったとき</h2><dl class="faq">${c.faq.map((f) => `<dt>${esc(f.q)}</dt><dd>${esc(f.a)}</dd>`).join('')}</dl></section>
 </main></body></html>`;
 
 const base = '卒研PJ管理_操作マニュアル_学生編';

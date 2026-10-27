@@ -23,6 +23,13 @@ export default async function seed() {
     driveUrl: 'https://drive.google.com/drive/folders/sample-shared', kickoffAt: Date.now() - 20 * 86400000, teamMeetingInput: false,
     message: { text: '来週は中間確認をします。WBSの期間を入れておいてください。', at: Date.now() - 3600000 },
     submitUrl: 'https://drive.google.com/drive/folders/sample-submit',
+    // 初期WBSの見直しは済んでいる (見直しの画面は、撮影のときだけ、この記録を外す)
+    wbsReview: { at: Date.now() - 15 * 86400000, by: 'A1' },
+    reportNotes: {
+      summary: 'Aチーム(4名)は、卒業研究制作として「学内イベント案内アプリ」に取り組みます。学内のイベントを、一覧・検索で見つけやすくすることを目指します。',
+      issues: 'データの設計がやや遅れています。担当を増やして、来週中に取り戻します。今後は、イベント一覧と検索の実装を進めます。',
+      by: 'A1', at: Date.now() - 86400000, summaryAt: Date.now() - 5 * 86400000, issuesAt: Date.now() - 86400000,
+    },
   });
 
   await db.doc('config/settings').set({ peerDailyView: true, rotateOrder: true, dailyStartDate: addDays(t, -14) });
@@ -33,8 +40,8 @@ export default async function seed() {
   await db.doc('milestones/m2').set({ title: '最終発表', date: addDays(t, 38), endDate: null, teamId: null, note: '' });
 
   // WBS (大項目5 + 子タスク)
-  const base = { detail: '', links: [], source: 'user', createdBy: 'teacher', updatedBy: 'teacher', createdAt: 1, updatedAt: 1, deleted: false, deletedAt: null };
-  type T = { id: string; title: string; parent?: string; s?: 'todo' | 'doing' | 'done'; a?: string[]; from?: number; to?: number };
+  const base = { detail: '', links: [], source: 'user' as 'user' | 'draft', createdBy: 'teacher', updatedBy: 'teacher', createdAt: 1, updatedAt: 1, deleted: false, deletedAt: null };
+  type T = { id: string; title: string; draft?: boolean; parent?: string; s?: 'todo' | 'doing' | 'done'; a?: string[]; from?: number; to?: number };
   const tasks: T[] = [
     { id: 't1', title: '企画・要件定義', from: -28, to: -12 },
     { id: 't1a', title: '要件を整理する', parent: 't1', s: 'done', a: ['A1'], from: -28, to: -21 },
@@ -45,17 +52,17 @@ export default async function seed() {
     { id: 't3', title: '実装', from: -4, to: 24 },
     { id: 't3a', title: 'トップ画面を作る', parent: 't3', s: 'doing', a: ['A1'], from: -4, to: 8 },
     { id: 't3b', title: 'イベント一覧を作る', parent: 't3', s: 'doing', a: ['A3', 'A4'], from: 0, to: 14 },
-    { id: 't3c', title: '検索機能を作る', parent: 't3', s: 'todo', a: [], from: 10, to: 24 },
+    { id: 't3c', title: '検索機能を作る', draft: true, parent: 't3', s: 'todo', a: [], from: 10, to: 24 },
     { id: 't4', title: '動作確認・改善', from: 20, to: 32 },
-    { id: 't4a', title: '操作テストをする', parent: 't4', s: 'todo', a: ['A2'], from: 20, to: 32 },
+    { id: 't4a', title: '操作テストをする', draft: true, parent: 't4', s: 'todo', a: ['A2'], from: 20, to: 32 },
     { id: 't5', title: '発表準備', from: 28, to: 38 },
-    { id: 't5a', title: 'スライドを作る', parent: 't5', s: 'todo', a: ['A4'], from: 28, to: 38 },
+    { id: 't5a', title: 'スライドを作る', draft: true, parent: 't5', s: 'todo', a: ['A4'], from: 28, to: 38 },
   ];
   let order = 0;
   for (const k of tasks) {
     order += 1000;
     await db.doc(`teams/A/tasks/${k.id}`).set({
-      ...base, title: k.title, parentId: k.parent ?? null, depth: k.parent ? 2 : 1, order, status: k.s ?? 'doing',
+      ...base, source: k.draft ? 'draft' : 'user', title: k.title, parentId: k.parent ?? null, depth: k.parent ? 2 : 1, order, status: k.s ?? 'doing',
       assignees: k.a ?? [], startDate: k.from === undefined ? null : addDays(t, k.from), endDate: k.to === undefined ? null : addDays(t, k.to),
     });
   }
@@ -69,4 +76,10 @@ export default async function seed() {
   await log('A3', 't2a', '画面の流れ図を完成させた', 'done', 'イベント一覧の実装を始める');
   await log('A4', 't3b', 'APIの使い方を調べて、サンプルを動かした', 'progress', 'イベント一覧の表示を作る');
   await log('A1', 't2a', '画面のワイヤーフレームを5枚描いた', 'done', 'トップ画面の実装を始める');
+
+  // 先生が公開した、前回のミーティングの議事録
+  await db.doc(`teams/A/meetingMinutes/${prev}`).set({
+    date: prev, publishedAt: Date.now() - 6 * 86400000,
+    text: '【決まったこと】\n・データの設計を、来週の授業までに終える(瀬戸口)\n・イベント一覧の実装を、2人で進める(御子柴・月島)\n【確認したこと】\n・中間報告に向けて、WBSの期間を入れておく',
+  });
 }
