@@ -355,6 +355,9 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .dcard.on.r-stuck { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 8%, var(--card)); }
 .dcard-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
 .dcard-head strong { font-size:18px; }
+.dcard-head { flex-wrap:wrap; }
+.dcard-head .detail-btn { margin-left:auto; }
+.dcard-detail { white-space:pre-wrap; background:var(--accent-soft); border-radius:8px; padding:8px 12px; margin:0 0 8px; font-size:15px; line-height:1.6; }
 .seg { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
 .seg-btn { background:var(--card); color:var(--fg); border:2px solid var(--line); box-shadow:none; padding:10px 6px; min-height:48px; font-size:17px; }
 .seg-btn.on { color:#fff; border-color:transparent; }

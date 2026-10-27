@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useBase } from '../../components/Base';
 import { saveDaily } from '../../data/daily';
-import { createTasks, newTaskId, setDeleted, updateTask } from '../../data/tasks';
+import { createTasks, newTaskId, setDeleted, updateTask, updateTaskArray } from '../../data/tasks';
 import {
   FIXED_KINDS, MIN_NEXT_CHARS, MIN_NOTE_CHARS, RESULT_LABEL, charCount, statusOf, validateDaily,
   type Daily, type DailyKind, type DailyResult,
 } from '../../lib/daily';
 import {
-  ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, nextCandidates, statusChanges, type DraftItem,
+  ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, newAssignments, nextCandidates, statusChanges, type DraftItem,
 } from '../../lib/dailyDraft';
 import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
 import { formatDate } from '../../lib/dates';
@@ -45,7 +45,7 @@ const PHRASES: Record<DailyResult, { label: string; text: string }[]> = {
 const addPhrase = (note: string, text: string) => `${note}${note && !/\n$/.test(note) ? '\n' : ''}${text}`;
 
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
-type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string };
+type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string; removed?: string[] };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
 const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, JSON.stringify(d)); } catch { /* 保存できなくても入力はできる */ } };
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
@@ -68,10 +68,12 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     if (!d) return base;
     // 下書きの内容を、いまのタスクの候補に重ねる (消えたタスクは捨てる)
     const saved = new Map(d.items.map((i) => [i.id, i]));
-    const merged = base.map((i) => (saved.has(i.id) ? { ...i, result: saved.get(i.id)!.result, note: saved.get(i.id)!.note } : i));
+    const gone = new Set(d.removed ?? []);
+    const merged = base.filter((i) => !gone.has(i.id)).map((i) => (saved.has(i.id) ? { ...i, result: saved.get(i.id)!.result, note: saved.get(i.id)!.note } : i));
     for (const i of d.items) if ((i.kind !== 'task' || i.adhoc) && !merged.some((m) => m.id === i.id)) merged.push({ id: i.id, kind: i.kind, result: i.result, note: i.note, ...(i.adhoc ? { adhoc: i.adhoc } : {}) });
     return merged;
   });
+  const [removed, setRemoved] = useState<string[]>(() => (prev ? [] : loadDraft(key)?.removed ?? [])); // 作業ログから外したタスク (下書きにも残す)
   const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
   const [extra, setExtra] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -80,8 +82,10 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const [touched, setTouched] = useState<Set<string>>(new Set()); // いちど書いて離れた欄
   const touch = (id: string) => setTouched((t) => (t.has(id) ? t : new Set(t).add(id)));
   const [shown, setShown] = useState(false); // 「提出する」を押してから、足りない点を赤く示す
+  const [open, setOpen] = useState<Set<string>>(new Set()); // 詳細を開いているタスクのカード
+  const toggleOpen = (id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next }); }, [items, next, key, prev]);
+  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next, removed }); }, [items, next, removed, key, prev]);
   useEffect(() => setState('idle'), [items, next]);
 
   const title = (i: DraftItem) => (i.adhoc ? i.adhoc.title.trim() || 'WBSにない作業' : i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
@@ -99,6 +103,13 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const addTask = (id: string) => { setFocusId(id); setItems((xs) => (xs.some((x) => x.id === id) ? xs.map((x) => (x.id === id ? { ...x, result: x.result ?? 'progress' } : x)) : [...xs, { id, kind: 'task', taskId: id, result: 'progress', note: '' }])); };
   const addAdhoc = () => setItems((xs) => [...xs, { id: `${ADHOC_PREFIX}${Date.now().toString(36)}`, kind: 'task', result: 'progress', note: '', adhoc: { title: '', parentId: null } }]);
   const removeKind = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
+  // 間違って選んだタスクや、手を付けなかったタスクは、作業ログから外せる (外したタスクは、「ほかのタスクを選ぶ」から選び直せる)
+  const removeTask = (i: DraftItem) => {
+    if (i.note.trim() && !window.confirm(`「${title(i)}」の説明を消して、作業ログから外しますか。`)) return;
+    removeKind(i.id);
+    setRemoved((r) => (r.includes(i.id) ? r : [...r, i.id]));
+  };
+  const addTaskBack = (id: string) => { setRemoved((r) => r.filter((x) => x !== id)); addTask(id); };
 
   const shownIds = new Set(items.map((i) => i.id));
   const others = live.filter((t) => !shownIds.has(t.id) && !live.some((c) => c.parentId === t.id));
@@ -131,6 +142,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       onSubmitted(first);
       // 結果に合わせて、タスクの状態も更新する (完了した → 完了。着手前なら、進行中に)
       await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status }, '作業ログ')));
+      // 担当でないタスクを選んで書いたときは、その人も担当に加える
+      await Promise.allSettled(newAssignments(items, tasks, sid).map((id) => updateTaskArray(teamId, sid, id, 'assignees', 'add', sid)));
     } catch (e) {
       setState('idle');
       setErr(`提出できませんでした: ${(e as Error).message}`);
@@ -150,7 +163,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       <section className="card">
         <h3>1. やったこと</h3>
         <p className="hint">{prevDate ? `前回(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを選んで、何をどこまでやったかを書きます。授業時間外の作業も含めます。</p>
-        {taskCards.length === 0 && <p className="hint">担当のタスクがありません。下の「ほかのタスクを選ぶ」か、WBSで担当を決めてください。</p>}
+        {taskCards.length === 0 && <p className="hint">タスクが選ばれていません。下の「ほかのタスクを選ぶ」から選んでください(タスクを1つも選ばないと、提出できません)。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
           const n = charCount(i.note);
@@ -159,7 +172,14 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
               <div className="dcard-head">
                 <strong>{title(i)}</strong>
                 {t && <span className="hint">{t.status === 'done' ? '完了済み(ほかの人が完了)・' : ''}{periodLabel(t.startDate, t.endDate)}</span>}
+                {t && <button type="button" className="detail-btn" aria-expanded={open.has(i.id)} aria-label={`${title(i)}の詳細`} onClick={() => toggleOpen(i.id)}>詳細 {open.has(i.id) ? '▴' : '▾'}</button>}
+                <button type="button" className="ghost icon" aria-label={`${title(i)}を作業ログから外す`} title="作業ログから外す(間違って選んだ・手を付けなかった)" onClick={() => removeTask(i)}>×</button>
               </div>
+              {t && open.has(i.id) && (
+                <div className="dcard-detail" aria-label={`${title(i)}の詳細の内容`}>
+                  {t.detail.trim() ? t.detail : '詳細は書かれていません。'}
+                </div>
+              )}
               <div className="seg" role="group" aria-label={`${title(i)}の結果`}>
                 {RESULTS.map((r) => (
                   <button key={r} type="button" className={`seg-btn r-${r} ${i.result === r ? 'on' : ''}`} aria-pressed={i.result === r} onClick={() => pick(i, r)}>
@@ -176,7 +196,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                   {!i.note.trim() && <div className="phrases" aria-label="ひとこと">
                     {PHRASES[i.result].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text) })}>＋ {ph.label}</button>)}
                   </div>}
-                  <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}</div>
+                  <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}{t && !t.assignees.includes(sid) && <span className="hint">提出すると、あなたもこのタスクの担当に加わります</span>}</div>
                 </>
               )}
             </div>
@@ -218,7 +238,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
           );
         })}
         {others.length > 0 && (
-          <select value={extra} onChange={(e) => { if (e.target.value) addTask(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
+          <select value={extra} onChange={(e) => { if (e.target.value) addTaskBack(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
             <option value="">＋ ほかのタスクを選ぶ…</option>
             {others.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
           </select>

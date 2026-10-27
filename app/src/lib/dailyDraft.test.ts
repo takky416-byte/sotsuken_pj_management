@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import type { Daily } from './daily';
 import {
-  candidateTasks, initialItems, itemsToEntries, nextCandidates, sinceOf, statusChanges,
+  candidateTasks, initialItems, itemsToEntries, newAssignments, nextCandidates, sinceOf, statusChanges,
 } from './dailyDraft';
 
 const TODAY = '2026-11-10';
@@ -112,5 +112,14 @@ describe('前回の作業ログのあと (授業時間外の作業も含む)', (
     expect(items.find((i) => i.id === 'mid')).toMatchObject({ result: 'done' });
     expect(items.find((i) => i.id === 'old')?.result ?? null).toBeNull();
     expect(items.find((i) => i.id === 'other')?.result ?? null).toBeNull();
+  });
+});
+
+describe('newAssignments (作業ログに書いたら、担当に加わる)', () => {
+  const item = (id: string, result: 'progress' | 'done' | 'stuck' | null) => ({ id, kind: 'task' as const, taskId: id, result, note: 'x' });
+  test('自分が担当でないタスクを書いたときだけ、担当に加える。書いていない(結果なし)・自分が担当・WBSにない作業は加えない', () => {
+    expect(newAssignments([item('other', null), item('later', 'done'), item('doing', null), item('nothing', 'progress')], tasks, 'A1')).toEqual([]);
+    expect(newAssignments([item('other', 'progress'), item('other', 'done'), item('later', 'progress')], tasks, 'A1')).toEqual(['other']);
+    expect(newAssignments([{ id: 'adhoc:1', kind: 'task' as const, result: 'progress' as const, note: 'x', adhoc: { title: 'a', parentId: null } }], tasks, 'A1')).toEqual([]);
   });
 });

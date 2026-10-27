@@ -130,6 +130,16 @@ test.describe.serial('運用の流れ', () => {
     await expect(card).not.toContainText('あと3字');
     await page.getByLabel('画面遷移図を描くの説明').fill('画面の下書きを3枚作った');
     await expect(card).not.toContainText('もう少し具体的に');
+    // タスクの詳細は、開閉して確かめられる
+    await card.getByRole('button', { name: '画面遷移図を描くの詳細' }).click();
+    await expect(card.getByLabel('画面遷移図を描くの詳細の内容')).toBeVisible();
+    await card.getByRole('button', { name: '画面遷移図を描くの詳細' }).click();
+    await expect(card.getByLabel('画面遷移図を描くの詳細の内容')).toHaveCount(0);
+    // 間違って選んだ・手を付けなかったタスクは、作業ログから外せる。外したタスクは、「ほかのタスクを選ぶ」から選び直せる
+    await page.getByRole('button', { name: 'ワイヤーフレームを作るを作業ログから外す' }).click();
+    await expect(page.locator('.dcard', { hasText: 'ワイヤーフレームを作る' })).toHaveCount(0);
+    await page.getByLabel('ほかのタスクを選ぶ').selectOption({ label: 'ワイヤーフレームを作る' });
+    await expect(page.getByLabel('ワイヤーフレームを作るの説明')).toBeVisible();
     // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
     await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');
     await page.getByLabel('次にやること', { exact: true }).fill('下書きをレビューして、清書する');

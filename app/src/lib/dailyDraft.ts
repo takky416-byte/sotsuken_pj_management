@@ -97,6 +97,17 @@ export function statusChanges(items: DraftItem[], tasks: Task[]): { taskId: stri
   return out;
 }
 
+/** 作業ログに書いたタスクのうち、まだ自分が担当でないもの (提出すると、担当に加わる)。WBSにない作業(新しく作るタスク)は、作るときに担当が付く。 */
+export function newAssignments(items: DraftItem[], tasks: Task[], sid: string): string[] {
+  const out: string[] = [];
+  for (const i of items) {
+    if (i.kind !== 'task' || i.adhoc || i.result === null || !i.taskId) continue;
+    const t = tasks.find((x) => x.id === i.taskId);
+    if (t && !t.deleted && !t.assignees.includes(sid) && !out.includes(t.id)) out.push(t.id);
+  }
+  return out;
+}
+
 /**
  * 作業ログがカバーする期間の始まり (ミリ秒)。前回の作業ログを出した時刻。
  * 作業ログは授業のときにだけ書き、作業は授業時間外にもするので、作業ログには、前回の作業ログのあとの作業をまとめて書く。

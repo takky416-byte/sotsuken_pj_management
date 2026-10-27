@@ -60,7 +60,7 @@ export function validateDaily(
   entries: DailyEntry[], next: string, titleOf: (e: DailyEntry) => string = () => '',
 ): DailyProblem[] {
   const out: DailyProblem[] = [];
-  if (entries.length === 0) out.push({ key: 'entries', message: '前回の作業ログのあとにやったことを、1つ以上選んでください' });
+  if (entries.length === 0) out.push({ key: 'entries', message: '前回の作業ログのあとにやったタスクを、1つ以上選んでください(間違って外したときは、「ほかのタスクを選ぶ」から選び直せます)' });
   entries.forEach((e, i) => {
     const n = charCount(e.note);
     if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、もう少し具体的に書いてください(何を、どこまでやったか)` });
