@@ -4,7 +4,7 @@ import { useTeams } from '../../data/teams';
 import { type DraftEntry, parseDraftBundle } from '../../lib/draftBundle';
 import { checkDraft } from '../../lib/draftCheck';
 import { fillPeriods } from '../../lib/draftSchedule';
-import { parseOutline } from '../../lib/outline';
+import { outlineMeta, parseOutline } from '../../lib/outline';
 
 /** ファイル名 (C-案1_….md) から、区切りの行を作る。ファイルの中に「@@」の行があれば、そのまま使う */
 function withHeader(name: string, text: string): string {
@@ -13,7 +13,7 @@ function withHeader(name: string, text: string): string {
   return m ? `@@ チーム${m[1]} 案${m[2]}\n${text}` : text;
 }
 
-const kindOf = (outline: string) => (/回路図|発注/.test(outline) ? 'ハード' : 'ソフト');
+const kindOf = (outline: string) => outlineMeta(outline).kind ?? (/回路図/.test(outline) ? 'ハード' : 'ソフト');
 
 /** 設定 > 叩き台の登録。各チームの2案を、先に登録しておく。キックオフでは、2案から選ぶだけ。 */
 export function KickoffDrafts() {

@@ -1,7 +1,7 @@
 import calendar from '../../data/calendar.json';
 import { addDays as addDaysStr } from './dates';
 import { DELIVERABLES } from './deliverables';
-import { NAME_LINE, parseOutline, type OutlineNode } from './outline';
+import { META_LINE, parseOutline, type OutlineNode } from './outline';
 import { parsePeriod } from './period';
 
 /** 叩き台の期間をつくる・確かめるための、授業期間と節目 (docs/decisions.md の共通マイルストーン) */
@@ -137,7 +137,7 @@ export function fillPeriods(text: string): string {
   const insert = new Map<number, string>();
   lines.forEach((raw, ln) => {
     if (raw.trim() === '' || /^\s*>/.test(raw)) return;
-    if (k === -1 && NAME_LINE.test(raw)) return; // 先頭の「企画名: …」は、項目ではない
+    if (k === -1 && META_LINE.test(raw)) return; // 先頭の「企画名: …」「種別: …」「データ保存: …」は、項目ではない
     k++;
     const before = nodes[k], after = filled[k];
     if (before && after && !(before.startDate && before.endDate) && after.startDate && after.endDate) {
@@ -156,7 +156,7 @@ export function fillPeriods(text: string): string {
       if (m && after?.startDate && after.endDate && parsePeriod(m[2].trim())) rewrite.set(ln, `${m[1]}${after.startDate}〜${after.endDate}`);
       return;
     }
-    if (kk === -1 && NAME_LINE.test(raw)) return;
+    if (kk === -1 && META_LINE.test(raw)) return;
     kk++;
   });
   const out: string[] = [];

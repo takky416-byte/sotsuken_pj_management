@@ -1,7 +1,7 @@
 import { addDays } from './dates';
 import { DRAFT_END, deadlineFor, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS, WINTER_BREAK, isClassDay } from './draftSchedule';
 import { DELIVERABLES, EXPECTED } from './deliverables';
-import { parseOutline, type OutlineNode } from './outline';
+import { outlineMeta, parseOutline, type OutlineNode } from './outline';
 import { TEMPLATE_NODES } from './template';
 
 export type DraftKind = 'ソフト' | 'ハード';
@@ -28,7 +28,9 @@ export const TARGET = { min: 50, max: 60, softMin: 45, softMax: 65 };
  * error = 直さないと取り込めない・決定事項に反する。warn = 見直したほうがよい。
  * ハード系 (機材発注に関わる) は kind='ハード' を渡すと、発注の項目も確かめる。
  */
-export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftReport {
+export function checkDraft(text: string, kindArg: DraftKind = 'ソフト'): DraftReport {
+  const meta = outlineMeta(text);
+  const kind: DraftKind = meta.kind ?? kindArg; // 先頭の「種別: …」があれば、それを使う
   const nodes = parseOutline(text);
   const issues: DraftIssue[] = [];
   const err = (message: string) => issues.push({ level: 'error', message });
@@ -125,7 +127,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
     // 成果物 (あらかじめ決まっている一覧) は、必ず項目にする
     for (const d of DELIVERABLES) {
       if (d.only === 'hard' && kind !== 'ハード') continue;
-      if (!in_(d.section, d.re)) (d.optional ? warn : err)(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
+      if (!in_(d.section, d.re)) (d.optional && meta.dataSaved === false ? () => undefined : d.optional ? warn : err)(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
     }
     for (const e of EXPECTED) if (!in_(e.section, e.re)) warn(`「${e.section}」に、${e.label}の項目がありません(${e.why})`);
     if (kind === 'ハード') {
