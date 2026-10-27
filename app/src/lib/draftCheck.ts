@@ -1,5 +1,5 @@
 import { addDays } from './dates';
-import { DRAFT_END, deadlineFor, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS, isClassDay } from './draftSchedule';
+import { DRAFT_END, deadlineFor, DRAFT_START, ORDER_DEADLINES, SECTION_WINDOWS, WINTER_BREAK, isClassDay } from './draftSchedule';
 import { DELIVERABLES, EXPECTED } from './deliverables';
 import { parseOutline, type OutlineNode } from './outline';
 import { TEMPLATE_NODES } from './template';
@@ -68,6 +68,7 @@ export function checkDraft(text: string, kind: DraftKind = 'ソフト'): DraftRe
     const { startDate: a, endDate: b } = n;
     if (!a || !b) { err(`${where}: 期間がありません (「> 期間: 2026-11-02〜2026-11-10」。キックオフ画面は自動で入れます)`); return; }
     if (a > b) err(`${where}: 期間の開始が終了より後です (${a}〜${b})`);
+    if (a < WINTER_BREAK[0] && b > WINTER_BREAK[1]) err(`${where}: 期間 ${a}〜${b} が、冬休み (${WINTER_BREAK[0]}〜${WINTER_BREAK[1]}) をまたいでいます。休み前に終えるか、休み明けから始めてください`);
     for (const [label, d] of [['開始', a], ['終了', b]] as const) if (!isClassDay(d)) err(`${where}: 期間の${label} ${d} が授業日ではありません (開始・終了は授業日。冬休みの12/25〜1/6は授業がありません)`);
     if (a < DRAFT_START || b > DRAFT_END) err(`${where}: 期間が授業期間(${DRAFT_START}〜${DRAFT_END})の外です (${a}〜${b})`);
     const sec = secOf(n);

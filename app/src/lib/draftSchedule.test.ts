@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { CLASS_DAYS, WINTER_BREAK, autoSchedule, fillPeriods, isClassDay, snapPeriod } from './draftSchedule';
+import { CLASS_DAYS, WINTER_BREAK, autoSchedule, avoidWinterBreak, fillPeriods, isClassDay, snapPeriod } from './draftSchedule';
 import { parseOutline } from './outline';
 import { parsePeriod } from './period';
 import { planImport } from './importPlan';
@@ -61,7 +61,15 @@ describe('授業日と冬休み', () => {
   test('授業日がはさまらない期間は、1日の期間にする。冬休みだけの期間も、前後の授業日になる', () => {
     expect(snapPeriod('2026-11-21', '2026-11-22')).toEqual({ start: '2026-11-24', end: '2026-11-24' });
     expect(snapPeriod('2026-12-26', '2027-01-05')).toEqual({ start: '2027-01-07', end: '2027-01-07' });
-    expect(snapPeriod('2026-12-23', '2027-01-08')).toEqual({ start: '2026-12-23', end: '2027-01-07' });
+    expect(snapPeriod('2026-12-23', '2027-01-08')).toEqual({ start: '2026-12-23', end: '2027-01-07' }); // 寄せるだけ。休みをまたぐ扱いは、下
+  });
+  test('冬休みをまたぐ期間は作らない: 休み前と休み明けの長いほう (同じなら休み前) だけにする', () => {
+    expect(avoidWinterBreak('2026-12-23', '2027-01-08')).toEqual({ start: '2026-12-23', end: '2026-12-24' }); // 2日と2日 → 休み前
+    expect(avoidWinterBreak('2026-12-22', '2027-01-12')).toEqual({ start: '2026-12-22', end: '2026-12-24' }); // 休み前 3日 > 休み明け 2日
+    expect(avoidWinterBreak('2026-12-24', '2027-01-20')).toEqual({ start: '2027-01-07', end: '2027-01-20' }); // 休み前 1日 < 休み明けのほう
+    expect(avoidWinterBreak('2026-12-15', '2027-01-07')).toEqual({ start: '2026-12-15', end: '2026-12-24' });
+    expect(avoidWinterBreak('2026-12-01', '2026-12-24')).toEqual({ start: '2026-12-01', end: '2026-12-24' }); // またがない
+    expect(avoidWinterBreak('2027-01-07', '2027-01-20')).toEqual({ start: '2027-01-07', end: '2027-01-20' });
   });
   test('自動で入れる期間・寄せた期間は、すべて授業日。冬休みの中には入らない。見本をもとに確かめる', () => {
     for (const f of ['example-soft.md', 'example-hard.md']) {
@@ -74,6 +82,7 @@ describe('授業日と冬休み', () => {
           expect(isClassDay(n.startDate as string), `${f} ${n.title} 開始 ${n.startDate}`).toBe(true);
           expect(isClassDay(n.endDate as string), `${f} ${n.title} 終了 ${n.endDate}`).toBe(true);
           expect((n.startDate as string) <= (n.endDate as string)).toBe(true);
+          expect(!((n.startDate as string) < WINTER_BREAK[0] && (n.endDate as string) > WINTER_BREAK[1]), `${f} ${n.title} が冬休みをまたぐ`).toBe(true);
         }
       }
       // 文章の形でも、期間の行がすべて授業日になる

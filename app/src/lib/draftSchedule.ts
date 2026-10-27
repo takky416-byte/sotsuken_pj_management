@@ -1,4 +1,5 @@
 import calendar from '../../data/calendar.json';
+import { addDays as addDaysStr } from './dates';
 import { DELIVERABLES } from './deliverables';
 import { NAME_LINE, parseOutline, type OutlineNode } from './outline';
 import { parsePeriod } from './period';
@@ -18,6 +19,19 @@ export const isClassDay = (d: string): boolean => CLASS_DAYS.includes(d);
 export const classDayOnOrAfter = (d: string): string => CLASS_DAYS.find((x) => x >= d) ?? CLASS_DAYS[CLASS_DAYS.length - 1];
 /** その日以前で、いちばん遅い授業日 (なければ最初の授業日) */
 export const classDayOnOrBefore = (d: string): string => [...CLASS_DAYS].reverse().find((x) => x <= d) ?? CLASS_DAYS[0];
+/**
+ * 冬休み (授業のない 12/25〜1/6) をまたぐ期間は、作らない。またぐときは、休み前の部分と休み明けの部分のうち、長いほう (同じなら休み前) だけにする。
+ * 休み前に終えるか、休み明けから始める、ということ。授業日どうしの期間 (snapPeriod のあと) に使う。
+ */
+export function avoidWinterBreak(start: string, end: string): { start: string; end: string } {
+  const before = classDayOnOrBefore(addDaysStr(WINTER_BREAK[0], -1)); // 休み前の最後の授業日 (12/24)
+  const after = classDayOnOrAfter(addDaysStr(WINTER_BREAK[1], 1)); // 休み明けの最初の授業日 (1/7)
+  if (!(start <= before && end >= after)) return { start, end };
+  const nBefore = CLASS_DAYS.filter((d) => d >= start && d <= before).length;
+  const nAfter = CLASS_DAYS.filter((d) => d >= after && d <= end).length;
+  return nBefore >= nAfter ? { start, end: before } : { start: after, end };
+}
+
 /** 開始は次の授業日へ、終了は前の授業日へ寄せる (授業日がはさまらないときは、1日の期間にする) */
 export function snapPeriod(start: string, end: string): { start: string; end: string } {
   const s = classDayOnOrAfter(start);
@@ -90,7 +104,7 @@ export function autoSchedule(nodes: OutlineNode[]): OutlineNode[] {
       const hasOrder = /発注/.test(node.title);
       const orderEnd = hasOrder ? ORDER_DEADLINES[orders++] : undefined;
       if (node.startDate && node.endDate) {
-        const p = snapPeriod(node.startDate, node.endDate);
+        const p = avoidWinterBreak(...Object.values(snapPeriod(node.startDate, node.endDate)) as [string, string]);
         node.startDate = p.start; node.endDate = p.end;
         return;
       }
@@ -104,7 +118,8 @@ export function autoSchedule(nodes: OutlineNode[]): OutlineNode[] {
         s = Math.max(floor, e - (len - 1));
       }
       if (s > e) s = e;
-      node.startDate = CLASS_DAYS[s]; node.endDate = CLASS_DAYS[e];
+      const p = avoidWinterBreak(CLASS_DAYS[s], CLASS_DAYS[e]);
+      node.startDate = p.start; node.endDate = p.end;
     });
   }
   return out;

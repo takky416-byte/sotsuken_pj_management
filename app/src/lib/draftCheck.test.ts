@@ -11,7 +11,7 @@ describe('checkDraft', () => {
   test('見本の叩き台は、問題なし', () => {
     const r = checkDraft(example);
     expect(r.issues).toEqual([]);
-    expect(r.total).toBe(53);
+    expect(r.total).toBe(54);
   });
   test('ハード系として見ると、発注の項目がないと誤り', () => {
     expect(errors(example, 'ハード').some((m) => m.includes('機材発注'))).toBe(true);
