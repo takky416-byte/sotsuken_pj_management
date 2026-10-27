@@ -50,10 +50,10 @@ describe('csvCell / toCsv', () => {
 describe('各CSV', () => {
   test('タスク: 担当は苗字、大項目→子の順、数式のガード、詳細の改行', () => {
     const lines = tasksCsv(backup()).replace('﻿', '');
-    expect(lines.split('\r\n')[0]).toBe('チーム,ID,親ID,階層,タイトル,状態,担当,開始日,終了日,詳細,リンク,叩き台,削除済み,作成者,更新者,更新日時');
+    expect(lines.split('\r\n')[0]).toBe('チーム,ID,親ID,階層,タイトル,状態,担当,開始日,終了日,詳細,叩き台,削除済み,作成者,更新者,更新日時');
     expect(lines).toContain(`"'=SUM(1,2)"`); // 数式にならないよう ' を付け、カンマを含むので囲む
     expect(lines).toContain('"1行目\n2行目, ""引用"""');
-    expect(lines).toContain('設計 https://x');
+    expect(lines).not.toContain('https://x'); // リンクは使わないので、CSVに出さない
     expect(lines).toContain(',進行中,岩田,2026-11-01,');
     expect(lines).toContain('叩き台');
     expect(lines).toContain('2026-10-28 12:00'); // 日本時間

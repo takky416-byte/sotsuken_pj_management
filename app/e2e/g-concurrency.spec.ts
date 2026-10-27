@@ -59,21 +59,6 @@ test.describe.serial('同時編集', () => {
     await a.p.waitForTimeout(800);
     await b.ctx.setOffline(false);
     for (const u of [a, b]) await expect(u.p.locator('.chip.on')).toHaveCount(2, { timeout: 15_000 }); // 岩田と近内
-    // リンクも同じ (配列を丸ごと書き換えない)
-    await b.ctx.setOffline(true);
-    await b.p.getByPlaceholder('https://...').fill('https://example.com/b');
-    await b.p.getByRole('button', { name: '追加', exact: true }).click();
-    await a.p.getByPlaceholder('https://...').fill('https://example.com/a');
-    await a.p.getByRole('button', { name: '追加', exact: true }).click();
-    await a.p.waitForTimeout(800);
-    await b.ctx.setOffline(false);
-    for (const u of [a, b]) await expect(u.p.locator('.detail .link-row')).toHaveCount(2, { timeout: 15_000 });
-    // 外す (他の人が足したリンクを消さない)
-    await a.p.locator('.detail .link-row', { hasText: 'example.com/a' }).getByRole('button', { name: '外す' }).click();
-    for (const u of [a, b]) {
-      await expect(u.p.locator('.detail .link-row')).toHaveCount(1, { timeout: 15_000 });
-      await expect(u.p.locator('.detail .link-row')).toContainText('example.com/b');
-    }
   });
 
   test('親の削除と、その下への追加が重なっても、タスクは迷子にならず、最上位に移せる', async () => {

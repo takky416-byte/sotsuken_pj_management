@@ -63,14 +63,13 @@ const sortBy = <T,>(a: T[], ...keys: ((x: T) => string | number)[]): T[] =>
 export function tasksCsv(b: Backup): string {
   const who = names(b);
   const nameOf = (sid: string) => (sid === 'teacher' ? '教員' : who.get(sid) ?? sid);
-  const rows: unknown[][] = [['チーム', 'ID', '親ID', '階層', 'タイトル', '状態', '担当', '開始日', '終了日', '詳細', 'リンク', '叩き台', '削除済み', '作成者', '更新者', '更新日時']];
+  const rows: unknown[][] = [['チーム', 'ID', '親ID', '階層', 'タイトル', '状態', '担当', '開始日', '終了日', '詳細', '叩き台', '削除済み', '作成者', '更新者', '更新日時']];
   const status: Record<string, string> = { todo: '未着手', doing: '進行中', done: '完了', hold: '保留' };
   for (const t of teamIds(b)) {
     for (const k of sortBy(col(b, `teams/${t}/tasks`), (x) => Number(x.depth ?? 0) === 1 ? 0 : 1, (x) => Number(x.order ?? 0))) {
       rows.push([
         t, k.id, k.parentId ?? '', k.depth, k.title, status[str(k.status)] ?? str(k.status),
         list<string>(k.assignees).map(nameOf).join('・'), k.startDate ?? '', k.endDate ?? '', k.detail,
-        list<{ url: string; label: string }>(k.links).map((l) => (l.label ? `${l.label} ${l.url}` : l.url)).join(' / '),
         k.source === 'draft' ? '叩き台' : k.source === 'adhoc' ? 'WBS外(後追い)' : '', k.deleted === true, nameOf(str(k.createdBy)), nameOf(str(k.updatedBy)), jstDateTime(k.updatedAt),
       ]);
     }

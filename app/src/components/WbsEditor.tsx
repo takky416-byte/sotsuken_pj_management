@@ -4,7 +4,6 @@ import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types'
 import {
   applyPatches, createTasks, newTaskId, setDeleted, updateTask, updateTaskArray, useTasks,
 } from '../data/tasks';
-import { isHttpUrl } from '../data/util';
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
@@ -17,7 +16,6 @@ import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } fro
 import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
-import type { TaskLink } from '../types';
 import { useEditableText } from './useEditableText';
 import { Toast, type ToastState } from './Toast';
 
@@ -330,7 +328,6 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               task={t} members={members} nameOf={nameOf} isParent={hasChildren}
               onChange={(changes) => run(() => updateTask(teamId, actor, t.id, changes))}
               onAssignee={(sid, add) => run(() => updateTaskArray(teamId, actor, t.id, 'assignees', add ? 'add' : 'remove', sid))}
-              onLink={(op, link) => run(() => updateTaskArray(teamId, actor, t.id, 'links', op, link))}
               onIndent={() => indent(t)}
               onOutdent={() => patch(planOutdent(tasks, t.id))}
               onMove={(d) => patch(planMove(tasks, t.id, d))}
@@ -478,29 +475,21 @@ function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent,
   );
 }
 
-function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onLink, onIndent, onOutdent, onMove, onDelete }: {
+function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIndent, onOutdent, onMove, onDelete }: {
   task: Task;
   members: Member[];
   nameOf: (sid: string) => string;
   isParent: boolean;
   onChange: (changes: Partial<Omit<Task, 'id'>>) => void;
   onAssignee: (sid: string, add: boolean) => void;
-  onLink: (op: 'add' | 'remove', link: TaskLink) => void;
   onIndent: () => void;
   onOutdent: () => void;
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
   const ed = useEditableText(t.detail, (detail) => onChange({ detail }), { trim: false, allowEmpty: true });
-  const [url, setUrl] = useState('');
-  const [label, setLabel] = useState('');
 
   const toggle = (sid: string) => onAssignee(sid, !t.assignees.includes(sid));
-  const addLink = () => {
-    if (!isHttpUrl(url)) return;
-    onLink('add', { url, label: label.trim() });
-    setUrl(''); setLabel('');
-  };
 
   return (
     <div className={`detail depth-${t.depth}`}>
@@ -536,23 +525,6 @@ function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onLi
         </div>
       </div>
       )}
-      <div>
-        <div className="label">リンク (Drive・GitHubなど)</div>
-        {t.links.map((l, i) => (
-          <div className="link-row" key={i}>
-            {/* 保存済みのURLでも、http(s) 以外 (javascript: など) はリンクにしない */}
-            {isHttpUrl(l.url)
-              ? <a href={l.url} target="_blank" rel="noreferrer noopener">{l.label || l.url}</a>
-              : <span title="http(s) 以外のURLなので、リンクにしていません">{l.label || l.url}</span>}
-            <button className="ghost" onClick={() => onLink('remove', l)}>外す</button>
-          </div>
-        ))}
-        <div className="row">
-          <input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
-          <input placeholder="名前(任意)" value={label} maxLength={60} onChange={(e) => setLabel(e.target.value)} />
-          <button className="ghost" disabled={!isHttpUrl(url)} onClick={addLink}>追加</button>
-        </div>
-      </div>
       <div className="row actions">
         <button className="ghost" onClick={() => onMove(-1)}>↑</button>
         <button className="ghost" onClick={() => onMove(1)}>↓</button>
