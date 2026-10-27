@@ -61,7 +61,7 @@ export function KickoffDrafts() {
           <input type="file" multiple accept=".md,.txt,text/plain,text/markdown" onChange={(e) => { void readFiles(e.target.files); e.target.value = ''; }} />
         </label>
         <label>または、貼り付ける(1案ごとに、「@@ チームC 案1」の行から始める)
-          <textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder={'@@ チームC 案1\n企画名: 立たせる椅子(仮)\n# 企画の具体化\n- 困りごとを決める'} />
+          <textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder={'@@ チームC 案1\n企画名: 立たせる椅子(仮)\n# 要件定義\n- 困りごとを決める'} />
         </label>
         {parsed && (
           <div className="card" aria-label="登録する叩き台の確認">

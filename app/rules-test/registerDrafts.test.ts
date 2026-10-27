@@ -36,7 +36,7 @@ describe('試運転の叩き台の登録', () => {
     const docs = (await db.collection('teams/C/kickoffDrafts').get()).docs;
     expect(docs.map((d) => d.id).sort()).toEqual(['1', '2']);
     expect(docs[0].data()).toMatchObject({ no: 1, title: '試運転用の見本(ソフト系)' });
-    expect(docs[0].data().outline.startsWith('企画名: 試運転用の見本(ソフト系)\n# 企画の具体化')).toBe(true);
+    expect(docs[0].data().outline.startsWith('企画名: 試運転用の見本(ソフト系)\n# 要件定義')).toBe(true);
     expect((await db.doc('teams/C').get()).data()).toMatchObject({ status: 'planning', driveUrl: 'https://x' });
   });
 });

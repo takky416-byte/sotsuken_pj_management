@@ -35,7 +35,7 @@ describe('checkDraft', () => {
     expect(errors(example.replace('- 機能2を実装する', '- 機能1を実装する')).some((m) => m.includes('重なって'))).toBe(true);
   });
   test('大項目の欠け・順序違い・件数の過不足', () => {
-    expect(errors(example.replace('# 要件定義', '# 要件')).some((m) => m.includes('6つ'))).toBe(true);
+    expect(errors(example.replace('# 要件定義', '# 要件')).some((m) => m.includes('5つ'))).toBe(true);
     const few = example.split('# 内部設計・実装')[0] + '# 内部設計・実装\n- a\n  > やること: x\n  > できあがり: yyyyyyy\n# 動作確認・改善\n# 発表・展示準備\n';
     expect(errors(few).some((m) => m.includes('50〜60件'))).toBe(true);
   });

@@ -43,9 +43,9 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
   // --- 大項目 ---
   const heads = nodes.filter((n) => n.depth === 1).map((n) => n.title);
   if (heads.join('/') !== SECTIONS.join('/')) {
-    err(`大項目は、次の6つをこの順で書いてください: ${SECTIONS.join(' / ')} (いまは: ${heads.join(' / ') || 'なし'})`);
+    err(`大項目は、次の5つをこの順で書いてください: ${SECTIONS.join(' / ')} (いまは: ${heads.join(' / ') || 'なし'})`);
   }
-  if (nodes.length > 0 && nodes[0].depth !== 1) err('先頭に大項目 (# 企画の具体化) がありません');
+  if (nodes.length > 0 && nodes[0].depth !== 1) err('先頭に大項目 (# 要件定義) がありません');
 
   // --- 大項目ごとの切り分け ---
   type Sec = { title: string; items: OutlineNode[] };
@@ -121,7 +121,7 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
 
   // --- 日程の節目との整合 ---
   const in_ = (sec: string, re: RegExp) => (secs.find((s) => s.title === sec)?.items ?? []).some((n) => re.test(n.title));
-  if (secs.length === 6) {
+  if (secs.length === SECTIONS.length) {
     if (!in_('外部設計', /中間報告の(当日の)?説明/)) warn('「外部設計」に、中間報告 (11/25) の当日の説明の項目がありません');
     if (!in_('発表・展示準備', /最終発表/)) warn('「発表・展示準備」に、最終発表 (1/26) に向けた項目がありません');
     if (!in_('発表・展示準備', /動画/)) warn('「発表・展示準備」に、YouTube動画 (1/27締切) の項目がありません');
@@ -135,8 +135,8 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
     }
     for (const e of EXPECTED) if (!in_(e.section, e.re)) warn(`「${e.section}」に、${e.label}の項目がありません(${e.why})`);
     if (kind === 'ハード') {
-      const orders = (secs.find((s) => s.title === '内部設計・実装')?.items ?? []).filter((n) => /発注/.test(n.title)).length;
-      if (orders < 2) err('ハード系の企画に、機材発注 (11/5・12/1) の項目が2つ以上ありません (「内部設計・実装」に入れる)');
+      const orders = secs.filter((s) => s.title === '要件定義' || s.title === '内部設計・実装').flatMap((s) => s.items).filter((n) => /発注/.test(n.title)).length;
+      if (orders < 2) err('ハード系の企画に、機材発注 (11/5・12/1) の項目が2つ以上ありません (1回目は「要件定義」、2回目は「内部設計・実装」に入れる)');
       if (!in_('要件定義', /予算|費用|部品|機材/)) warn('ハード系の企画に、予算・部品の洗い出しが「要件定義」にありません');
     }
   }

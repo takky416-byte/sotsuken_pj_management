@@ -32,7 +32,7 @@ test.describe.serial('運用の流れ', () => {
 
     await page.goto('/teacher/team/A');
     await expect(page.getByText('テスト企画')).toBeVisible();
-    for (const t of ['企画の具体化', '要件定義', '外部設計', '内部設計・実装', '動作確認・改善', '発表・展示準備', '機能一覧を作る']) {
+    for (const t of ['要件定義', '外部設計', '内部設計・実装', '動作確認・改善', '発表・展示準備', '機能一覧を作る']) {
       await expect(row(page, t)).toBeVisible();
     }
     await expect(row(page, '機能一覧を作る').getByText('叩き台')).toHaveCount(0); // 「叩き台」の表記は、WBSの行に出さない

@@ -30,7 +30,7 @@ describe('planImport', () => {
   test('2回実行しても増えない (雛形+取り込み)', () => {
     const nodes = [...TEMPLATE_NODES, ...parseOutline('# 要件定義\n- 機能一覧を作る')];
     const first = planImport([], nodes, mkId());
-    expect(first.created).toHaveLength(7);
+    expect(first.created).toHaveLength(6);
     const asExisting = first.created.map((c) => existingTask(c.id, c.title, c.parentId, c.depth, c.order));
     expect(planImport(asExisting, nodes, mkId()).created).toEqual([]);
   });

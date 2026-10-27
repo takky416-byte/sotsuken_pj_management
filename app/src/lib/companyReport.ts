@@ -46,7 +46,7 @@ const MAX_LIST = 10;
 export function defaultSummary(team: { id: string; projectName: string; members: unknown[] }, taskCount: number): string {
   const n = team.members.length;
   return `${team.id}チーム${n > 0 ? `(${n}名)` : ''}は、卒業研究制作として「${team.projectName}」に取り組みます。`
-    + '2026年10月から、企画の具体化・要件定義・外部設計・内部設計・実装・動作確認・改善の順に進め、2027年2月6日の卒業研究制作展で成果を発表します。'
+    + '2026年10月から、要件定義・外部設計・内部設計・実装・動作確認・改善の順に進め、2027年2月6日の卒業研究制作展で成果を発表します。'
     + `初期の計画は、${taskCount}件のタスクで構成し、進めながら見直します。`;
 }
 

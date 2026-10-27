@@ -492,7 +492,7 @@ describe('キックオフの「最初からやり直す」: 教員だけが、�
 });
 
 describe('キックオフの叩き台 (先生だけが読み書きできる)', () => {
-  const draft = (no: number, over: Record<string, unknown> = {}) => ({ no, title: '立たせる椅子(仮)', outline: '# 企画の具体化\n- 困りごとを決める', updatedAt: 1, ...over });
+  const draft = (no: number, over: Record<string, unknown> = {}) => ({ no, title: '立たせる椅子(仮)', outline: '# 要件定義\n- 困りごとを決める', updatedAt: 1, ...over });
   test('先生は登録・読み取り・削除できる。学生(自分のチームでも)は、読めない・書けない・消せない', async () => {
     await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1'), draft(1)));
     await assertSucceeds(getDoc(doc(as(TEACHER), 'teams/A/kickoffDrafts/1')));

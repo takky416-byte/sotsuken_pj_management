@@ -31,7 +31,7 @@ async function seed() {
   await db.doc('config/classDays').set({ days: [{ date: '2026-10-28', periods: '3-4', meeting: false, note: '' }] });
   // キックオフ済みの雛形 (大項目) と、叩き台の1件
   const base = { detail: '', status: 'todo', assignees: [], startDate: null, endDate: null, links: [], source: 'draft', createdBy: 'teacher', updatedBy: 'teacher', createdAt: 1, updatedAt: 1, deleted: false, deletedAt: null };
-  await db.doc('teams/D/tasks/big1').set({ ...base, title: '企画の具体化', parentId: null, depth: 1, order: 1024 });
+  await db.doc('teams/D/tasks/big1').set({ ...base, title: '要件定義', parentId: null, depth: 1, order: 1024 });
   await db.doc('teams/D/tasks/big3').set({ ...base, title: '外部設計', parentId: null, depth: 1, order: 3072 });
   await db.doc('teams/D/tasks/draft1').set({ ...base, title: '画面の一覧を考える', parentId: 'big3', depth: 2, order: 1024 });
 }
@@ -63,7 +63,7 @@ describe('試運転データ (pilot-data)', () => {
     expect(after1.meetings).toBe(4);
     const titles = (await db.collection('teams/D/tasks').get()).docs.map((d) => d.data().title);
     expect(titles.filter((t) => t === '画面の一覧を考える')).toHaveLength(1); // 叩き台と重複しない
-    expect(titles.filter((t) => t === '企画の具体化')).toHaveLength(1); // 雛形の大項目を使う
+    expect(titles.filter((t) => t === '要件定義')).toHaveLength(1); // 雛形の大項目を使う
 
     await applyPilot({ db, teamId: 'D', dryRun: false, now: NOW, log: quiet });
     expect({ tasks: await count('teams/D/tasks'), dailies: await count('teams/D/dailyReports'), meetings: await count('teams/D/meetings') }).toEqual(after1);
