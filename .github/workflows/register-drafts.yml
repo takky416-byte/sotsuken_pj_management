@@ -1,0 +1,45 @@
+name: Register kickoff drafts (pilot)
+
+# 試運転のチームに、キックオフの叩き台 (2案) を登録する。公開リポジトリにある見本 (example-soft.md・example-hard.md) だけを使う。
+# 企画の資料から作った叩き台は、ここでは扱わない (先生が、アプリの 設定 > 叩き台の登録 から登録する)。
+# dry_run が true (初期値) のときは、何も書き込まない。
+on:
+  workflow_dispatch:
+    inputs:
+      teams:
+        description: 対象のチーム (A〜H をカンマ区切り。例 C,D)
+        required: true
+      dry_run:
+        description: ドライラン (true なら書き込まない)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Write credentials
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: Register
+        working-directory: app
+        env:
+          TEAMS: ${{ inputs.teams }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/register-kickoff-drafts.mjs
