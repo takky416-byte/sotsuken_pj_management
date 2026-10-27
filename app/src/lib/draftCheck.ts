@@ -14,6 +14,9 @@ export type DraftReport = {
   counts: { title: string; n: number }[];
   /** 大項目を除いた項目の数 */
   total: number;
+  /** 点検で使った種別 (先頭の「種別: …」、なければ回路図があるかで判断) */
+  kind: DraftKind;
+  kindFromHeader: boolean;
 };
 
 const SECTIONS = TEMPLATE_NODES.map((n) => n.title);
@@ -28,9 +31,10 @@ export const TARGET = { min: 50, max: 60, softMin: 45, softMax: 65 };
  * error = 直さないと取り込めない・決定事項に反する。warn = 見直したほうがよい。
  * ハード系 (機材発注に関わる) は kind='ハード' を渡すと、発注の項目も確かめる。
  */
-export function checkDraft(text: string, kindArg: DraftKind = 'ソフト'): DraftReport {
+export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
   const meta = outlineMeta(text);
-  const kind: DraftKind = meta.kind ?? kindArg; // 先頭の「種別: …」があれば、それを使う
+  // 先頭の「種別: …」があれば、それを使う。なければ、渡された種別、それもなければ、回路図の項目があるかで決める
+  const kind: DraftKind = meta.kind ?? kindArg ?? (/回路図/.test(text) ? 'ハード' : 'ソフト');
   const nodes = parseOutline(text);
   const issues: DraftIssue[] = [];
   const err = (message: string) => issues.push({ level: 'error', message });
@@ -137,5 +141,5 @@ export function checkDraft(text: string, kindArg: DraftKind = 'ソフト'): Draf
     }
   }
 
-  return { issues, counts, total };
+  return { issues, counts, total, kind, kindFromHeader: meta.kind !== undefined };
 }

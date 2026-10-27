@@ -100,3 +100,13 @@ describe('ハード系の見本・記入サンプルから足した確認', () =
     expect(r.issues.some((i) => i.level === 'error' && i.message.includes('展望'))).toBe(false);
   });
 });
+
+describe('種別の決め方', () => {
+  test('先頭の「種別」があればそれ。なければ、回路図の項目があるかで、ハードかソフトか決める', () => {
+    expect(checkDraft(example).kind).toBe('ソフト');
+    expect(checkDraft(example).kindFromHeader).toBe(false);
+    expect(checkDraft('種別: ハード\n' + example).kind).toBe('ハード');
+    expect(checkDraft('種別: ハード\n' + example).kindFromHeader).toBe(true);
+    expect(checkDraft(example.replace('# 内部設計・実装\n', '# 内部設計・実装\n- 回路図を作る\n  > やること: 回路図を描く。\n  > できあがり: 回路図がある。\n')).kind).toBe('ハード');
+  });
+});

@@ -35,7 +35,6 @@ function KickoffForm({ team }: { team: Team }) {
   const [driveUrl, setDriveUrl] = useState(team.driveUrl);
   const [outline, setOutline] = useState('');
   const [autoName, setAutoName] = useState('');
-  const [hard, setHard] = useState(false);
   const [fill, setFill] = useState(true);
   const [restart, setRestart] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -87,7 +86,7 @@ function KickoffForm({ team }: { team: Team }) {
     return { heads, items: created.length - heads };
   };
 
-  const report = useMemo(() => (outline.trim() ? checkDraft(fill ? fillPeriods(outline) : outline, hard ? 'ハード' : 'ソフト') : null), [outline, hard, fill]);
+  const report = useMemo(() => (outline.trim() ? checkDraft(fill ? fillPeriods(outline) : outline) : null), [outline, fill]);
 
   const urlOk = driveUrl === '' || isHttpUrl(driveUrl);
   const canRun = !!projectName.trim() && urlOk && !busy && !!tasks;
@@ -177,13 +176,9 @@ function KickoffForm({ team }: { team: Team }) {
           <input type="checkbox" checked={fill} onChange={(e) => setFill(e.target.checked)} />
           期間のない項目に、期間を自動で入れる(開始・終了は授業日。冬休みは入らず、またぎません。「{'>'} 期間: 2026-11-04〜2026-11-10」と書けば、その期間になります。授業日でない日は、授業日に寄せます)
         </label>
-        <label className="chip">
-          <input type="checkbox" checked={hard} onChange={(e) => setHard(e.target.checked)} />
-          ハード系の企画(機材発注の項目も点検する)
-        </label>
         {report && (
           <div className="card" aria-label="叩き台の点検">
-            <strong>叩き台の点検</strong>: {report.total}項目(目安は50〜60)
+            <strong>叩き台の点検</strong>: {report.total}項目(目安は50〜60)。種別: {report.kind}({report.kind === 'ハード' ? '機材発注・回路図も点検します' : '機材発注・回路図は点検しません'}。{report.kindFromHeader ? '叩き台の先頭の「種別」の行から' : '先頭に「種別: ソフト」か「種別: ハード」の行がないので、回路図の項目があるかで判断'})
             {report.issues.length === 0 ? <p className="ok">問題は見つかりませんでした。</p> : (
               <ul>
                 {report.issues.map((i, k) => (
