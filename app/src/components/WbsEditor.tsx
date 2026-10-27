@@ -207,6 +207,10 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 onMove={(d) => patch(planMove(tasks, t.id, d))}
                 readOnly={!canEdit}
               />
+              <button
+                type="button" className={`ghost detail-btn${openId === t.id ? ' on' : ''}`} aria-label="詳細" aria-expanded={openId === t.id}
+                title={canEdit ? 'タスクの詳細を開く' : 'タスクの詳細を見る'} onClick={() => setOpenId(openId === t.id ? null : t.id)}
+              >詳細 {openId === t.id ? '▴' : '▾'}</button>
               {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
               {t.source === 'adhoc' && <span className="badge adhoc" title="作業ログで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
@@ -316,9 +320,6 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               {canEdit && t.depth < 3 && (
                 <button className="ghost icon" aria-label="子タスクを追加" title="子タスクを追加" onClick={() => setAddingUnder(t.id)}>＋</button>
               )}
-              <button className="ghost icon" aria-label="詳細" title={canEdit ? '詳細' : '詳細(閲覧)'} onClick={() => setOpenId(openId === t.id ? null : t.id)}>
-                {openId === t.id ? '▲' : '⋯'}
-              </button>
             </div>
           </div>
 

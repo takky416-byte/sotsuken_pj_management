@@ -862,3 +862,7 @@ table.access tr.detail td { background:var(--bg); }
 .hero .hero-actions .btn { padding:8px 18px; }
 
 .kickoff-preview { list-style: none; padding: 0; margin: 8px 0 0; max-height: 360px; overflow: auto; font-size: 14px; line-height: 1.7; }
+
+/* タスク名のすぐ右の「詳細」ボタン (右端まで目を動かさなくてよいように) */
+.w-title .detail-btn { flex:none; padding:2px 8px; font-size:13px; line-height:1.4; white-space:nowrap; }
+.w-title .detail-btn.on { background:var(--accent-soft, rgba(80,70,230,.12)); }
