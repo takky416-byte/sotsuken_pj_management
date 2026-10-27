@@ -211,7 +211,6 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 type="button" className={`ghost detail-btn${openId === t.id ? ' on' : ''}`} aria-label="詳細" aria-expanded={openId === t.id}
                 title={canEdit ? 'タスクの詳細を開く' : 'タスクの詳細を見る'} onClick={() => setOpenId(openId === t.id ? null : t.id)}
               >詳細 {openId === t.id ? '▴' : '▾'}</button>
-              {t.source === 'draft' && <span className="badge" title="叩き台です。自由に変更してください">叩き台</span>}
               {t.source === 'adhoc' && <span className="badge adhoc" title="作業ログで「WBSにない作業」として追加された作業です。正しい場所に移してください">後追い</span>}
             </div>
             <div className="w-status">
@@ -466,7 +465,7 @@ function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent,
   return (
     <>
       <input
-        ref={ref} className="title-input" value={ed.value} maxLength={200} aria-label="タイトル" readOnly={readOnly}
+        ref={ref} className="title-input" value={ed.value} maxLength={200} aria-label="タイトル" title={ed.value} readOnly={readOnly}
         onChange={(e) => ed.setValue(e.target.value)} onFocus={ed.onFocus} onBlur={ed.commit} onKeyDown={key}
       />
       {ed.conflict !== null && (
