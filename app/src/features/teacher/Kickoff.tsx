@@ -161,7 +161,7 @@ function KickoffForm({ team }: { team: Team }) {
         </p>
         <label className="chip">
           <input type="checkbox" checked={fill} onChange={(e) => setFill(e.target.checked)} />
-          期間のない項目に、期間を自動で入れる(「{'>'} 期間: 2026-11-02〜2026-11-10」と書けば、その期間になります)
+          期間のない項目に、期間を自動で入れる(開始・終了は授業日。冬休みは入りません。「{'>'} 期間: 2026-11-04〜2026-11-10」と書けば、その期間になります。授業日でない日は、授業日に寄せます)
         </label>
         <label className="chip">
           <input type="checkbox" checked={hard} onChange={(e) => setHard(e.target.checked)} />

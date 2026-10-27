@@ -49,8 +49,12 @@ describe('期間', () => {
   test('期間のない項目は誤り。範囲外・逆順・節目の期限超えも誤り', () => {
     const stripped = example.replace(/^ {2}> 期間: .*\n/m, '');
     expect(errors(stripped).some((m) => m.includes('期間がありません'))).toBe(true);
-    expect(errors(example.replace('2026-10-28〜2026-10-30', '2026-10-01〜2026-10-30')).some((m) => m.includes('外'))).toBe(true);
-    expect(errors(example.replace('2026-10-28〜2026-10-30', '2026-10-30〜2026-10-28')).some((m) => m.includes('開始が終了より後'))).toBe(true);
+    const [first, a, b] = /期間: (\d{4}-\d{2}-\d{2})〜(\d{4}-\d{2}-\d{2})/.exec(example) as RegExpExecArray; // 最初の項目の期間
+    expect(errors(example.replace(first, '期間: 2026-10-01〜' + b)).some((m) => m.includes('外'))).toBe(true);
+    expect(errors(example.replace(first, `期間: 2026-11-04〜2026-10-29`)).some((m) => m.includes('開始が終了より後'))).toBe(true);
+    expect(errors(example.replace(first, `期間: 2026-11-07〜2026-11-08`)).some((m) => m.includes('授業日ではありません'))).toBe(true); // 土・日
+    expect(errors(example.replace(first, `期間: 2026-12-26〜2027-01-05`)).some((m) => m.includes('授業日ではありません'))).toBe(true); // 冬休み
+    void a;
     const late = example.replace(/(- 外部設計レビューの資料を作る\n {2}> 期間: )[^\n]*/, '$12026-11-20〜2026-12-02');
     expect(errors(late).some((m) => m.includes('外部設計レビュー'))).toBe(true);
   });
