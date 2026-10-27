@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { CLASS_DAYS, WINTER_BREAK, autoSchedule, avoidWinterBreak, fillPeriods, isClassDay, snapPeriod } from './draftSchedule';
+import { CLASS_DAYS, WINTER_BREAK, autoSchedule, deadlineFor, avoidWinterBreak, fillPeriods, isClassDay, snapPeriod } from './draftSchedule';
 import { parseOutline } from './outline';
 import { parsePeriod } from './period';
 import { planImport } from './importPlan';
@@ -91,5 +91,14 @@ describe('授業日と冬休み', () => {
         expect(isClassDay(m[1]) && isClassDay(m[2]), `${f} ${m[0]}`).toBe(true);
       }
     }
+  });
+});
+
+describe('最終発表(1/26)と資料送付(1/19)の期限', () => {
+  test('スライドと最新化した設計書類は1/19まで、練習・デモは1/26まで、指摘を直すのは1/26のあと(2/2まで)', () => {
+    expect(deadlineFor('発表・展示準備', '最終発表のスライドを作る(事前送付)')?.end).toBe('2027-01-19');
+    expect(deadlineFor('発表・展示準備', '最新化した設計書類を事前送付する')?.end).toBe('2027-01-19');
+    expect(deadlineFor('発表・展示準備', 'デモの準備をする(デモ動画)')?.end).toBe('2027-01-26');
+    expect(deadlineFor('発表・展示準備', '最終発表の指摘を直す')?.end).toBe('2027-02-02');
   });
 });
