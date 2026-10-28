@@ -5,9 +5,11 @@ import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 export const RENAMES = { 外部設計レビュー: '中間報告', 最終レビュー: '最終発表' };
+/** 各チームのタスクの題名の言い換え (キックオフ後に、展開済みのタスクを直す)。 */
+export const TASK_RENAMES = { '設計資料を修正する(教員のレビューをもとに)': '設計資料を修正する' };
 
-/** @returns {Promise<{ milestones: number, classDays: number }>} 書き換えた (ドライランでは書き換える) 件数 */
-export async function renameMilestones({ db, dryRun = true, renames = RENAMES, log = console.log }) {
+/** @returns {Promise<{ milestones: number, classDays: number, tasks: number }>} 書き換えた (ドライランでは書き換える) 件数 */
+export async function renameMilestones({ db, dryRun = true, renames = RENAMES, taskRenames = TASK_RENAMES, log = console.log }) {
   let milestones = 0;
   for (const d of (await db.collection('milestones').get()).docs) {
     const to = renames[d.data().title];
@@ -29,8 +31,17 @@ export async function renameMilestones({ db, dryRun = true, renames = RENAMES, l
     });
     if (classDays > 0 && !dryRun) await ref.update({ days });
   }
+  let tasks = 0;
+  for (const d of (await db.collectionGroup('tasks').get()).docs) {
+    const t = d.data();
+    const to = taskRenames[t.title];
+    if (!to || t.deleted) continue;
+    log(`タスク ${d.ref.path}: 「${t.title}」→「${to}」`);
+    if (!dryRun) await d.ref.update({ title: to, updatedBy: 'system', updatedAt: Date.now() });
+    tasks++;
+  }
   log(dryRun ? '--- ドライラン: 何も書き換えていません ---' : '--- 書き換えました ---');
-  return { milestones, classDays };
+  return { milestones, classDays, tasks };
 }
 
 const isMain = process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
