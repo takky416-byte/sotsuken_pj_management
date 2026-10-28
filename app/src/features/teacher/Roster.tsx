@@ -86,7 +86,7 @@ export function Roster() {
       <div className="card form">
         <label>CSV を貼り付け (苗字,メールアドレス,チーム)
           <textarea rows={8} value={text} onChange={(e) => setText(e.target.value)}
-            placeholder={'苗字,メールアドレス,チーム\n岩田,xxxx@trident.ac.jp,A'} />
+            placeholder={'苗字,メールアドレス,チーム\n〇〇,xxxx@trident.ac.jp,A'} />
         </label>
         <p className="hint">1行目が見出しなら読み飛ばします。同姓の学生は「鈴木秀」「鈴木空」のように区別できる名前にしてください。同じメールアドレスは上書きします。</p>
         {parsed.errors.length > 0 && (

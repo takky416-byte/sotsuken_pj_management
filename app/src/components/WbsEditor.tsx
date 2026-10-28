@@ -80,7 +80,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
     const id = newTaskId(teamId);
     const order = afterId ? orderAfter(tasks, afterId) : appendOrder(tasks, parentId);
     setFocusId(afterId ? id : null);
-    // 「タスク名 @氷室 〜10/30」のように書くと、担当と期限も一緒に決まる
+    // 「タスク名 @〇〇 〜10/30」のように書くと、担当と期限も一緒に決まる
     const q = title ? parseQuickAdd(title, members, jstDate()) : { title, assignees: [], endDate: null };
     return run(() => createTasks(teamId, actor, [{ id, parentId, depth, title: q.title, detail: '', order, assignees: q.assignees, endDate: q.endDate }]));
   };
@@ -353,7 +353,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
 
       {canEdit && <div className="wbs-add depth-1">
         <AddBox
-          placeholder="タスクを追加 (Enterで追加。例: ログイン画面を作る @氷室 〜11/30)"
+          placeholder="タスクを追加 (Enterで追加。例: ログイン画面を作る @〇〇 〜11/30)"
           onAdd={(title) => add(null, title)}
           onPaste={(text) => paste(null, text)}
         />

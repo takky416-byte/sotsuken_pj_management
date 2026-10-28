@@ -19,11 +19,11 @@ const RESULTS: DailyResult[] = ['progress', 'done', 'stuck'];
 const PLACEHOLDER: Record<DailyResult, string> = {
   progress: '何を、どこまでやった? 分かったことは?\n例: ER図の主なテーブルを3つ作った。ユーザーとイベントの関係で迷っている。',
   done: '何ができあがった? どう確かめた?\n例: ログイン画面を作り終えた。正しい/誤ったパスワードの両方で動くことを確認した。',
-  stuck: 'どこで詰まった? 何を試した? チームの誰と相談して、どう進める?\n例: ツールの図形がそろわない。2通り試したが直らない。高瀬さんに聞いてみる。',
+  stuck: 'どこで詰まった? 何を試した? チームの誰と相談して、どう進める?\n例: ツールの図形がそろわない。2通り試したが直らない。〇〇さんに聞いてみる。',
 };
 const KIND_PLACEHOLDER: Record<Exclude<DailyKind, 'task'>, string> = {
   study: '何を調べて、何が分かった?\n例: 認証の仕組みを調べて、セッションとトークンの違いが分かった。',
-  discuss: '誰と何を話して、何が決まった?\n例: 岩田さんと分担を話し合い、画面設計は私、DB設計は岩田さんに決まった。',
+  discuss: '誰と何を話して、何が決まった?\n例: 〇〇さんと分担を話し合い、画面設計は私、DB設計は〇〇さんに決まった。',
   other: '何をした?',
 };
 
@@ -170,10 +170,14 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
           return (
             <div key={i.id} className={`dcard ${i.result ? `on r-${i.result}` : ''}`}>
               <div className="dcard-head">
-                <strong>{title(i)}</strong>
-                {t && <span className="hint">{t.status === 'done' ? '完了済み(ほかの人が完了)・' : ''}{periodLabel(t.startDate, t.endDate)}</span>}
-                {t && <button type="button" className="detail-btn" aria-expanded={open.has(i.id)} aria-label={`${title(i)}の詳細`} onClick={() => toggleOpen(i.id)}>詳細 {open.has(i.id) ? '▴' : '▾'}</button>}
-                <button type="button" className="ghost icon" aria-label={`${title(i)}を作業ログから外す`} title="作業ログから外す(間違って選んだ・手を付けなかった)" onClick={() => removeTask(i)}>×</button>
+                <div className="dcard-title">
+                  <strong>{title(i)}</strong>
+                  {t && <span className="hint">{t.status === 'done' ? '完了済み(ほかの人が完了)・' : ''}{periodLabel(t.startDate, t.endDate)}</span>}
+                </div>
+                <div className="dcard-actions">
+                  {t && <button type="button" className="detail-btn" aria-expanded={open.has(i.id)} aria-label={`${title(i)}の詳細`} onClick={() => toggleOpen(i.id)}>詳細 {open.has(i.id) ? '▴' : '▾'}</button>}
+                  <button type="button" className="ghost icon" aria-label={`${title(i)}を作業ログから外す`} title="作業ログから外す(間違って選んだ・手を付けなかった)" onClick={() => removeTask(i)}>×</button>
+                </div>
               </div>
               {t && open.has(i.id) && (
                 <div className="dcard-detail" aria-label={`${title(i)}の詳細の内容`}>
