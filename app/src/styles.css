@@ -713,6 +713,12 @@ table.access tr.access-detail td { background:var(--bg); }
 .picker li { padding:7px 10px; border-radius:6px; cursor:pointer; font-size:15px; }
 .picker li.on { background:var(--accent-soft); }
 .picker li.none { color:var(--muted); cursor:default; }
+.log-filters { align-items:flex-end; flex-wrap:wrap; gap:10px; margin:8px 0; }
+.log-filters .grow { flex:1 1 260px; }
+.log-filters .grow input { width:100%; }
+.log-section { margin:12px 0; }
+.log-person { margin:10px 0 14px; }
+.log-person h4 { margin:6px 0; }
 .md { overflow-wrap:anywhere; }
 .md p, .md ul, .md ol, .md blockquote, .md pre, .md h4, .md h5 { margin:3px 0; }
 .md ul, .md ol { padding-left:1.4em; }

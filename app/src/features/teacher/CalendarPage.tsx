@@ -21,7 +21,7 @@ export function CalendarPage() {
   if (!milestones || !days) return <p>読み込み中…</p>;
   return (
     <>
-      <h2>カレンダー</h2>
+      <h3>カレンダー</h3>
       {err && <p className="error">{err}</p>}
       {msg && <p className="ok">{msg}</p>}
       <Milestones milestones={milestones} run={run} />

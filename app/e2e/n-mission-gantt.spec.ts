@@ -162,6 +162,30 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await sp.close(); await t.close();
   });
 
+  test('教員: 作業ログの一覧を、チームごと・個人ごとに、日付・文字で絞り込んで見られる。カレンダーは、設定の中にある', async ({ browser }) => {
+    const t = await browser.newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await t.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await expect(t.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
+    await t.getByLabel('チーム', { exact: true }).selectOption('A');
+    await expect(t.locator('.log-section')).toHaveCount(1);
+    await expect(t.getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
+    await t.getByLabel('文字で絞り込む').fill('存在しない文字');
+    await expect(t.getByText('条件に合う作業ログはありません。')).toBeVisible();
+    await t.getByLabel('文字で絞り込む').fill('下書き');
+    await expect(t.getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
+    await t.getByRole('button', { name: '個人ごと' }).click();
+    await expect(t.locator('.log-person').first()).toBeVisible();
+    await t.getByLabel('個人', { exact: true }).selectOption({ index: 1 });
+    await expect(t.locator('.log-person')).toHaveCount(1);
+    // カレンダーは、ナビになく、設定の中の1項目
+    await expect(t.getByRole('link', { name: 'カレンダー', exact: true })).toHaveCount(0);
+    await t.getByRole('link', { name: '設定', exact: true }).click();
+    await t.getByRole('button', { name: 'カレンダー', exact: true }).click();
+    await expect(t.getByRole('heading', { name: '授業日とミーティング' })).toBeVisible();
+    await t.close();
+  });
+
   test('利用ガイド: 初回に自動で出て、あとからヘッダーの「ガイド」で画面に合わせて開ける', async ({ browser }) => {
     const page = await (await browser.newContext()).newPage();
     await login(page, 'a2@trident.ac.jp', { keepGuide: true });
