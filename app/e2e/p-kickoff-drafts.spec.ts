@@ -50,6 +50,7 @@ test.describe.serial('キックオフの叩き台 (2案から選ぶ)', () => {
   test('先生が企画名を直したあとは、案を切り替えても上書きしない。登録は消せる', async ({ page }) => {
     await login(page, TEACHER);
     await page.goto('/teacher/kickoff/B');
+    await expect(page.getByLabel('採用する企画名')).toHaveValue(/案1の企画/); // 叩き台が読み込まれて、企画名が入るのを待ってから、直す
     await page.getByLabel('採用する企画名').fill('先生が決めた名前');
     await page.getByLabel(/企画①/).check();
     await expect(page.getByLabel('採用する企画名')).toHaveValue('先生が決めた名前');
