@@ -477,7 +477,10 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .st-chip.st-doing { background:var(--accent); } .st-chip.st-done { background:var(--ok, #22b573); } .st-chip.st-hold { background:var(--line); color:var(--fg); }
 .report-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
 .report-head h2 { margin:0 0 6px; } .report-meta { display:flex; gap:18px; flex-wrap:wrap; }
-.report-meta .label { margin-right:4px; }
+.report-meta .label { margin:0 8px 0 0; }
+.report-head .report-meta { gap:10px 22px; align-items:center; font-size:16px; font-weight:600; }
+/* 帯(ヘッダーの色)の上では、見出しを、帯の文字色の小さなラベルにして、読みやすくする */
+.report-head .report-meta .label { display:inline-block; color:var(--header-fg,#fff); background:color-mix(in srgb, var(--header-fg,#fff) 18%, transparent); border:1px solid color-mix(in srgb, var(--header-fg,#fff) 55%, transparent); border-radius:999px; padding:1px 10px; font-size:13px; font-weight:700; margin-top:0; }
 @media (max-width:640px) { .phase { grid-template-columns:1fr 80px; } .phase-bar { grid-column:1 / -1; order:3; } }
 
 @media print {
