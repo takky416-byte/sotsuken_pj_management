@@ -72,6 +72,16 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await page.getByLabel('追加するタスクの名前').fill('ガントチャートから追加したタスク');
     await page.getByRole('button', { name: '追加', exact: true }).click();
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャートから追加したタスク' })).toBeVisible();
+
+    // 行の「＋」から、その場で追加できる。続けて入れられる
+    await page.getByRole('button', { name: /「なぞって期間を入れるタスク」にタスクを中に追加/ }).click();
+    const inline = page.getByLabel('ここに追加するタスクの名前');
+    await inline.fill('行の＋から足した1つめ');
+    await inline.press('Enter');
+    await inline.fill('行の＋から足した2つめ');
+    await inline.press('Enter');
+    await expect(page.locator('.gantt-row', { hasText: '行の＋から足した1つめ' })).toBeVisible();
+    await expect(page.locator('.gantt-row', { hasText: '行の＋から足した2つめ' })).toBeVisible();
   });
 
   test('作業ログ: WBSにない作業を書いて提出すると、WBSに「後追い」のタスクができる', async ({ page }) => {

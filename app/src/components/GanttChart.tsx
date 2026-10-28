@@ -33,6 +33,8 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const meta = useRef<{ left: number; width: number; day0: number; moved: boolean } | null>(null);
   const [addParent, setAddParent] = useState('');
   const [addTitle, setAddTitle] = useState('');
+  const [inline, setInline] = useState<string | null>(null); // 行の「＋」から、その場で追加するときの、追加先 (''は大項目)
+  const [inlineTitle, setInlineTitle] = useState('');
   const box = useRef<HTMLDivElement>(null);
   const ready = !!tasks && !!milestones;
   // 開いたときに、今日の線が見える位置までスクロールする (スマホなど、横にはみ出すとき)
@@ -115,16 +117,18 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
     const r = dragDates(field, { start: s, end: e }, n);
     void save(t.id, { startDate: r.start, endDate: r.end });
   };
-  const addTask = () => {
-    const title = addTitle.trim();
+  const submitAdd = (rawTitle: string, parentId: string) => {
+    const title = rawTitle.trim();
     if (!title) return;
-    const parent = live.find((t) => t.id === addParent && t.depth <= 2) ?? null;
+    const parent = live.find((t) => t.id === parentId && t.depth <= 2) ?? null;
     const depth = (parent ? parent.depth + 1 : 1) as 1 | 2 | 3;
     const q = parseQuickAdd(title, members, jstDate());
-    setErr(''); setAddTitle('');
+    setErr('');
     createTasks(teamId, actor, [{ id: newTaskId(teamId), parentId: parent?.id ?? null, depth, title: q.title, detail: '', order: appendOrder(live, parent?.id ?? null), assignees: q.assignees, endDate: q.endDate }])
       .catch((e) => setErr(`追加できませんでした: ${(e as Error).message}`));
   };
+  const addTask = () => { const t = addTitle; setAddTitle(''); submitAdd(t, addParent); };
+  const addInline = () => { const t = inlineTitle; setInlineTitle(''); submitAdd(t, inline ?? ''); }; // 続けて、いくつも入れられるよう、閉じない
   const parentChoices = live.filter((t) => t.depth <= 2).sort((a, b) => a.depth - b.depth || a.order - b.order);
 
   if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
@@ -171,8 +175,17 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
                 className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={r.task.title}
                 onClick={direct ? () => { setSel(sel === r.task.id ? null : r.task.id); setAddParent(addParentFor(r.task.id)); } : undefined}
               >
-                {r.task.title}
-                {r.task.assignees.length > 0 && <small> {r.task.assignees.map(name).join('・')}</small>}
+                <span className="gantt-name-text">
+                  {r.task.title}
+                  {r.task.assignees.length > 0 && <small> {r.task.assignees.map(name).join('・')}</small>}
+                </span>
+                {!report && (
+                  <button
+                    type="button" className="ghost gantt-plus no-print" aria-label={`「${r.task.title}」に${r.depth >= 3 ? '同じ階層のタスクを' : 'タスクを中に'}追加`}
+                    title={r.depth >= 3 ? 'この下に、同じ階層のタスクを追加' : 'この中に、タスクを追加'}
+                    onClick={(e) => { e.stopPropagation(); setInline(addParentFor(r.task.id)); setInlineTitle(''); }}
+                  >＋</button>
+                )}
               </div>
               <div
                 className={`gantt-track${live1 && !pv ? ' paintable' : ''}`}
@@ -198,6 +211,24 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
             </div>
           );
         })}
+        {!report && (
+          <div className="gantt-addrow no-print">
+            {inline === null
+              ? <button type="button" className="ghost" onClick={() => { setInline(''); setInlineTitle(''); }}>＋ 大項目を追加</button>
+              : (
+                <div className="row gantt-add">
+                  <span className="hint">{inline ? `「${live.find((t) => t.id === inline)?.title ?? ''}」の中に追加` : '大項目として追加'}</span>
+                  <input
+                    autoFocus aria-label="ここに追加するタスクの名前" placeholder="タスク名 @担当 〜10/30 (Enterで追加。続けて入力できます)" maxLength={200} value={inlineTitle}
+                    onChange={(e) => setInlineTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) addInline(); if (e.key === 'Escape') setInline(null); }}
+                  />
+                  <button type="button" onClick={addInline} disabled={!inlineTitle.trim()}>追加</button>
+                  <button type="button" className="ghost" onClick={() => setInline(null)}>閉じる</button>
+                </div>
+              )}
+          </div>
+        )}
         <div className="gantt-today" style={{ left: `calc(var(--gantt-name) + (100% - var(--gantt-name)) * ${todayX / 100})` }} title="今日" />
         {bolt && (
           <svg className="gantt-lightning" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height: H, top: ROW_PX + msH }} aria-label="稲妻線" role="img">
