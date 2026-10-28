@@ -13,6 +13,7 @@ import {
 import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
 import { formatDate } from '../../lib/dates';
 import { flatten, periodLabel } from '../../lib/wbs';
+import { TaskPicker } from '../../components/TaskPicker';
 import type { Task } from '../../types';
 
 const RESULTS: DailyResult[] = ['progress', 'done', 'stuck'];
@@ -75,7 +76,6 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   });
   const [removed, setRemoved] = useState<string[]>(() => (prev ? [] : loadDraft(key)?.removed ?? [])); // 作業ログから外したタスク (下書きにも残す)
   const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
-  const [extra, setExtra] = useState('');
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const [focusId, setFocusId] = useState<string | null>(null); // 結果を押したら、そのまま説明を書き始められるように
@@ -245,10 +245,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
           );
         })}
         {others.length > 0 && (
-          <select value={extra} onChange={(e) => { if (e.target.value) addTaskBack(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
-            <option value="">＋ ほかのタスクを選ぶ…</option>
-            {others.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-          </select>
+          <TaskPicker options={others} onPick={addTaskBack} label="ほかのタスクを選ぶ" placeholder="＋ ほかのタスクを選ぶ(文字で絞り込めます)" />
         )}
         {kindCards.map((i) => {
           const n = charCount(i.note);

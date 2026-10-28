@@ -138,8 +138,14 @@ test.describe.serial('運用の流れ', () => {
     // 間違って選んだ・手を付けなかったタスクは、作業ログから外せる。外したタスクは、「ほかのタスクを選ぶ」から選び直せる
     await page.getByRole('button', { name: 'ワイヤーフレームを作るを作業ログから外す' }).click();
     await expect(page.locator('.dcard', { hasText: 'ワイヤーフレームを作る' })).toHaveCount(0);
-    const optValue = await page.getByLabel('ほかのタスクを選ぶ').locator('option', { hasText: 'ワイヤーフレームを作る' }).getAttribute('value'); // 選択肢は「大項目 › … › タスク名」の形で、WBSの順に並ぶ
-    await page.getByLabel('ほかのタスクを選ぶ').selectOption(optValue!);
+    // 選択肢は「大項目 › … › タスク名」の形で、WBSの順に並ぶ。文字で絞り込める (部分一致)
+    const picker = page.getByRole('combobox', { name: 'ほかのタスクを選ぶ' });
+    await picker.fill('ワイヤー');
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await picker.fill('存在しない文字');
+    await expect(page.getByText('該当するタスクがありません')).toBeVisible();
+    await picker.fill('ワイヤー');
+    await page.getByRole('option', { name: /ワイヤーフレームを作る/ }).click();
     await expect(page.getByLabel('ワイヤーフレームを作るの説明')).toBeVisible();
     // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
     await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');

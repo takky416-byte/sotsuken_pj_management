@@ -707,6 +707,12 @@ table.access tr.detail td { background:var(--bg); }
 .wbs .w-title .badge { font-size:11px; }
 
 /* 作業ログ: タスクのカードは、最初から、結果のボタンと説明の欄を開いておく (書かなかったカードは、提出に入らない) */
+.picker { position:relative; max-width:560px; margin:6px 0; }
+.picker input { width:100%; }
+.picker ul { position:absolute; z-index:20; left:0; right:0; max-height:280px; overflow:auto; margin:4px 0 0; padding:4px; list-style:none; background:var(--card); border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.15); }
+.picker li { padding:7px 10px; border-radius:6px; cursor:pointer; font-size:15px; }
+.picker li.on { background:var(--accent-soft); }
+.picker li.none { color:var(--muted); cursor:default; }
 .md { overflow-wrap:anywhere; }
 .md p, .md ul, .md ol, .md blockquote, .md pre, .md h4, .md h5 { margin:3px 0; }
 .md ul, .md ol { padding-left:1.4em; }
