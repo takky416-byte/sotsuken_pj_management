@@ -130,7 +130,7 @@
    "date": "2026-11-25",
    "periods": "3-4",
    "meeting": false,
-   "note": "外部設計レビュー"
+   "note": "中間報告"
   },
   {
    "date": "2026-11-26",
@@ -250,7 +250,7 @@
    "date": "2027-01-26",
    "periods": "3-4",
    "meeting": false,
-   "note": "最終レビュー"
+   "note": "最終発表"
   },
   {
    "date": "2027-01-27",
@@ -298,7 +298,7 @@
   },
   {
    "id": "common-2026-11-25",
-   "title": "外部設計レビュー",
+   "title": "中間報告",
    "date": "2026-11-25",
    "endDate": null,
    "teamId": null,
@@ -314,7 +314,7 @@
   },
   {
    "id": "common-2027-01-26",
-   "title": "最終レビュー",
+   "title": "最終発表",
    "date": "2027-01-26",
    "endDate": null,
    "teamId": null,

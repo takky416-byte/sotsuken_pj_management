@@ -123,6 +123,7 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
   const in_ = (sec: string, re: RegExp) => (secs.find((s) => s.title === sec)?.items ?? []).some((n) => re.test(n.title));
   if (secs.length === SECTIONS.length) {
     if (!in_('外部設計', /中間報告の(当日の)?説明/)) warn('「外部設計」に、中間報告 (11/25) の当日の説明の項目がありません');
+    if (!in_('外部設計', /設計資料を修正/)) warn('「外部設計」に、事前送付(11/18)のあと、中間報告(11/25)の前の、設計資料の修正の項目がありません');
     if (!in_('発表・展示準備', /最終発表/)) warn('「発表・展示準備」に、最終発表 (1/26) に向けた項目がありません');
     if (!in_('発表・展示準備', /動画/)) warn('「発表・展示準備」に、YouTube動画 (1/27締切) の項目がありません');
     if (!in_('発表・展示準備', /内覧会/)) warn('「発表・展示準備」に、内覧会 (1/28) の項目がありません');
