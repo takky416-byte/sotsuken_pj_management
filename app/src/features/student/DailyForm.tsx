@@ -191,18 +191,17 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                   </button>
                 ))}
               </div>
-              {i.result && (
-                <>
-                  <textarea
-                    ref={focusOn(i.id)} className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
-                    placeholder={PLACEHOLDER[i.result]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
-                  />
-                  {!i.note.trim() && <div className="phrases" aria-label="ひとこと">
-                    {PHRASES[i.result].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text) })}>＋ {ph.label}</button>)}
-                  </div>}
-                  <div className="counter-row">{counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}{t && !t.assignees.includes(sid) && <span className="hint">提出すると、あなたもこのタスクの担当に加わります</span>}</div>
-                </>
-              )}
+              <>
+                <textarea
+                  ref={focusOn(i.id)} className={`note-area ${shown && i.result && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={500} aria-label={`${title(i)}の説明`}
+                  placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note}
+                  onChange={(e) => patch(i.id, { note: e.target.value, ...(i.result === null && e.target.value.trim() ? { result: 'progress' as const } : {}) })} onBlur={() => touch(i.id)}
+                />
+                {!i.note.trim() && <div className="phrases" aria-label="ひとこと">
+                  {PHRASES[i.result ?? 'progress'].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text), result: i.result ?? 'progress' })}>＋ {ph.label}</button>)}
+                </div>}
+                <div className="counter-row">{i.result && counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}{i.result && t && !t.assignees.includes(sid) && <span className="hint">提出すると、あなたもこのタスクの担当に加わります</span>}{!i.result && <span className="hint">やっていないタスクは、そのままにしてください(提出には入りません)。間違って選んだときは「×」で外せます</span>}</div>
+              </>
             </div>
           );
         })}
