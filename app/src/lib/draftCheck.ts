@@ -138,6 +138,7 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
     if (kind === 'ハード') {
       const orders = secs.filter((s) => s.title === '要件定義' || s.title === '内部設計・実装').flatMap((s) => s.items).filter((n) => /発注/.test(n.title)).length;
       if (orders < 2) err('ハード系の企画に、機材発注 (11/5・12/1) の項目が2つ以上ありません (1回目は「要件定義」、2回目は「内部設計・実装」に入れる)');
+      if (!in_('要件定義', /機材を選定|機材の選定|選定.*機材/)) warn('ハード系の企画に、機材の選定 (候補を比べて1つに選ぶ。期間をしっかりとる) が「要件定義」にありません');
       if (!in_('要件定義', /予算|費用|部品|機材/)) warn('ハード系の企画に、予算・部品の洗い出しが「要件定義」にありません');
     }
   }

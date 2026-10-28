@@ -122,7 +122,7 @@ test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
     await expect(card.getByRole('button', { name: '見直しを終えた' })).toBeDisabled();
     await s.screenshot({ path: 'e2e-shots/student-home-review.png' });
     await s.goto('/daily');
-    await expect(s.getByRole('status').filter({ hasText: '初期WBS(叩き台)の見直し' })).toBeVisible();
+    await expect(s.getByRole('status').filter({ hasText: '叩き台を、自分たちの計画に仕上げる' })).toBeVisible();
   });
 
   test('教員の一覧と詳細に、未確認と出る', async ({ browser }) => {

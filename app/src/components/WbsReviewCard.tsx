@@ -26,7 +26,7 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <p className="card review-banner" role="status">
-        <strong>最初にやること:</strong> 初期WBS(叩き台)の見直し
+        <strong>最初にやること:</strong> 叩き台を、自分たちの計画に仕上げる(削除・追加・修正)
         {s.unassigned.length > 0 && <>(担当が決まっていない項目 {s.unassigned.length}件)</>}
         <Link to={`${base}/wbs`}> WBSを開く →</Link>
       </p>
@@ -43,7 +43,7 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
   const steps = (
     <ol className="review-steps">
       <li>
-        <strong>全部の項目を読む。</strong> 要らないものは<strong>削除</strong>、足りないものは<strong>追加</strong>、言葉や内容は<strong>修正</strong>します。
+        <strong>全部の項目を読んで、計画を完成させる。</strong> 要らないものは<strong>削除</strong>、足りないものは<strong>追加</strong>、言葉・内容・期間は<strong>修正</strong>します。ハード(機材)の企画は、機材の選定(〜11/4)と機材購入リスト(11/5)の期間も、自分たちで確かめます。
       </li>
       <li className={s.unassigned.length === 0 ? 'ok' : ''}>
         <strong>{step(s.unassigned.length === 0)} 担当を決める。</strong>{' '}
@@ -61,8 +61,8 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
     <section className="card review-card" aria-label="初期WBSの見直し">
       <h3>最初にやること: 初期WBSの見直し</h3>
       <p>
-        先生が用意した叩き台({s.drafts}件)は、まだ「たとえば」の案です。
-        チームで1項目ずつ見て、自分たちの企画に合わせて直しましょう。
+        先生が用意した叩き台({s.drafts}件)は、「たとえば」の案です。キックオフの直後の授業で、チーム全員で時間をとって、
+        1項目ずつ見て、<strong>削除・追加・修正</strong>をして、<strong>自分たちの計画として完成させましょう</strong>。
       </p>
       {allSet ? <details className="review-steps-fold"><summary>手順を見る(担当・期間は、そろっています)</summary>{steps}</details> : steps}
       <div className="row">
