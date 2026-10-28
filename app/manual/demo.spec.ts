@@ -28,6 +28,10 @@ test('動画1: 作業ログを送る', async ({ browser }) => {
   await caption(page, '3. やったタスクの結果を選びます(進んだ / 完了した / 詰まった)');
   const card = page.locator('.dcard', { hasText: 'イベント一覧を作る' });
   await card.waitFor(); await pause(page, 1800);
+  await caption(page, '3-2. 「詳細」でタスクの内容を開けます。「×」で、手を付けなかったタスクを外せます');
+  await tap(page, card.getByRole('button', { name: /の詳細/ })); await pause(page, 3000);
+  await tap(page, card.getByRole('button', { name: /の詳細/ })); await pause(page, 1200);
+  await caption(page, '3-3. やったタスクの結果を選びます(進んだ / 完了した / 詰まった)'); await pause(page, 1500);
   await tap(page, card.getByRole('button', { name: '進んだ' })); await pause(page, 1200);
   await caption(page, '4. 何を・どこまでやったかを、一言書きます');
   await tap(page, card.getByLabel(/の説明/));
@@ -119,7 +123,7 @@ test('動画5: 初期WBSの見直し(キックオフのあと)', async ({ browse
     const page = await recordedPage(browser, 'a1@trident.ac.jp');
     await page.locator('.review-card').waitFor();
     await caption(page, '1. キックオフのあと、ホームに「最初にやること: 初期WBSの見直し」が出ます'); await pause(page, 3500);
-    await caption(page, '2. 先生が用意した叩き台は「たとえば」の案です。チームで1項目ずつ見て、直します'); await pause(page, 3500);
+    await caption(page, '2. 叩き台は「たとえば」の案。みんなで1項目ずつ見て、自分たちの計画として完成させます'); await pause(page, 3500);
     await caption(page, '3. 「編集モードでWBSを開く」を押します');
     await tap(page, page.getByRole('link', { name: '編集モードでWBSを開く' }));
     await page.locator('.wbs-row').first().waitFor(); await pause(page, 2500);
@@ -131,7 +135,7 @@ test('動画5: 初期WBSの見直し(キックオフのあと)', async ({ browse
     await caption(page, '6. 行の「＋ 担当」を押して、担当を決めます');
     await tap(page, row.getByRole('button', { name: /担当を変える/ })); await pause(page, 1500);
     await tap(page, page.locator('.chip-btn', { hasText: '氷室' })); await pause(page, 2500);
-    await caption(page, '7. 要らない項目は削除、足りない項目は追加、言葉や期間は修正します'); await pause(page, 3500);
+    await caption(page, '7. 要らない項目は削除、足りない項目は追加、言葉や期間は修正して、計画を完成させます'); await pause(page, 3500);
     await tap(page, page.getByRole('link', { name: 'ホーム' })); await page.locator('.review-card').waitFor(); await pause(page, 1500);
     await caption(page, '8. 全部見たら、チェックを入れて「見直しを終えた」を押します');
     await tap(page, page.getByLabel(/全部の項目を見て/)); await pause(page, 1500);
