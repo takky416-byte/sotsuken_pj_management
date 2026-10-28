@@ -110,3 +110,15 @@ describe('種別の決め方', () => {
     expect(checkDraft(example.replace('# 内部設計・実装\n', '# 内部設計・実装\n- 回路図を作る\n  > やること: 回路図を描く。\n  > できあがり: 回路図がある。\n')).kind).toBe('ハード');
   });
 });
+
+describe('機構設計図 (機械的な構造・可動部分がある場合だけ)', () => {
+  const item = '- 機構設計図を作る\n  > 期間: 2026-11-17〜2026-11-18\n  > やること: 軸と取り付けと動く範囲を、寸法つきの図面にする。\n  > できあがり: 機構設計図があり、寸法が入っている。\n';
+  test('「機構: あり」なら、外部設計に機構設計図の項目が必要(なければ誤り)。なし・書いてなければ、必要ない', () => {
+    expect(errors(`機構: あり\n${exampleHard}`, 'ハード').some((m) => m.includes('機構設計図'))).toBe(true);
+    expect(errors(`機構: なし\n${exampleHard}`, 'ハード').some((m) => m.includes('機構設計図'))).toBe(false);
+    expect(errors(exampleHard, 'ハード').some((m) => m.includes('機構設計図'))).toBe(false);
+    const withItem = `機構: あり\n${exampleHard.replace('# 内部設計・実装\n', `${item}# 内部設計・実装\n`)}`; // 内部設計・実装の見出しの前 = 外部設計の中
+    expect(errors(withItem, 'ハード').some((m) => m.includes('機構設計図'))).toBe(false);
+    expect(errors(withItem.replace('機構設計図を作る', '図を作る'), 'ハード').some((m) => m.includes('機構設計図'))).toBe(true);
+  });
+});

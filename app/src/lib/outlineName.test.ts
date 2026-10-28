@@ -51,3 +51,13 @@ describe('先頭の見出し行 (企画名・種別・データ保存)', () => {
     expect(warns(`種別: ソフト\n${base}`, 'ハード').some((m) => m.includes('回路図'))).toBe(false);
   });
 });
+
+describe('先頭の「機構」の行', () => {
+  it('読める。項目にはならず、期間を入れる行もずれない', () => {
+    const t = '企画名: 椅子(仮)\n種別: ハード\nデータ保存: なし\n機構: あり\n# 要件定義\n- 困りごとを決める\n  > やること: 聞く\n  > できあがり: 書けた';
+    expect(outlineMeta(t)).toEqual({ name: '椅子(仮)', kind: 'ハード', dataSaved: false, mechanical: true });
+    expect(outlineMeta('機構: なし').mechanical).toBe(false);
+    expect(parseOutline(t).map((n) => n.title)).toEqual(['要件定義', '困りごとを決める']);
+    expect(fillPeriods(t).split('\n').slice(0, 4)).toEqual(['企画名: 椅子(仮)', '種別: ハード', 'データ保存: なし', '機構: あり']);
+  });
+});

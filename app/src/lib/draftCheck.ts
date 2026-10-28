@@ -132,6 +132,7 @@ export function checkDraft(text: string, kindArg?: DraftKind): DraftReport {
     // 成果物 (あらかじめ決まっている一覧) は、必ず項目にする
     for (const d of DELIVERABLES) {
       if (d.only === 'hard' && kind !== 'ハード') continue;
+      if (d.only === 'mech' && !(meta.mechanical ?? /機構設計図/.test(text))) continue; // 機械的な構造・可動部分がある企画だけ
       if (!in_(d.section, d.re)) (d.optional && meta.dataSaved === false ? () => undefined : d.optional ? warn : err)(`成果物「${d.label}」(${d.stage}${d.note ? `。${d.note}` : ''})の項目が、「${d.section}」にありません`);
     }
     for (const e of EXPECTED) if (!in_(e.section, e.re)) warn(`「${e.section}」に、${e.label}の項目がありません(${e.why})`);

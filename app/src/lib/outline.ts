@@ -6,7 +6,7 @@ const clamp = (n: number): 1 | 2 | 3 => (Math.min(Math.max(n, 1), 3) as 1 | 2 | 
 
 export const NAME_LINE = /^\s*企画名[:：]\s*(.+?)\s*$/;
 /** 先頭の見出し行 (企画名・種別・データ保存)。項目にはしない */
-export const META_LINE = /^\s*(企画名|種別|データ保存)[:：]\s*(.*?)\s*$/;
+export const META_LINE = /^\s*(企画名|種別|データ保存|機構)[:：]\s*(.*?)\s*$/;
 
 /** アウトラインの先頭の「企画名: …」の行 (叩き台に、仮の企画名を入れておく)。なければ空。 */
 export function outlineProjectName(text: string): string {
@@ -19,6 +19,8 @@ export type OutlineMeta = {
   kind?: 'ソフト' | 'ハード';
   /** 「データ保存: あり」「データ保存: なし」。なしなら、ER図・テーブル定義書の点検をしない。書いてなければ undefined */
   dataSaved?: boolean;
+  /** 「機構: あり」「機構: なし」。機械的な構造・可動部分があれば、機構設計図が必要。書いてなければ undefined (機構設計図の項目があるかで判断する) */
+  mechanical?: boolean;
 };
 
 /** 先頭の見出し行 (企画名・種別・データ保存)。項目の前にある行だけを読む */
@@ -30,6 +32,7 @@ export function outlineMeta(text: string): OutlineMeta {
     if (!m) break;
     if (m[1] === '企画名') meta.name = m[2];
     else if (m[1] === '種別') meta.kind = /^ハード/.test(m[2]) ? 'ハード' : /^ソフト/.test(m[2]) ? 'ソフト' : undefined;
+    else if (m[1] === '機構') meta.mechanical = /^(あり|有|する|はい)/.test(m[2]) ? true : /^(なし|無|しない|いいえ)/.test(m[2]) ? false : undefined;
     else if (m[1] === 'データ保存') meta.dataSaved = /^(あり|有|する|はい)/.test(m[2]) ? true : /^(なし|無|しない|いいえ)/.test(m[2]) ? false : undefined;
   }
   return meta;
@@ -41,7 +44,7 @@ export function outlineMeta(text: string): OutlineMeta {
  *   - タスク         → 直前の見出しの1つ下。インデント2スペース(またはタブ)ごとに1階層下
  *     > 詳細         → 直前のタスクの詳細 (複数行可)
  * 見出しがない場合、先頭の項目の階層は baseDepth (既定 1)。4階層以上は3階層にまとめる。
- * 先頭の「企画名: …」「種別: …」「データ保存: …」の行は、項目にしない (outlineMeta で読む)。
+ * 先頭の「企画名: …」「種別: …」「データ保存: …」「機構: …」の行は、項目にしない (outlineMeta で読む)。
  */
 export function parseOutline(text: string, baseDepth: 1 | 2 | 3 = 1): OutlineNode[] {
   const nodes: OutlineNode[] = [];
