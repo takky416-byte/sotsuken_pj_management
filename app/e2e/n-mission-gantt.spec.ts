@@ -169,11 +169,11 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(t.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
     await t.getByLabel('チーム', { exact: true }).selectOption('A');
     await expect(t.locator('.log-section')).toHaveCount(1);
-    await expect(t.getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
+    await expect(t.getByText('API仕様の不明点を3つ整理して')).toBeVisible();
     await t.getByLabel('文字で絞り込む').fill('存在しない文字');
     await expect(t.getByText('条件に合う作業ログはありません。')).toBeVisible();
-    await t.getByLabel('文字で絞り込む').fill('下書き');
-    await expect(t.getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
+    await t.getByLabel('文字で絞り込む').fill('不明点');
+    await expect(t.getByText('API仕様の不明点を3つ整理して')).toBeVisible();
     await t.getByRole('button', { name: '個人ごと' }).click();
     await expect(t.locator('.log-person').first()).toBeVisible();
     await t.getByLabel('個人', { exact: true }).selectOption({ index: 1 });
