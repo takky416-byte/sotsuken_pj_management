@@ -157,8 +157,8 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     const row = t.locator('table.access tbody tr', { hasText: 'A1' }).first();
     await expect(row).toContainText('今日');
     await row.getByRole('button').click();
-    await expect(t.locator('tr.detail')).toContainText('開いた');
-    await expect(t.locator('tr.detail')).toContainText('ホーム');
+    await expect(t.locator('tr.access-detail')).toContainText('開いた');
+    await expect(t.locator('tr.access-detail')).toContainText('ホーム');
     await sp.close(); await t.close();
   });
 

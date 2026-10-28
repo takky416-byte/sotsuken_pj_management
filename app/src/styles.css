@@ -536,7 +536,7 @@ table.facts td.bad { color:var(--danger); font-weight:700; }
 table.access { border-collapse:collapse; width:100%; font-size:15px; }
 table.access th, table.access td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:middle; }
 table.access tr.quiet td { background:#fff8ee; }
-table.access tr.detail td { background:var(--bg); }
+table.access tr.access-detail td { background:var(--bg); }
 .linklike { background:none; border:none; color:var(--accent); font-weight:700; padding:0; text-decoration:underline dotted; }
 .dots { display:inline-flex; gap:3px; }
 .dot { width:12px; height:16px; border-radius:3px; background:var(--line); display:inline-block; }

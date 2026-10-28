@@ -68,7 +68,7 @@ export function AccessLogPage() {
                   <td>{r.topScreens.slice(0, 3).map(([k, n]) => `${SCREEN_LABEL[k] ?? k} ${n}`).join(' / ') || '—'}</td>
                 </tr>
                 {open === r.sid && (
-                  <tr className="detail">
+                  <tr className="access-detail">
                     <td colSpan={6}>
                       <ul className="plain">
                         {[...r.dates].reverse().filter((d) => d.log).map((d) => (
