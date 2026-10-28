@@ -138,7 +138,8 @@ test.describe.serial('運用の流れ', () => {
     // 間違って選んだ・手を付けなかったタスクは、作業ログから外せる。外したタスクは、「ほかのタスクを選ぶ」から選び直せる
     await page.getByRole('button', { name: 'ワイヤーフレームを作るを作業ログから外す' }).click();
     await expect(page.locator('.dcard', { hasText: 'ワイヤーフレームを作る' })).toHaveCount(0);
-    await page.getByLabel('ほかのタスクを選ぶ').selectOption({ label: 'ワイヤーフレームを作る' });
+    const optValue = await page.getByLabel('ほかのタスクを選ぶ').locator('option', { hasText: 'ワイヤーフレームを作る' }).getAttribute('value'); // 選択肢は「大項目 › … › タスク名」の形で、WBSの順に並ぶ
+    await page.getByLabel('ほかのタスクを選ぶ').selectOption(optValue!);
     await expect(page.getByLabel('ワイヤーフレームを作るの説明')).toBeVisible();
     // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
     await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');
@@ -158,7 +159,8 @@ test.describe.serial('運用の流れ', () => {
     await update.click();
     await expect(page.getByText('提出しました。今日のうちは')).toBeVisible();
     await expect(page.locator('.feed').getByText('画面の下書きを3枚作り、レビューした')).toBeVisible();
-    await expect(page.locator('.feed').getByText('次にやること: 下書きをレビューして、清書する')).toBeVisible();
+    await expect(page.locator('.feed').getByText('次にやること', { exact: true })).toBeVisible();
+    await expect(page.locator('.feed').getByText('下書きをレビューして、清書する')).toBeVisible();
 
     // タスクが完了になっている (WBS)
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();

@@ -707,6 +707,16 @@ table.access tr.detail td { background:var(--bg); }
 .wbs .w-title .badge { font-size:11px; }
 
 /* 作業ログ: タスクのカードは、最初から、結果のボタンと説明の欄を開いておく (書かなかったカードは、提出に入らない) */
+.md { overflow-wrap:anywhere; }
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md h4, .md h5 { margin:3px 0; }
+.md ul, .md ol { padding-left:1.4em; }
+.md h4 { font-size:16px; } .md h5 { font-size:15px; }
+.md code { background:var(--accent-soft); border-radius:4px; padding:0 4px; font-size:.92em; }
+.md pre { background:var(--accent-soft); border-radius:8px; padding:8px 10px; overflow-x:auto; }
+.md pre code { background:none; padding:0; }
+.md blockquote { border-left:3px solid var(--line); padding-left:10px; color:var(--muted); }
+.md a { text-decoration:underline; word-break:break-all; }
+.feed .note.md { margin:2px 0 2px 4px; }
 .phrases { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
 .chip-btn.small { padding:3px 10px; font-size:14px; min-height:0; }
 .submit-bar { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; gap:10px 16px; flex-wrap:wrap; margin:14px 0 0; padding:10px 14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 -4px 14px rgba(0,0,0,.08); }

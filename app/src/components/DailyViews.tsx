@@ -1,5 +1,6 @@
 import { FIXED_KINDS, RESULT_LABEL, statusOf, type Daily, type DayStatus } from '../lib/daily';
 import { formatDate } from '../lib/dates';
+import { Markdown } from './Markdown';
 import type { Member, Task } from '../types';
 
 const MARK: Record<DayStatus, string> = { submitted: '○', absent: '欠', missing: '×' };
@@ -54,11 +55,11 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
                 <span className="badge">{e.kind === 'task' ? 'タスク' : kindLabel.get(e.kind)}</span>
                 {' '}{e.kind === 'task' ? (title.get(e.taskId ?? '') ?? '(削除されたタスク)') : ''}
                 {e.result && <span className={`result-badge r-${e.result}`}>{RESULT_LABEL[e.result]}</span>}
-                {e.note && <span className="note">　{e.note}</span>}
+                {e.note && <Markdown className="note" text={e.note} />}
               </li>
             ))}
           </ul>
-          {d.next?.trim() && <div className="next-plan">次にやること: {d.next}</div>}
+          {d.next?.trim() && <div className="next-plan"><strong>次にやること</strong><Markdown text={d.next} /></div>}
         </div>
       ))}
     </div>

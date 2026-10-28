@@ -12,7 +12,7 @@ import {
 } from '../../lib/dailyDraft';
 import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
 import { formatDate } from '../../lib/dates';
-import { periodLabel } from '../../lib/wbs';
+import { flatten, periodLabel } from '../../lib/wbs';
 import type { Task } from '../../types';
 
 const RESULTS: DailyResult[] = ['progress', 'done', 'stuck'];
@@ -112,7 +112,10 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const addTaskBack = (id: string) => { setRemoved((r) => r.filter((x) => x !== id)); addTask(id); };
 
   const shownIds = new Set(items.map((i) => i.id));
-  const others = live.filter((t) => !shownIds.has(t.id) && !live.some((c) => c.parentId === t.id));
+  // 「ほかのタスクを選ぶ」は、WBSに載っている順 (上から)。大項目 › 中項目 › タスク の形で出す
+  const titleById = new Map(live.map((t) => [t.id, t]));
+  const pathOf = (t: Task): string => { const names: string[] = []; for (let p = t.parentId ? titleById.get(t.parentId) : undefined; p; p = p.parentId ? titleById.get(p.parentId) : undefined) names.unshift(p.title); return [...names, t.title].join(' › '); };
+  const others = flatten(live).filter((r) => !r.hasChildren && !shownIds.has(r.task.id)).map((r) => ({ id: r.task.id, label: pathOf(r.task) }));
   const suggestions = nextCandidates(tasks, sid, today, items, 3);
   const taskCards = items.filter((i) => i.kind === 'task' && !i.adhoc);
   const adhocCards = items.filter((i) => !!i.adhoc);
@@ -163,6 +166,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       <section className="card">
         <h3>1. やったこと</h3>
         <p className="hint">{prevDate ? `前回(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを選んで、何をどこまでやったかを書きます。授業時間外の作業も含めます。</p>
+        <p className="hint md-hint">Markdownで書けます(例: <code>**太字**</code>・<code>- 箇条書き</code>・<code>`コード`</code>・<code>[文字](https://…)</code>)。URLは、そのままリンクになります。</p>
         {taskCards.length === 0 && <p className="hint">タスクが選ばれていません。下の「ほかのタスクを選ぶ」から選んでください(タスクを1つも選ばないと、提出できません)。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -243,7 +247,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         {others.length > 0 && (
           <select value={extra} onChange={(e) => { if (e.target.value) addTaskBack(e.target.value); setExtra(''); }} aria-label="ほかのタスクを選ぶ">
             <option value="">＋ ほかのタスクを選ぶ…</option>
-            {others.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            {others.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
         )}
         {kindCards.map((i) => {
