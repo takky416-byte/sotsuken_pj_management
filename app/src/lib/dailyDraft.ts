@@ -17,17 +17,23 @@ export type DraftItem = {
   adhoc?: { title: string; parentId: string | null; /** やった日 (YYYY-MM-DD)。空なら今日 */ date?: string };
 };
 
+/** 作業ログのカードに出す、予定の始まりの範囲 (今日から何日先まで)。これより先のタスクは、「ほかのタスクを選ぶ」から選べる */
+export const CARD_WINDOW_DAYS = 7;
+
 export const ADHOC_PREFIX = 'adhoc:';
 export const isAdhocItem = (i: DraftItem) => !!i.adhoc;
 
 export const kindItemId = (kind: DailyKind) => `kind:${kind}`;
 
 /** 作業ログの候補にするタスク: 自分が担当の、子のないタスク。完了・保留は除く。急ぎのものから (期限超過 → 進行中 → 予定の期間内 → ほか)。 */
-export function candidateTasks(tasks: Task[], sid: string, today: string): Task[] {
+export function candidateTasks(tasks: Task[], sid: string, today: string, withinDays?: number): Task[] {
   const live = tasks.filter((t) => !t.deleted);
+  // withinDays: これより先に始まる (未着手の) タスクは、候補に出さない (作業ログのカードが、先のタスクで埋まらないように)
+  const limit = withinDays === undefined ? null : addDays(today, withinDays);
   const rank = (t: Task) => (t.endDate && t.endDate < today ? 0 : t.status === 'doing' ? 1 : t.startDate && t.startDate <= today ? 2 : 3);
   return live
     .filter((t) => isLeaf(live, t) && (t.assignees ?? []).includes(sid) && t.status !== 'done' && t.status !== 'hold')
+    .filter((t) => !(limit && t.status === 'todo' && t.startDate && t.startDate > limit))
     .sort((a, b) => rank(a) - rank(b) || (a.endDate ?? '9999').localeCompare(b.endDate ?? '9999') || a.order - b.order);
 }
 
@@ -56,7 +62,7 @@ export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string
       }
     }
   }
-  for (const t of candidateTasks(tasks, sid, today)) {
+  for (const t of candidateTasks(tasks, sid, today, CARD_WINDOW_DAYS)) {
     if (!has(t.id)) items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
   }
   // 共同の担当で、前回の作業ログのあとに (ほかの人が) 完了したタスクも、自分の作業ログに書けるよう候補に残す

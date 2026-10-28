@@ -708,7 +708,8 @@ table.access tr.detail td { background:var(--bg); }
 
 /* 作業ログ: 選んでいないタスクは、1行にまとめる。結果を押すと開く。提出のボタンは、画面の下に付いてくる */
 .dcard:not(.on) { display:flex; align-items:center; gap:6px 12px; padding:6px 10px; margin:6px 0; flex-wrap:wrap; }
-.dcard:not(.on) .dcard-head { flex:1 1 180px; margin:0; min-width:0; justify-content:flex-start; gap:10px; }
+.dcard:not(.on) .dcard-head { flex:1 1 360px; margin:0; min-width:0; justify-content:flex-start; gap:10px; align-items:center; }
+.dcard:not(.on) .dcard-title { min-width:150px; }
 .dcard:not(.on) .dcard-head strong { font-size:16px; }
 .dcard:not(.on) .seg { flex:0 1 330px; gap:6px; }
 .dcard:not(.on) .seg-btn { min-height:36px; padding:4px 6px; font-size:15px; }

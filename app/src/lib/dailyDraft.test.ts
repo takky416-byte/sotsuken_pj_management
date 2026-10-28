@@ -26,6 +26,11 @@ describe('candidateTasks', () => {
   test('自分が担当の、子のないタスク。完了・保留は除く。急ぎのものから', () => {
     expect(candidateTasks(tasks, 'A1', TODAY).map((t) => t.id)).toEqual(['overdue', 'doing', 'inperiod', 'later', 'kid']);
   });
+  test('日数を指定すると、それより先に始まる未着手のタスクは出さない(進行中・期限超過・期間内は出す)', () => {
+    expect(candidateTasks(tasks, 'A1', TODAY, 7).map((t) => t.id)).toEqual(['overdue', 'doing', 'inperiod', 'kid']);
+    expect(candidateTasks(tasks, 'A1', TODAY, 10).map((t) => t.id)).toContain('later');
+    expect(initialItems(undefined, tasks, 'A1', TODAY).map((i) => i.id)).not.toContain('later'); // 作業ログのカードには、先のタスクを出さない
+  });
 });
 
 describe('共同の担当で、相方が完了したタスク', () => {
