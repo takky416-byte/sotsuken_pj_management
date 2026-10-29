@@ -1,0 +1,32 @@
+name: Usage summary
+
+# 利用量の集計 (読み取り専用): 読み取りの無料枠の使われ方を見積もる。何も書き込まない。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        working-directory: app
+        run: npm ci
+      - name: Write credentials
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_SERVICE_ACCOUNT が未設定です"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: Summary
+        working-directory: app
+        run: node scripts/usage-summary.mjs
