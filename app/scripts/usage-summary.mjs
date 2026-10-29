@@ -32,7 +32,17 @@ export async function usageSummary({ db, log = console.log }) {
     const push = Object.entries(r.writesByTeam).reduce((n, [team, w]) => n + w * Math.max(0, (sizes[team] ?? 1) - 1), 0);
     log(`${date}, ${r.students}, ${r.visits}, ${r.students ? (r.visits / r.students).toFixed(1) : '-'}, ${r.views}, ${r.taskLogs}, ${push}`);
   }
+  // タスクの件数: 画面が毎回読むのは、削除済みも含めた全件
+  let live = 0, trash = 0;
+  const perTeam = {};
+  for (const t of teams.docs) {
+    const ts = await t.ref.collection('tasks').get();
+    const dead = ts.docs.filter((d) => d.data().deleted === true).length;
+    live += ts.size - dead; trash += dead;
+    perTeam[t.id] = `${ts.size - dead}+${dead}`;
+  }
   log(`チーム人数: ${JSON.stringify(sizes)}`);
+  log(`タスク(生きている+削除済み): 合計 ${live}+${trash} / チームごと ${JSON.stringify(perTeam)}`);
   return rows.length;
 }
 
