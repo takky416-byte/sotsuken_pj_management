@@ -54,7 +54,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
       <div className="row">
         <h3>{team.id}チーム {team.projectName && <small>{team.projectName}</small>}</h3>
         <span className="hint">{shortDate(from)}〜{shortDate(today)}</span>
-        <button type="button" className="ghost" onClick={() => download(`利用状況_${team.id}チーム_${from}_${today}.csv`, 'text/csv', contributionCsv(rows))}>CSVで書き出す</button>
+        <button type="button" className="ghost" onClick={() => download(`sotsuken-usage-${team.id}-${from}_${today}.csv`, 'text/csv', contributionCsv(rows))}>CSVで書き出す</button>
       </div>
       <div className="table-wrap">
         <StackTable className="facts">

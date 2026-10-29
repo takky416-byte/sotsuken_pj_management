@@ -213,7 +213,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await t.getByLabel('期間').selectOption('d7');
     await expect(t.locator('table.facts tbody tr').first()).toBeVisible();
     const [dl] = await Promise.all([t.waitForEvent('download'), t.getByRole('button', { name: 'CSVで書き出す' }).click()]);
-    expect(dl.suggestedFilename()).toMatch(/^利用状況_Aチーム_.*\.csv$/);
+    expect(dl.suggestedFilename()).toMatch(/^sotsuken-usage-A-.*\.csv$/);
     // チームの中の比較: メンバーの割合 (積み上げ棒) と、週ごとの動き (ヒートマップ)
     await expect(t.locator('.share-bars li').first()).toBeVisible();
     await t.getByLabel('割合の指標').selectOption('completed');
