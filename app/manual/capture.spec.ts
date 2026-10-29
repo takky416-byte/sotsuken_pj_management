@@ -114,6 +114,13 @@ test('学生編の画面写真', async ({ browser }) => {
   await page.locator('.gantt-row').first().waitFor();
   await page.waitForTimeout(800);
   await shot(page, '12-gantt', [], { maxH: 900 });
+  const plus = page.getByRole('button', { name: /にタスクを中に追加/ }).first();
+  await plus.click();
+  await page.getByLabel('ここに追加するタスクの名前').waitFor();
+  await shot(page, '12b-gantt-add', [
+    { loc: plus, n: 1 },
+    { loc: page.getByLabel('ここに追加するタスクの名前'), n: 2 },
+  ], { maxH: 900 });
 
   // 6. PJ分析・ミーティング
   await page.getByRole('link', { name: 'PJ分析', exact: true }).click();

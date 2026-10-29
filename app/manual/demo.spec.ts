@@ -33,7 +33,7 @@ test('動画1: 作業ログを送る', async ({ browser }) => {
   await tap(page, card.getByRole('button', { name: /の詳細/ })); await pause(page, 1200);
   await caption(page, '3-3. やったタスクの結果を選びます(進んだ / 完了した / 詰まった)'); await pause(page, 1500);
   await tap(page, card.getByRole('button', { name: '進んだ' })); await pause(page, 1200);
-  await caption(page, '4. 何を・どこまでやったかを、一言書きます');
+  await caption(page, '4. 何を・どこまでやったかを、一言書きます(Markdown で、箇条書きなども書けます)');
   await tap(page, card.getByLabel(/の説明/));
   await card.getByLabel(/の説明/).pressSequentially('イベント一覧の画面を作り、データを5件表示できた', { delay: 70 }); await pause(page, 1200);
   await caption(page, '5. 「つぎにやること」も書きます');
@@ -68,6 +68,11 @@ test('動画2: WBS・ガントチャートを見る・直す', async ({ browser 
   await tap(page, page.getByRole('button', { name: /ガントチャートを大きく/ }));
   await page.locator('.gantt-row').first().waitFor(); await pause(page, 3500);
   await caption(page, '8. 「ガントチャートで編集する」にチェックを入れると、棒をドラッグして期間を変えられます'); await pause(page, 3500);
+  await caption(page, '9. 各行の「＋」を押すと、その行の中に、タスクをその場で追加できます');
+  await tap(page, page.getByRole('button', { name: /にタスクを中に追加/ }).first()); await pause(page, 1200);
+  const inline = page.getByLabel('ここに追加するタスクの名前');
+  await inline.pressSequentially('イベントの並べ替えを作る @氷室 〜11/30', { delay: 70 }); await pause(page, 800);
+  await inline.press('Enter'); await pause(page, 2500);
   await saveVideo(page, 'demo-2-wbs');
 });
 

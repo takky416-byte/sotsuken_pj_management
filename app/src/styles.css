@@ -895,7 +895,8 @@ table.access tr.access-detail td { background:var(--bg); }
 /* ガントチャートの各行の「＋」: その場でタスクを追加する */
 .gantt-name:has(.gantt-plus) { display:flex; align-items:center; gap:4px; }
 .gantt-name-text { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.gantt-plus { flex:none; padding:0 6px; min-height:24px; line-height:1; font-size:16px; }
+button.ghost.gantt-plus { flex:none; padding:0 4px; min-height:24px; line-height:1; font-size:16px; border:none; background:transparent; color:var(--muted); box-shadow:none; opacity:.7; }
+button.ghost.gantt-plus:hover:not(:disabled), button.ghost.gantt-plus:focus-visible { color:var(--accent); opacity:1; background:var(--accent-soft); }
 .gantt-addrow { position:sticky; left:0; padding:6px 0 2px; }
 .gantt-addrow .gantt-add { align-items:center; }
 
