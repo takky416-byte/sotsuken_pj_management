@@ -28,7 +28,7 @@ test('動画1: 作業ログを送る', async ({ browser }) => {
   await caption(page, '3. やったタスクの結果を選びます(進んだ / 完了した / 詰まった)');
   const card = page.locator('.dcard', { hasText: 'イベント一覧を作る' });
   await card.waitFor(); await pause(page, 1800);
-  await caption(page, '3-2. 「詳細」でタスクの内容を開けます。「×」で、手を付けなかったタスクを外せます');
+  await caption(page, '3-2. 「詳細」でタスクの内容を開けます。着手していないタスクなどは「今日は作業していない」で消せます');
   await tap(page, card.getByRole('button', { name: /の詳細/ })); await pause(page, 3000);
   await tap(page, card.getByRole('button', { name: /の詳細/ })); await pause(page, 1200);
   await caption(page, '3-3. やったタスクの結果を選びます(進んだ / 完了した / 詰まった)'); await pause(page, 1500);

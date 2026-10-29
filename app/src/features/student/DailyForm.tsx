@@ -105,7 +105,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const removeKind = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
   // 間違って選んだタスクや、手を付けなかったタスクは、作業ログから外せる (外したタスクは、「ほかのタスクを選ぶ」から選び直せる)
   const removeTask = (i: DraftItem) => {
-    if (i.note.trim() && !window.confirm(`「${title(i)}」の説明を消して、作業ログから外しますか。`)) return;
+    if (i.note.trim() && !window.confirm(`「${title(i)}」は今日は作業していないことにして、書いた説明を消しますか。`)) return;
     removeKind(i.id);
     setRemoved((r) => (r.includes(i.id) ? r : [...r, i.id]));
   };
@@ -180,7 +180,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                 </div>
                 <div className="dcard-actions">
                   {t && <button type="button" className="detail-btn" aria-expanded={open.has(i.id)} aria-label={`${title(i)}の詳細`} onClick={() => toggleOpen(i.id)}>詳細 {open.has(i.id) ? '▴' : '▾'}</button>}
-                  <button type="button" className="ghost icon" aria-label={`${title(i)}を作業ログから外す`} title="作業ログから外す(間違って選んだ・手を付けなかった)" onClick={() => removeTask(i)}>×</button>
+                  <button type="button" className="ghost skip-btn" aria-label={`${title(i)}は今日は作業していない`} title="今日は作業していないので、作業ログから外す(「ほかのタスクを選ぶ」から選び直せます)" onClick={() => removeTask(i)}>今日は作業していない</button>
                 </div>
               </div>
               {t && open.has(i.id) && (
@@ -204,7 +204,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                 {!i.note.trim() && <div className="phrases" aria-label="ひとこと">
                   {PHRASES[i.result ?? 'progress'].map((ph) => <button key={ph.label} type="button" className="chip-btn small" onClick={() => patch(i.id, { note: addPhrase(i.note, ph.text), result: i.result ?? 'progress' })}>＋ {ph.label}</button>)}
                 </div>}
-                <div className="counter-row">{i.result && counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}{i.result && t && !t.assignees.includes(sid) && <span className="hint">提出すると、あなたもこのタスクの担当に加わります</span>}{!i.result && <span className="hint">やっていないタスクは、そのままにしてください(提出には入りません)。間違って選んだときは「×」で外せます</span>}</div>
+                <div className="counter-row">{i.result && counter(i.id, n, MIN_NOTE_CHARS)}{i.result === 'done' && <span className="hint">提出すると、タスクも「完了」になります</span>}{i.result && t && !t.assignees.includes(sid) && <span className="hint">提出すると、あなたもこのタスクの担当に加わります</span>}{!i.result && <span className="hint">作業していないタスクは、「今日は作業していない」を押すと、作業ログから消えます(押さずにそのままでも、提出には入りません)</span>}</div>
               </>
             </div>
           );

@@ -136,7 +136,7 @@ test.describe.serial('運用の流れ', () => {
     await card.getByRole('button', { name: '画面遷移図を描くの詳細' }).click();
     await expect(card.getByLabel('画面遷移図を描くの詳細の内容')).toHaveCount(0);
     // 間違って選んだ・手を付けなかったタスクは、作業ログから外せる。外したタスクは、「ほかのタスクを選ぶ」から選び直せる
-    await page.getByRole('button', { name: 'ワイヤーフレームを作るを作業ログから外す' }).click();
+    await page.getByRole('button', { name: 'ワイヤーフレームを作るは今日は作業していない' }).click();
     await expect(page.locator('.dcard', { hasText: 'ワイヤーフレームを作る' })).toHaveCount(0);
     // 選択肢は「大項目 › … › タスク名」の形で、WBSの順に並ぶ。文字で絞り込める (部分一致)
     const picker = page.getByRole('combobox', { name: 'ほかのタスクを選ぶ' });
