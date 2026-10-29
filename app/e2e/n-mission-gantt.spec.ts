@@ -232,6 +232,23 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await t.close();
   });
 
+  test('ホーム: 前回の作業ログの「次にやること」は、Markdown で表示される', async ({ browser }) => {
+    const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
+    const y = new Date(Date.now() - 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+    await db.doc(`teams/A/dailyReports/${y}_A2`).set({
+      sid: 'A2', date: y, dayKey: 0, entries: [{ kind: 'study', note: '調べた' }], blocker: '', absent: false,
+      next: '- **APIの仕様**を確認する\n- [資料](https://example.com/doc)を読む',
+    });
+    const page = await (await browser.newContext()).newPage();
+    await login(page, 'a2@trident.ac.jp');
+    const q = page.locator('.next-quote');
+    await expect(q.locator('li')).toHaveCount(2);
+    await expect(q.locator('strong')).toHaveText('APIの仕様');
+    await expect(q.getByRole('link', { name: '資料' })).toHaveAttribute('href', 'https://example.com/doc');
+    await expect(q).not.toContainText('**');
+    await page.close();
+  });
+
   test('利用ガイド: 初回に自動で出て、あとからヘッダーの「ガイド」で画面に合わせて開ける', async ({ browser }) => {
     const page = await (await browser.newContext()).newPage();
     await login(page, 'a2@trident.ac.jp', { keepGuide: true });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { Markdown } from '../../components/Markdown';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
 import { Em } from '../../components/Em';
@@ -216,7 +217,7 @@ function MeetingScreen({ team }: { team: Team }) {
               {stuckList.map((c, i) => (
                 <li key={i} className="blocker">
                   <strong>{nameOf(c.sid)}</strong> <span className="hint">{formatDate(c.date)}</span>
-                  {c.taskId && <> 「{tasks.find((t) => t.id === c.taskId)?.title ?? '(削除されたタスク)'}」</>}<br />{c.text}
+                  {c.taskId && <> 「{tasks.find((t) => t.id === c.taskId)?.title ?? '(削除されたタスク)'}」</>}<Markdown text={c.text} />
                 </li>
               ))}
             </ul>

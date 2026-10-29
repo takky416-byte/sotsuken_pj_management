@@ -920,3 +920,4 @@ table.heat td.zero { color:var(--muted); background:transparent; }
 
 /* 作業ログのカード: 「今日は作業していない」 (×ではなく、言葉で) */
 button.ghost.skip-btn { font-size:13px; padding:4px 10px; min-height:32px; white-space:nowrap; }
+.next-quote .md { white-space:normal; }

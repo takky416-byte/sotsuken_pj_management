@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProfile } from '../../auth/AuthProvider';
 import { useBase } from '../../components/Base';
+import { Markdown } from '../../components/Markdown';
 import { BookmarkPrompt } from '../../components/BookmarkPrompt';
 import { TeamBoard } from '../../components/TeamBoard';
 import { Em } from '../../components/Em';
@@ -157,7 +158,7 @@ export function StudentHome() {
         {lastNext && (
           <blockquote className="next-quote">
             <div className="hint">前回の作業ログで決めたこと({formatDate(lastNext.date)})</div>
-            {lastNext.text}
+            <Markdown text={lastNext.text} />
           </blockquote>
         )}
         {soon.length > 0 && (
