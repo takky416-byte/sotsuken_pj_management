@@ -17,6 +17,16 @@ type Entry = {
 
 const store = new Map<string, Entry>();
 export const GRACE_MS = 5 * 60 * 1000;
+/**
+ * 教員は、画面を行き来して、全チームのデータ (ダッシュボードだけで約770回) を何度も開く。5分で解除すると、そのたびに読み直すので、
+ * 長く保持する (保持中は、変更が届く分だけ読む)。ただし、アクセス履歴や変更履歴のように、変更が頻繁で量が多いものは、短いまま。
+ */
+export const TEACHER_GRACE_MS = 30 * 60 * 1000;
+const SHORT_KEYS = ['access:', 'taskLogs-since:'];
+let teacherMode = false;
+export const setTeacherMode = (v: boolean) => { teacherMode = v; };
+export const graceOf = (key: string, teacher = teacherMode): number =>
+  teacher && !SHORT_KEYS.some((p) => key.startsWith(p)) ? TEACHER_GRACE_MS : GRACE_MS;
 
 export type Start<T> = (emit: (data: T) => void, fail: (message: string) => void) => () => void;
 
@@ -44,7 +54,7 @@ export function useShared<T>(key: string | null, start: Start<T>): { data: T | n
     return () => {
       entry.subs.delete(rerender);
       if (entry.subs.size === 0) {
-        entry.timer = setTimeout(() => { entry.unsub(); if (store.get(key) === entry) store.delete(key); }, GRACE_MS);
+        entry.timer = setTimeout(() => { entry.unsub(); if (store.get(key) === entry) store.delete(key); }, graceOf(key));
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

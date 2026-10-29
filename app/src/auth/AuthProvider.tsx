@@ -5,7 +5,7 @@ import {
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { clearShared } from '../data/shared';
+import { clearShared, setTeacherMode } from '../data/shared';
 import { countReads } from '../lib/readMeter';
 
 export const SCHOOL_DOMAIN = '@trident.ac.jp';
@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubRoster?.();
       unsubRoster = null;
       clearShared(); // 別のユーザーに、前のユーザーの購読を引き継がない
+      setTeacherMode(false);
       if (!user) {
         setState((s) => (s.status === 'signedOut' && s.error ? s : { status: 'signedOut' }));
         return;
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
           const d = snap.data() as Omit<Profile, 'email'>;
+          setTeacherMode(d.role === 'teacher');
           setState({ status: 'ready', profile: { email, name: d.name, role: d.role, teamId: d.teamId, sid: d.sid } });
         },
         // 名簿にない場合は、ルールで読み取りが拒否されることもある
