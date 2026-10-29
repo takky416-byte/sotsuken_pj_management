@@ -49,6 +49,8 @@ async function seedScale() {
         await set(`accessLogs/${date}_${m.sid}`, { sid: m.sid, teamId: team, date, firstAt: 1, lastAt: 2, visits: 2, views: 20, screens: { home: 8, wbs: 6, daily: 4, gantt: 2 } });
       }
     }
+    // 教員のダッシュボード用の集計メモ (タスクを変えるたびに更新されるもの)
+    await set(`teams/${team}/digest/tasks`, { done: 20, total: 54, due: [], n: 60, at: 1 });
     for (let k = 1; k <= 8; k++) await set(`teams/${team}/meetings/scale-${k}`, { date: addDays(t, -7 * k), decided: '決定', actions: [], note: '' });
   }
   await writer.commit();
@@ -80,8 +82,8 @@ test.describe.serial('読み取り回数', () => {
     const back = await measure(page, '教員: ダッシュボードに戻る', async () => { await page.getByRole('link', { name: 'チーム', exact: true }).click(); await page.getByRole('heading', { name: 'チーム一覧' }).waitFor(); });
     console.log('教員 ラベル別 (合計):', JSON.stringify((await reads(page)).byLabel));
     // 上限 (回帰の防止): 初回は規模に比例する。画面を移っても、同じデータを読み直さない
-    expect(first).toBeLessThan(1000);
-    expect(detail).toBeLessThan(30);
+    expect(first).toBeLessThan(400); // タスク全件ではなく、チームごとの集計メモ (1件) を読む
+    expect(detail).toBeLessThan(100); // ダッシュボードはタスク全件を読まないので、チーム詳細を開いたときに、そのチームのタスク (約60件) を読む
     expect(daily).toBeLessThan(30);
     expect(access).toBeLessThan(450); // 28名 × 直近14日ぶんまで。開くたびではなく、5分間は共有される
     expect(back).toBeLessThan(150); // 最初のチーム以外のデータを、新しく購読する分

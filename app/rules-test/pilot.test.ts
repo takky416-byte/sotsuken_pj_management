@@ -7,6 +7,7 @@ import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { applyPilot, buildPilot, DUMMY_NOTE, pastClassDays } from '../scripts/pilot-data.mjs';
 import { resetTeams } from '../scripts/reset-team-data.mjs';
 import { engagement } from '../src/lib/engagement';
+import { buildDigest, digestOverdue } from '../src/lib/digest';
 import { teamFlags } from '../src/lib/flags';
 
 const app = getApps().find((a) => a.name === 'pilot-it') ?? initializeApp({ projectId: 'demo-sotsuken' }, 'pilot-it');
@@ -128,7 +129,7 @@ describe('試運転データ (pilot-data)', () => {
 
     const flags = teamFlags(
       { id: 'D', members: MEMBERS, status: 'active', projectName: 'x', proposals: [], driveUrl: '', kickoffAt: Date.parse('2026-09-29T10:00:00+09:00'), teamMeetingInput: false },
-      tasks, dailies, classDays, TODAY, p.start,
+      digestOverdue(buildDigest(tasks), TODAY).unassigned, dailies, classDays, TODAY, p.start,
     );
     expect(flags.missing).toEqual(['徳松']); // 2回連続未提出
     expect(flags.unassignedOverdue).toBeGreaterThan(0); // 担当なしの期限超過

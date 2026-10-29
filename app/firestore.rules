@@ -48,6 +48,12 @@ service cloud.firestore {
         && d.deleted is bool;
     }
 
+    function validDigest(d) {
+      return d.keys().hasOnly(['done', 'total', 'due', 'n', 'at'])
+        && d.done is number && d.total is number && d.n is number && d.at is number
+        && d.due is list && d.due.size() <= 1000;
+    }
+
     function validTaskLog(d) {
       return d.keys().hasOnly(['taskId', 'title', 'by', 'at', 'kind', 'changes', 'via'])
         && d.taskId is string && d.title is string && d.title.size() <= 200
@@ -163,6 +169,14 @@ service cloud.firestore {
             && request.resource.data.date is string && request.resource.data.date.size() == 10
             && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 10000
             && request.resource.data.publishedAt is int));
+      }
+
+      // 教員のダッシュボード用の「集計メモ」(タスクの完了数・期限など。チームごとに1件)。タスクを変える人が、同じ書き込みの中で更新する
+      // (これが拒否されると、タスクの変更も失敗するので、形の検査は、タスクの書き込みで必ず通る範囲にする)
+      match /digest/{docId} {
+        allow read: if canSeeTeam(teamId);
+        allow create, update: if canSeeTeam(teamId) && docId == 'tasks' && validDigest(request.resource.data);
+        allow delete: if isTeacher();
       }
 
       // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (学生は、書き換え・削除はできない。教員は、バックアップの復元で書け、「最初からやり直す」で消せる)

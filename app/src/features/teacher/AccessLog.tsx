@@ -47,7 +47,7 @@ export function AccessLogPage() {
       <div className="table-wrap">
         <table className="access">
           <thead>
-            <tr><th>チーム</th><th>名前</th><th>最終アクセス</th><th>直近{DAYS}日 <span className="hint">(◆=授業日)</span></th><th>日数</th><th>よく見る画面</th></tr>
+            <tr><th>チーム</th><th>名前</th><th>最終アクセス</th><th>直近{DAYS}日 <span className="hint">(◆=授業日)</span></th><th>日数</th><th>よく見る画面 <span className="hint">(上位3つ・全画面の合計)</span></th></tr>
           </thead>
           <tbody>
             {rows.map((r) => (
@@ -65,11 +65,20 @@ export function AccessLogPage() {
                     </span>
                   </td>
                   <td>{r.activeDays}/{DAYS}</td>
-                  <td>{r.topScreens.slice(0, 3).map(([k, n]) => `${SCREEN_LABEL[k] ?? k} ${n}`).join(' / ') || '—'}</td>
+                  <td>
+                    {r.topScreens.slice(0, 3).map(([k, n]) => `${SCREEN_LABEL[k] ?? k} ${n}`).join(' / ') || '—'}
+                    {r.topScreens.length > 0 && <div className="hint">全画面の合計 {r.topScreens.reduce((n, [, v]) => n + v, 0)}回</div>}
+                  </td>
                 </tr>
                 {open === r.sid && (
                   <tr className="access-detail">
                     <td colSpan={6}>
+                      {r.topScreens.length > 0 && (
+                        <p className="access-screens">
+                          <strong>全画面の合計(直近{DAYS}日)</strong>: {r.topScreens.map(([k, n]) => `${SCREEN_LABEL[k] ?? k} ${n}`).join(' / ')}
+                          {' '}<span className="hint">(合計 {r.topScreens.reduce((n, [, v]) => n + v, 0)}回)</span>
+                        </p>
+                      )}
                       <ul className="plain">
                         {[...r.dates].reverse().filter((d) => d.log).map((d) => (
                           <li key={d.date}>

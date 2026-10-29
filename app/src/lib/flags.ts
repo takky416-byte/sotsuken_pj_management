@@ -1,7 +1,6 @@
-import type { ClassDay, Task, Team } from '../types';
+import type { ClassDay, Team } from '../types';
 import { classDatesBetween, consecutiveMisses, fromDailyStart, statusOf, type Daily, type DayStatus } from './daily';
 import { jstDate } from './dates';
-import { isLeaf } from './meetingView';
 
 export type TeamFlags = {
   /** 直近の授業日 (今日を含む) と、その日の提出人数 */
@@ -24,7 +23,7 @@ export const MISS_THRESHOLD = 2;
  * (今日の分は、今日が終わるまで数えない)。
  */
 export function teamFlags(
-  team: Team, tasks: Task[], dailies: Daily[], allClassDays: ClassDay[], today: string, dailyStart: string,
+  team: Team, unassignedOverdue: number, dailies: Daily[], allClassDays: ClassDay[], today: string, dailyStart: string,
 ): TeamFlags {
   const classDays = fromDailyStart(allClassDays, dailyStart); // 運用開始日より前の授業日は対象にしない
   const by = new Map(dailies.map((d) => [`${d.date}_${d.sid}`, d]));
@@ -43,9 +42,6 @@ export function teamFlags(
     const st = new Map<string, DayStatus>(dates.map((d) => [d, statusOf(by.get(`${d}_${m.sid}`))]));
     return consecutiveMisses(st, dates) >= MISS_THRESHOLD;
   }).map((m) => m.name);
-
-  const unassignedOverdue = tasks.filter((t) => !t.deleted && isLeaf(tasks, t) && t.status !== 'done' && t.status !== 'hold'
-    && t.assignees.length === 0 && t.endDate !== null && t.endDate < today).length;
 
   return { latestDay, submitted, total: team.members.length, latestMissing, missing, unassignedOverdue };
 }

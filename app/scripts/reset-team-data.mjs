@@ -6,7 +6,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { DEFAULT_DAILY_START, DUMMY_NOTE } from './pilot-data.mjs';
 
-const SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'meetingMinutes'];
+const SUBCOLLECTIONS = ['tasks', 'digest', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'meetingMinutes'];
 const VALID_TEAM = /^[A-H]$/;
 
 export function parseTeams(text) {

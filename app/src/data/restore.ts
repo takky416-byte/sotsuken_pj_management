@@ -1,6 +1,7 @@
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Write } from '../lib/restore';
+import { rebuildAllDigests } from './digest';
 
 const CHUNK = 200;
 
@@ -12,4 +13,7 @@ export async function applyRestore(writes: Write[], onProgress: (done: number) =
     await batch.commit();
     onProgress(Math.min(writes.length, i + CHUNK));
   }
+  // タスクを書き戻したチームは、ダッシュボードの集計メモも、作り直す
+  const teams = [...new Set(writes.map((w) => /^teams\/([^/]+)\/tasks$/.exec(w.path)?.[1]).filter((x): x is string => !!x))];
+  if (teams.length > 0) await rebuildAllDigests(teams);
 }

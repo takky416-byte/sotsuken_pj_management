@@ -4,8 +4,10 @@ import type { Task, TaskLink } from '../types';
 import type { Patch } from '../lib/wbs';
 import type { NewTask } from '../lib/importPlan';
 import { taskDoc } from '../lib/taskDoc';
+import { digestRef } from './digest';
 import { useQuery } from './util';
 import { diffArray, diffTask, type TaskLog } from '../lib/taskLog';
+import { applyChanges, buildDigest } from '../lib/digest';
 
 const col = (teamId: string) => collection(db, 'teams', teamId, 'tasks');
 
@@ -47,6 +49,15 @@ async function commitAll(ops: ((b: ReturnType<typeof writeBatch>) => void)[]) {
 
 type Batch = ReturnType<typeof writeBatch>;
 const addLog = (b: Batch, teamId: string, log: TaskLog) => b.set(doc(logCol(teamId)), log);
+/**
+ * 教員のダッシュボード用の「集計メモ」を、同じ書き込みの中で更新する。手元の一覧 (latest) に、これから書く変更を当てはめて作る。
+ * 一覧がまだ読めていないとき (画面を開いた直後など) は書かない (教員が開いたときに、作り直して直す)。
+ */
+const addDigest = (b: Batch, teamId: string, next: Task[] | undefined) => {
+  if (!next) return;
+  latest.set(teamId, next); // 続けて書くときも、直前の変更を含めて作る
+  b.set(digestRef(teamId), buildDigest(next));
+};
 /** 多くを一度に追加・削除するとき (取り込みなど) は、1件ずつではなく、まとめて1件の履歴にする */
 const MANY = 20;
 
@@ -55,6 +66,8 @@ export async function createTasks(teamId: string, actor: Actor, plan: NewTask[],
   const ops: ((b: Batch) => void)[] = plan.map((n) => (b) => b.set(doc(col(teamId), n.id), taskDoc(n, actor, source)));
   if (plan.length > MANY) ops.push((b) => addLog(b, teamId, { taskId: '', title: `${plan.length}件のタスクをまとめて追加`, by: actor, at: now, kind: 'create', changes: [] }));
   else plan.forEach((n) => ops.push((b) => addLog(b, teamId, { taskId: n.id, title: n.title, by: actor, at: now, kind: 'create', changes: [], ...(source === 'adhoc' ? { via: '作業ログ(WBSにない作業)' } : {}) })));
+  const cur = latest.get(teamId);
+  ops.push((b) => addDigest(b, teamId, cur && [...cur, ...plan.map((n) => ({ id: n.id, ...taskDoc(n, actor, source, now) }) as Task)]));
   await commitAll(ops);
 }
 
@@ -65,6 +78,8 @@ export async function updateTask(teamId: string, actor: Actor, id: string, chang
   const batch = writeBatch(db);
   batch.update(doc(col(teamId), id), { ...changes, updatedBy: actor, updatedAt: now });
   if (diff.length > 0) addLog(batch, teamId, { taskId: id, title: changes.title ?? prev?.title ?? '', by: actor, at: now, kind: 'update', changes: diff, ...(via ? { via } : {}) });
+  const cur = latest.get(teamId);
+  addDigest(batch, teamId, cur && applyChanges(cur, new Map([[id, changes as Partial<Task>]])));
   await batch.commit();
 }
 
@@ -82,6 +97,11 @@ export async function updateTaskArray(
   const batch = writeBatch(db);
   batch.update(doc(col(teamId), id), { [field]: change, updatedBy: actor, updatedAt: now });
   if (diff.length > 0) addLog(batch, teamId, { taskId: id, title: prev?.title ?? '', by: actor, at: now, kind: 'update', changes: diff });
+  const cur = latest.get(teamId);
+  if (field === 'assignees' && cur && prev) {
+    const next = op === 'add' ? (prev.assignees.includes(value as string) ? prev.assignees : [...prev.assignees, value as string]) : prev.assignees.filter((x) => x !== value);
+    addDigest(batch, teamId, applyChanges(cur, new Map([[id, { assignees: next }]])));
+  }
   await batch.commit();
 }
 
@@ -93,6 +113,8 @@ export async function applyPatches(teamId: string, actor: Actor, patches: Patch[
   const moved = patches.filter((p) => diffTask(before(teamId, p.id), p.changes).length > 0);
   if (moved.length > MANY) ops.push((b) => addLog(b, teamId, { taskId: '', title: `${moved.length}件のタスクの場所・並び順を変更`, by: actor, at: now, kind: 'update', changes: [{ field: 'move', from: '', to: '' }] }));
   else moved.forEach((p) => ops.push((b) => addLog(b, teamId, { taskId: p.id, title: before(teamId, p.id)?.title ?? '', by: actor, at: now, kind: 'update', changes: [{ field: 'move', from: '', to: '' }] })));
+  const cur = latest.get(teamId);
+  ops.push((b) => addDigest(b, teamId, cur && applyChanges(cur, new Map(patches.map((p) => [p.id, p.changes as Partial<Task>])))));
   await commitAll(ops);
 }
 
@@ -103,5 +125,7 @@ export async function setDeleted(teamId: string, actor: Actor, ids: string[], de
   const kind = deleted ? 'delete' : 'restore';
   if (ids.length > MANY) ops.push((b) => addLog(b, teamId, { taskId: '', title: `${ids.length}件のタスクを${deleted ? '削除' : '元に戻した'}`, by: actor, at: now, kind, changes: [] }));
   else ids.forEach((id) => ops.push((b) => addLog(b, teamId, { taskId: id, title: before(teamId, id)?.title ?? '', by: actor, at: now, kind, changes: [] })));
+  const cur = latest.get(teamId);
+  ops.push((b) => addDigest(b, teamId, cur && applyChanges(cur, new Map(ids.map((id) => [id, { deleted } as Partial<Task>])))));
   await commitAll(ops);
 }

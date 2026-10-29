@@ -6,24 +6,31 @@ import { useClassDays, useMilestones } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
 import { useMeetings } from '../../data/meetings';
 import { isHttpUrl } from '../../data/util';
+import { rebuildAllDigests, saveDigest, useDigest } from '../../data/digest';
 import { useTasks } from '../../data/tasks';
 import { updateTeam, useTeams } from '../../data/teams';
 import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import { teamFlags } from '../../lib/flags';
-import { overallProgress } from '../../lib/wbs';
+import { digestOverdue } from '../../lib/digest';
 import type { ClassDay, Milestone, Team } from '../../types';
 
 
 function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string; onSeverity: (id: string, n: number) => void }) {
   const today = jstDate();
-  const { data: tasks } = useTasks(team.id);
+  // タスク全件の代わりに、チームごとの「集計メモ」(1件) を読む。メモがまだないチームだけ、タスクから作って書く (最初の1回)
+  const { data: digestDocs } = useDigest(team.id);
+  const digest = digestDocs?.[0] ?? null;
+  const missingDigest = digestDocs !== null && !digest;
+  const { data: tasksForDigest } = useTasks(missingDigest ? team.id : null);
+  useEffect(() => { if (missingDigest && tasksForDigest && tasksForDigest.length > 0) void saveDigest(team.id, tasksForDigest); }, [missingDigest, tasksForDigest, team.id]);
+  const ready = !!digest || (missingDigest && !!tasksForDigest && tasksForDigest.length === 0);
   const { data: dailies } = useTeamDailies(team.id, dailyWindowFrom(today));
   const { data: meetings } = useMeetings(team.id);
   const lastMeeting = (meetings ?? []).map((m) => m.date).sort().at(-1);
   const next = milestones.find((m) => (m.endDate ?? m.date) >= today && (m.teamId === null || m.teamId === team.id));
-  const flags = tasks && dailies ? teamFlags(team, tasks, dailies, classDays, today, dailyStart) : null;
-  const delayed = (tasks ?? []).filter((t) => !t.deleted && t.status !== 'done' && t.status !== 'hold'
-    && t.endDate && t.endDate < today).length;
+  const over = digest ? digestOverdue(digest, today) : { overdue: 0, unassigned: 0 };
+  const flags = ready && dailies ? teamFlags(team, over.unassigned, dailies, classDays, today, dailyStart) : null;
+  const delayed = over.overdue;
   const active = team.status === 'active';
   // 要確認の多さ (一覧を、要確認の多い順に並べるために、親へ知らせる)
   const severity = flags ? flags.missing.length * 2 + flags.unassignedOverdue : 0;
@@ -34,11 +41,11 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
       <td>
         {active ? team.projectName : <span className="hint">企画検討中</span>}
-        {active && tasks && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}
+        {active && ready && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}
         {active && <div className="hint">提出先: {team.submitUrl ? '設定済み' : <span className="warn">未設定</span>}</div>}
       </td>
       <td>
-        {tasks ? <Progress {...overallProgress(tasks)} /> : '…'}
+        {ready ? <Progress done={digest?.done ?? 0} total={digest?.total ?? 0} /> : '…'}
         {delayed > 0 && <div className="warn">期限超過 {delayed}件</div>}
       </td>
       <td>
@@ -75,6 +82,8 @@ export function TeacherHome() {
   const settings = useSettings();
   const [severity, setSeverity] = useState<Record<string, number>>({});
   const [flagFirst, setFlagFirst] = useState(true);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildErr, setRebuildErr] = useState('');
   const onSeverity = (id: string, n: number) => setSeverity((s) => (s[id] === n ? s : { ...s, [id]: n }));
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!teams || !milestones || !classDays || !settings) return <p>読み込み中…</p>;
@@ -82,7 +91,14 @@ export function TeacherHome() {
   return (
     <>
       <h2>チーム一覧</h2>
-      <label className="check"><input type="checkbox" checked={flagFirst} onChange={(e) => setFlagFirst(e.target.checked)} />要確認のチームを上に並べる</label>
+      <div className="row">
+        <label className="check"><input type="checkbox" checked={flagFirst} onChange={(e) => setFlagFirst(e.target.checked)} />要確認のチームを上に並べる</label>
+        <button type="button" className="ghost" disabled={rebuilding} title="全チームのタスクを読み直して、WBS進捗・期限超過の数を作り直します(読み取りが約500回増えます)"
+          onClick={() => { setRebuilding(true); rebuildAllDigests(teams.map((t) => t.id)).catch((e) => setRebuildErr((e as Error).message)).finally(() => setRebuilding(false)); }}>
+          {rebuilding ? '更新中…' : '最新にする'}
+        </button>
+        {rebuildErr && <span className="error">{rebuildErr}</span>}
+      </div>
       <div className="table-wrap">
         <StackTable>
           <thead>
@@ -97,6 +113,7 @@ export function TeacherHome() {
       <SubmitList teams={sorted} />
       <Broadcast teams={sorted} />
       <p className="hint">
+        WBS進捗・期限超過は、タスクを変えるたびに更新される集計から出しています(ダッシュボードを開く読み取りを減らすため)。数が合わないと感じたら、「最新にする」を押してください。
         「要確認」は目安です。授業日に2回続けて作業ログが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。
         評価や単位認定には使いません。
       </p>

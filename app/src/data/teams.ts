@@ -49,7 +49,7 @@ export const saveReportNotes = (
 };
 
 /** キックオフの「最初からやり直す」で消すもの (チームの下の、タスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録) */
-export const WIPE_COLLECTIONS = ['tasks', 'dailyReports', 'taskLogs', 'meetings', 'comments', 'thanks', 'meetingMinutes'] as const;
+export const WIPE_COLLECTIONS = ['tasks', 'digest', 'dailyReports', 'taskLogs', 'meetings', 'comments', 'thanks', 'meetingMinutes'] as const;
 
 /**
  * チームを、キックオフ前の状態に戻す (教員だけ)。WIPE_COLLECTIONS をすべて消し、チームを「企画検討中」にして、

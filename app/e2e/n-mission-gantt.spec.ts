@@ -170,6 +170,7 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await row.getByRole('button').click();
     await expect(t.locator('tr.access-detail')).toContainText('開いた');
     await expect(t.locator('tr.access-detail')).toContainText('ホーム');
+    await expect(t.locator('tr.access-detail')).toContainText('全画面の合計');
     await sp.close(); await t.close();
   });
 

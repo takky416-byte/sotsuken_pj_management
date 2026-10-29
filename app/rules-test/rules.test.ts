@@ -4,7 +4,7 @@ import {
   assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where,
+  addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 
 let env: RulesTestEnvironment;
@@ -458,6 +458,45 @@ describe('タスクの変更履歴 (taskLogs)', () => {
   test('教員は、復元のために書き換えられる', async () => {
     await assertSucceeds(setDoc(doc(as(A1), 'teams/A/taskLogs/l9'), log('A1')));
     await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/taskLogs/l9'), log('A1')));
+  });
+});
+
+describe('タスクの集計メモ (digest。教員のダッシュボード用)', () => {
+  const digest = (over: Record<string, unknown> = {}) => ({ done: 1, total: 3, due: ['2026-11-03LU', '2026-11-10PA'], n: 4, at: 1, ...over });
+  test('チームの学生と教員は、チームのメモを書ける・読める。別のチームは、書けも読めもしない', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest()));
+    await assertSucceeds(setDoc(doc(as(A2), 'teams/A/digest/tasks'), digest({ done: 2 })));
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/digest/tasks'), digest()));
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'teams/A/digest/tasks')));
+    await assertSucceeds(getDoc(doc(as(A2), 'teams/A/digest/tasks')));
+    await assertFails(getDoc(doc(as(B1), 'teams/A/digest/tasks')));
+    await assertFails(setDoc(doc(as(B1), 'teams/A/digest/tasks'), digest()));
+  });
+  test('形の検査: 知らない項目・数でない値・リストでない due・長すぎるリスト・別の名前のドキュメントは不可', async () => {
+    await assertFails(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest({ extra: 1 })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest({ done: 'x' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest({ due: 'x' })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest({ due: Array.from({ length: 1001 }, () => 'a') })));
+    await assertFails(setDoc(doc(as(A1), 'teams/A/digest/other'), digest()));
+  });
+  test('削除できるのは教員だけ', async () => {
+    await assertSucceeds(setDoc(doc(as(A1), 'teams/A/digest/tasks'), digest()));
+    await assertFails(deleteDoc(doc(as(A1), 'teams/A/digest/tasks')));
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teams/A/digest/tasks')));
+  });
+  test('学生が、タスクの変更と同じ書き込み (バッチ) でメモも更新できる。メモの形が違うと、バッチごと失敗する', async () => {
+    const fs = as(A1);
+    const b1 = writeBatch(fs);
+    b1.set(doc(fs, 'teams/A/tasks/dg1'), task('A1'));
+    b1.set(doc(fs, 'teams/A/digest/tasks'), digest());
+    await assertSucceeds(b1.commit());
+    const b2 = writeBatch(fs);
+    b2.set(doc(fs, 'teams/A/tasks/dg2'), task('A1'));
+    b2.set(doc(fs, 'teams/A/digest/tasks'), digest({ extra: 1 }));
+    await assertFails(b2.commit());
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      if ((await getDoc(doc(ctx.firestore(), 'teams/A/tasks/dg2'))).exists()) throw new Error('バッチが、一部だけ書き込まれた');
+    });
   });
 });
 

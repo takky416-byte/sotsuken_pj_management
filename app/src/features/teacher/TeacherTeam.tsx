@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { MeetingRecords } from './MeetingRecords';
 import { MeetingMinutesEditor } from './MeetingMinutesEditor';
@@ -9,6 +9,7 @@ import { ReportView } from '../../components/ReportView';
 import { WbsGantt } from '../../components/WbsGantt';
 import { useClassDays } from '../../data/calendar';
 import { useSettings, useTeamDailies } from '../../data/daily';
+import { healDigest, useDigest } from '../../data/digest';
 import { useTasks } from '../../data/tasks';
 import { resetWbsReview } from '../../data/teams';
 import { reviewState } from '../../lib/wbsReview';
@@ -47,11 +48,27 @@ function ReviewStatus({ team }: { team: Team }) {
   );
 }
 
+/**
+ * 教員がチーム詳細を開いたとき、タスクを全件読んでいる。そのついでに、ダッシュボード用の「集計メモ」とずれていれば、直す
+ * (2人が同時に書いてずれたときや、バックアップの復元・手作業の変更のあとに、数が合うようにする)。
+ */
+function DigestHeal({ teamId }: { teamId: string }) {
+  const { data: tasks } = useTasks(teamId);
+  const { data: digestDocs } = useDigest(teamId);
+  useEffect(() => {
+    if (!tasks || !digestDocs) return;
+    const t = setTimeout(() => { void healDigest(teamId, tasks, digestDocs[0] ?? null).catch(() => undefined); }, 1500); // 続けて変わっているあいだは、待つ
+    return () => clearTimeout(t);
+  }, [teamId, tasks, digestDocs]);
+  return null;
+}
+
 function TeamDetail({ team }: { team: Team }) {
   const [tab, setTab] = useState<'wbs' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
   return (
     <>
       <Link to="/teacher">← チーム一覧</Link>
+      <DigestHeal teamId={team.id} />
       <h2>{team.id}チーム</h2>
       <div className="card">
         <div className="label">メンバー</div>
