@@ -55,6 +55,8 @@ var BACKUP_FOLDER_ID = '1hTPJorv8aCJbtXjj5hrR2TPgj4GU4ksP';
 var TOP_COLLECTIONS = ['roster', 'teams', 'config', 'milestones', 'teacherNotes', 'followups', 'evaluationsRaw', 'accessLogs'];
 /** 件数が多く (学生 1 人 × 1 日 1 件)、増え続けるので、毎日は読まず、週 1 回の全部入りのときだけ入れる (Firestore の読み取りを、約 4 割減らす) */
 var HEAVY_COLLECTIONS = ['accessLogs'];
+/** チームの中でも、同じ理由で、週 1 回の全部入りのときだけ入れる。タスクの変更履歴は、1 日に数百件ずつ増え続け (学期の終わりには数万件)、毎日読むと、無料枠 (5 万/日) を使い切るため */
+var HEAVY_TEAM_SUBCOLLECTIONS = ['taskLogs'];
 var TEAM_SUBCOLLECTIONS = ['tasks', 'dailyReports', 'meetings', 'comments', 'thanks', 'taskLogs', 'meetingMinutes', 'evaluationsPublished'];
 
 /** 初回の設定: 毎日 3 時ごろに backupDaily を動かすトリガーを作る。何度実行しても重複しない。 */
@@ -88,10 +90,13 @@ function runBackup_(full) {
     var collections = {};
     TOP_COLLECTIONS.forEach(function (p) { if (full || HEAVY_COLLECTIONS.indexOf(p) < 0) collections[p] = listDocs_(p); });
     collections.teams.forEach(function (t) {
-      TEAM_SUBCOLLECTIONS.forEach(function (sub) { collections['teams/' + t.id + '/' + sub] = listDocs_('teams/' + t.id + '/' + sub); });
+      TEAM_SUBCOLLECTIONS.forEach(function (sub) {
+        if (!full && HEAVY_TEAM_SUBCOLLECTIONS.indexOf(sub) >= 0) return;
+        collections['teams/' + t.id + '/' + sub] = listDocs_('teams/' + t.id + '/' + sub);
+      });
     });
     var backup = {
-      meta: { app: 'sotsuken-pj', version: 1, exportedAt: new Date().toISOString(), includesTeacherNotes: true, excluded: full ? [] : HEAVY_COLLECTIONS },
+      meta: { app: 'sotsuken-pj', version: 1, exportedAt: new Date().toISOString(), includesTeacherNotes: true, excluded: full ? [] : HEAVY_COLLECTIONS.concat(HEAVY_TEAM_SUBCOLLECTIONS.map(function (s) { return 'teams/*/' + s; })) },
       collections: collections,
     };
     var folder = backupFolder_();
@@ -104,7 +109,7 @@ function runBackup_(full) {
     props.setProperty('LAST_BACKUP', today);
     if (full) props.setProperty('LAST_FULL_BACKUP', today);
     var n = Object.keys(collections).reduce(function (a, k) { return a + collections[k].length; }, 0);
-    Logger.log('バックアップしました: ' + name + ' (' + n + '件' + (full ? '、全部入り' : '、アクセス履歴を除く') + ')。古いバックアップを ' + removed + ' 件、ごみ箱に移しました。');
+    Logger.log('バックアップしました: ' + name + ' (' + n + '件' + (full ? '、全部入り' : '、アクセス履歴・変更履歴を除く') + ')。古いバックアップを ' + removed + ' 件、ごみ箱に移しました。');
     return { name: name, docs: n, full: full };
   } catch (e) {
     Logger.log('バックアップに失敗: ' + e);

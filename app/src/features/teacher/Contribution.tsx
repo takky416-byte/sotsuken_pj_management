@@ -5,7 +5,7 @@ import { download } from '../../data/export';
 import { useClassDays } from '../../data/calendar';
 import { useTeamDailies, useSettings } from '../../data/daily';
 import { useAllMeetings } from '../../data/meetings';
-import { useTaskLogsSince, useTasks } from '../../data/tasks';
+import { TASK_LOG_CAP, useTaskLogsSince, useTasks } from '../../data/tasks';
 import { useTeams } from '../../data/teams';
 import { useThanks } from '../../data/thanks';
 import { PERIOD_LABEL, contributionCsv, contributions, periodFrom, type Period } from '../../lib/contribution';
@@ -34,7 +34,7 @@ function useTeamNumbers(team: Team, period: Period, withAccess: boolean) {
     return {
       rows: contributions({ teamId: team.id, members: team.members, from, today, tasks, taskLogs, dailies, classDays, dailyStart: settings.dailyStartDate, thanks, meetings, access: mine }),
       weekly: weeklyActivity({ members: team.members, from, today, taskLogs, dailies, access: mine }),
-      from, today, days: periodDays(from, today),
+      from, today, days: periodDays(from, today), capped: taskLogs.length >= TASK_LOG_CAP,
     };
   }, [team, from, today, tasks, taskLogs, dailies, thanks, meetings, classDays, settings, withAccess, access]);
   return data;
@@ -54,6 +54,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
       <div className="row">
         <h3>{team.id}チーム {team.projectName && <small>{team.projectName}</small>}</h3>
         <span className="hint">{shortDate(from)}〜{shortDate(today)}</span>
+        {data?.capped && <span className="hint">(変更履歴が多いため、新しい{TASK_LOG_CAP.toLocaleString()}件までで数えています。WBSの変更・完了の数は、少なめに出ます)</span>}
         <button type="button" className="ghost" onClick={() => download(`sotsuken-usage-${team.id}-${from}_${today}.csv`, 'text/csv', contributionCsv(rows))}>CSVで書き出す</button>
       </div>
       <div className="table-wrap">
@@ -235,7 +236,7 @@ export function ContributionPanel() {
       </div>
       {scope === 'between' && (loadAll
         ? <CompareTeams key={`${period}:${withAccess}`} teams={sorted} period={period} withAccess={withAccess} />
-        : <div className="card"><p>全チームのぶんを読み込んで、比べます(読み取りが増えるので、必要なときだけ)。</p><button type="button" onClick={() => setLoadAll(true)}>全チームを読み込んで比べる</button></div>)}
+        : <div className="card"><p>全チームのぶんを読み込んで、比べます。読み取りが多く(学期が進むと、1回で1万回ほど)、1日の上限(5万回)を使うので、必要なときだけ押してください。</p><button type="button" onClick={() => setLoadAll(true)}>全チームを読み込んで比べる</button></div>)}
       {scope === 'inside' && !team && <p className="card">チームを選ぶと、メンバーごとの数が出ます。</p>}
       {scope === 'inside' && shown.map((t) => <TeamContribution key={`${t.id}:${period}:${withAccess}`} team={t} period={period} withAccess={withAccess} />)}
       {scope === 'inside' && team && (

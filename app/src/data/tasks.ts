@@ -1,4 +1,4 @@
-import { arrayRemove, arrayUnion, collection, doc, query, where, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, doc, limit, orderBy, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, TaskLink } from '../types';
 import type { Patch } from '../lib/wbs';
@@ -14,9 +14,14 @@ const logCol = (teamId: string) => collection(db, 'teams', teamId, 'taskLogs');
 const latest = new Map<string, Task[]>();
 const before = (teamId: string, id: string) => latest.get(teamId)?.find((t) => t.id === id);
 
-/** 教員の利用状況の分析用: from (ミリ秒) 以降の変更履歴。期間のぶんだけ読む。 */
+/** 利用状況の分析で、1チームから読む変更履歴の上限 (学期が進むと数万件になるため、読み取りの無料枠を守る) */
+export const TASK_LOG_CAP = 3000;
+/** 教員の利用状況の分析用: from (ミリ秒) 以降の変更履歴を、新しい順に、TASK_LOG_CAP 件まで。 */
 export function useTaskLogsSince(teamId: string | null, fromMs: number) {
-  return useQuery<TaskLog>(teamId ? query(logCol(teamId), where('at', '>=', fromMs)) : null, `taskLogs-since:${teamId}:${fromMs}`);
+  return useQuery<TaskLog>(
+    teamId ? query(logCol(teamId), where('at', '>=', fromMs), orderBy('at', 'desc'), limit(TASK_LOG_CAP)) : null,
+    `taskLogs-since:${teamId}:${fromMs}`,
+  );
 }
 
 export function useTasks(teamId: string | null) {

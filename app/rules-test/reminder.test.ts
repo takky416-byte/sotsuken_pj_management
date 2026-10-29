@@ -244,7 +244,7 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
       expect(s.store.LAST_BACKUP).toBe(today);
     });
 
-    test('アクセス履歴は、全部入りの曜日だけ入れる (ほかの日は除いて、読み取りを減らす)。除いたことは meta に書く。最初の1回は、全部入り', async () => {
+    test('アクセス履歴とタスクの変更履歴は、全部入りの曜日だけ入れる (ほかの日は除いて、読み取りを減らす)。除いたことは meta に書く。最初の1回は、全部入り', async () => {
       await db.doc('accessLogs/2026-10-28_A1').set({ sid: 'A1', teamId: 'A', date: '2026-10-28', firstAt: 1, lastAt: 2, visits: 1, views: 3, screens: { home: 3 } });
       const weekday = new Date(Date.now() + JST).getUTCDay();
       const file = () => parseBackup(driveFolders.get(FOLDER)!.get(`sotsuken-backup-${today}.json`)!.content);
@@ -254,15 +254,17 @@ describe('試験モードは、送る相手がいなくても先生に送る (�
       const r1 = light.call('backupDaily');
       expect(r1.full).toBe(false);
       expect(file().collections.accessLogs).toBeUndefined();
+      expect(Object.keys(file().collections).filter((k) => k.endsWith('/taskLogs'))).toEqual([]);
       expect(file().collections.roster).toBeTruthy();
-      expect((file().meta as { excluded?: string[] }).excluded).toEqual(['accessLogs']);
+      expect((file().meta as { excluded?: string[] }).excluded).toEqual(['accessLogs', 'teams/*/taskLogs']);
       expect(light.store.LAST_FULL_BACKUP).toBe('2026-01-01'); // 全部入りの記録は、変わらない
-      expect(light.logs.join('\n')).toContain('アクセス履歴を除く');
+      expect(light.logs.join('\n')).toContain('アクセス履歴・変更履歴を除く');
 
       // 今日が全部入りの曜日 → アクセス履歴も入る
       const full = loadScript({ ...baseProps, BACKUP_FULL_DAY: String(weekday), LAST_FULL_BACKUP: '2026-01-01' });
       expect(full.call('backupDaily').full).toBe(true);
       expect(file().collections.accessLogs.map((d) => d.id)).toEqual(['2026-10-28_A1']);
+      expect(Object.keys(file().collections).filter((k) => k.endsWith('/taskLogs')).length).toBeGreaterThan(0);
       expect((file().meta as { excluded?: string[] }).excluded).toEqual([]);
       expect(full.store.LAST_FULL_BACKUP).toBe(today);
 
