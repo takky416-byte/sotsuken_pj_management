@@ -54,7 +54,7 @@ export function DailyLogsPage() {
   const set = (c: Partial<Filter>) => setF((x) => ({ ...x, ...c }));
   return (
     <>
-      <h2>作業ログ</h2>
+      <h3>作業ログ</h3>
       <p className="hint">学生の作業ログを、チームごと・個人ごとに見られます。チームを選ぶと、そのチームだけを読み込みます(「すべて」は、全チームを読み込むので、必要なときだけにしてください)。</p>
       <div className="seg view-switch" role="group" aria-label="見方">
         <button type="button" className={`seg-btn ${f.view === 'team' ? 'on' : ''}`} aria-pressed={f.view === 'team'} onClick={() => set({ view: 'team' })}>チームごと</button>

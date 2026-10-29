@@ -1,4 +1,4 @@
-import { arrayRemove, arrayUnion, collection, doc, query, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, doc, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, TaskLink } from '../types';
 import type { Patch } from '../lib/wbs';
@@ -13,6 +13,11 @@ const logCol = (teamId: string) => collection(db, 'teams', teamId, 'taskLogs');
 /** 変更履歴に「変更前」を残すための、画面が読んでいる最新のタスク */
 const latest = new Map<string, Task[]>();
 const before = (teamId: string, id: string) => latest.get(teamId)?.find((t) => t.id === id);
+
+/** 教員の利用状況の分析用: from (ミリ秒) 以降の変更履歴。期間のぶんだけ読む。 */
+export function useTaskLogsSince(teamId: string | null, fromMs: number) {
+  return useQuery<TaskLog>(teamId ? query(logCol(teamId), where('at', '>=', fromMs)) : null, `taskLogs-since:${teamId}:${fromMs}`);
+}
 
 export function useTasks(teamId: string | null) {
   const r = useQuery<Task>(teamId ? query(col(teamId)) : null, `tasks:${teamId}`);

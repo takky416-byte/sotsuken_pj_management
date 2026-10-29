@@ -10,8 +10,7 @@ import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
 import { AccessTracker } from './components/AccessTracker';
 import { GuideAutoOpen, GuideButton, GuideProvider } from './components/Guide';
-import { AccessLogPage } from './features/teacher/AccessLog';
-import { DailyLogsPage } from './features/teacher/DailyLogs';
+import { Usage } from './features/teacher/Usage';
 import { Attendance } from './features/teacher/Attendance';
 import { Kickoff } from './features/teacher/Kickoff';
 import { Preview } from './features/teacher/Preview';
@@ -43,9 +42,8 @@ function Shell() {
             <NavLink to="/teacher" end>チーム</NavLink>
             <NavLink to="/teacher/report">PJ分析</NavLink>
             <NavLink to="/meeting">ミーティング</NavLink>
-            <NavLink to="/teacher/logs">作業ログ</NavLink>
             <NavLink to="/teacher/attendance">欠席</NavLink>
-            <NavLink to="/teacher/access">アクセス</NavLink>
+            <NavLink to="/teacher/usage">利用状況</NavLink>
             <NavLink to="/teacher/preview">学生の画面</NavLink>
             <NavLink to="/teacher/settings">設定</NavLink>
             <NavLink to="/teacher/help">使い方</NavLink>
@@ -72,9 +70,10 @@ function Shell() {
             <Route path="/teacher/kickoff/:id" element={<Kickoff />} />
             <Route path="/teacher/preview" element={<Preview />} />
             <Route path="/teacher/preview/:sid/*" element={<Preview />} />
-            <Route path="/teacher/logs" element={<DailyLogsPage />} />
+            <Route path="/teacher/usage" element={<Usage />} />
+            <Route path="/teacher/logs" element={<Navigate to="/teacher/usage?tab=logs" replace />} />
             <Route path="/teacher/attendance" element={<Attendance />} />
-            <Route path="/teacher/access" element={<AccessLogPage />} />
+            <Route path="/teacher/access" element={<Navigate to="/teacher/usage?tab=access" replace />} />
             <Route path="/teacher/roster" element={<Navigate to="/teacher/settings?tab=roster" replace />} />
             <Route path="/teacher/export" element={<Navigate to="/teacher/settings?tab=export" replace />} />
             <Route path="/teacher/settings" element={<Settings />} />

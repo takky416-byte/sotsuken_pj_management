@@ -162,7 +162,8 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
 
     const t = await browser.newPage();
     await login(t, 'teacher@trident.ac.jp');
-    await t.getByRole('link', { name: 'アクセス', exact: true }).click();
+    await t.getByRole('link', { name: '利用状況', exact: true }).click();
+    await t.getByRole('button', { name: 'アクセス', exact: true }).click();
     await expect(t.getByRole('heading', { name: 'アクセス履歴' })).toBeVisible();
     const row = t.locator('table.access tbody tr', { hasText: 'A1' }).first();
     await expect(row).toContainText('今日');
@@ -175,7 +176,8 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
   test('教員: 作業ログの一覧を、チームごと・個人ごとに、日付・文字で絞り込んで見られる。カレンダーは、設定の中にある', async ({ browser }) => {
     const t = await browser.newPage();
     await login(t, 'teacher@trident.ac.jp');
-    await t.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await t.getByRole('link', { name: '利用状況', exact: true }).click();
+    await t.getByRole('button', { name: '作業ログ', exact: true }).click();
     await expect(t.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
     await t.getByLabel('チーム', { exact: true }).selectOption('A');
     await expect(t.locator('.log-section')).toHaveCount(1);
@@ -193,6 +195,28 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await t.getByRole('link', { name: '設定', exact: true }).click();
     await t.getByRole('button', { name: 'カレンダー', exact: true }).click();
     await expect(t.getByRole('heading', { name: '授業日とミーティング' })).toBeVisible();
+    await t.close();
+  });
+
+  test('教員: 利用状況の分析で、メンバーごとの関与・貢献の数を、キックオフからの通算などで見られる', async ({ browser }) => {
+    const t = await browser.newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    // 作業ログ・アクセスは、「利用状況」にまとまっている (ナビには別に出ない)
+    await expect(t.getByRole('link', { name: 'アクセス', exact: true })).toHaveCount(0);
+    await t.getByRole('link', { name: '利用状況', exact: true }).click();
+    await expect(t.getByRole('heading', { name: '利用状況', exact: true })).toBeVisible();
+    await expect(t.getByText('チームを選ぶと、メンバーごとの数が出ます。')).toBeVisible();
+    await t.getByLabel('分析するチーム').selectOption('A');
+    await expect(t.getByRole('heading', { name: /Aチーム/ })).toBeVisible();
+    await expect(t.getByRole('columnheader', { name: /作業ログ/ })).toBeVisible();
+    await expect(t.locator('table.facts tbody tr').first()).toBeVisible();
+    await t.getByLabel('期間').selectOption('d7');
+    await expect(t.locator('table.facts tbody tr').first()).toBeVisible();
+    const [dl] = await Promise.all([t.waitForEvent('download'), t.getByRole('button', { name: 'CSVで書き出す' }).click()]);
+    expect(dl.suggestedFilename()).toMatch(/^利用状況_Aチーム_.*\.csv$/);
+    // 古いURLも、利用状況の中を開く
+    await t.goto('/teacher/logs');
+    await expect(t.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();
     await t.close();
   });
 
