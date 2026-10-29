@@ -141,7 +141,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
         <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントチャートで編集する</label>
         <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>
       </div>
-      {direct && !report && <p className="hint">バーを<strong>ドラッグ</strong>で移動、両端で期間を変更。<strong>空の行をなぞる</strong>と期間が入ります。バーや行を<strong>タップ</strong>すると、状態の変更・タスクの追加ができます。</p>}
+      {direct && !report && <p className="hint">バーを<strong>ドラッグ</strong>で移動、両端で期間を変更。<strong>空の行をなぞる</strong>と期間が入ります。バーや行を<strong>タップ</strong>すると、状態の変更ができます。各行の<strong>＋</strong>で、その行の中にタスクを追加できます。</p>}
       {err && <p className="error">{err}</p>}
       <div className="gantt" ref={box}>
         <div className="gantt-inner">
