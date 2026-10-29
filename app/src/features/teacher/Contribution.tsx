@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { StackTable } from '../../components/StackTable';
 import { useAccessLogs } from '../../data/access';
+import { download } from '../../data/export';
 import { useClassDays } from '../../data/calendar';
 import { useTeamDailies, useSettings } from '../../data/daily';
 import { useAllMeetings } from '../../data/meetings';
@@ -14,13 +15,6 @@ import { shortDate } from '../../lib/wbs';
 import type { Team } from '../../types';
 
 const fromMs = (date: string) => Date.parse(`${date}T00:00:00+09:00`);
-
-function download(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = name; a.click();
-  URL.revokeObjectURL(url);
-}
 
 /** チームの、メンバーごとの数と、週ごとの動き。チームのぶんだけ読む。 */
 function useTeamNumbers(team: Team, period: Period, withAccess: boolean) {
@@ -60,7 +54,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
       <div className="row">
         <h3>{team.id}チーム {team.projectName && <small>{team.projectName}</small>}</h3>
         <span className="hint">{shortDate(from)}〜{shortDate(today)}</span>
-        <button type="button" className="ghost" onClick={() => download(`利用状況_${team.id}チーム_${from}_${today}.csv`, contributionCsv(rows))}>CSVで書き出す</button>
+        <button type="button" className="ghost" onClick={() => download(`利用状況_${team.id}チーム_${from}_${today}.csv`, 'text/csv', contributionCsv(rows))}>CSVで書き出す</button>
       </div>
       <div className="table-wrap">
         <StackTable className="facts">
