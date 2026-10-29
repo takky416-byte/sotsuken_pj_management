@@ -208,12 +208,24 @@ test.describe.serial('ミッション・WBS外の作業・ガントチャート�
     await expect(t.getByText('チームを選ぶと、メンバーごとの数が出ます。')).toBeVisible();
     await t.getByLabel('分析するチーム').selectOption('A');
     await expect(t.getByRole('heading', { name: /Aチーム/ })).toBeVisible();
-    await expect(t.getByRole('columnheader', { name: /作業ログ/ })).toBeVisible();
+    await expect(t.getByRole('columnheader', { name: /作業ログ.*提出/ })).toBeVisible();
     await expect(t.locator('table.facts tbody tr').first()).toBeVisible();
     await t.getByLabel('期間').selectOption('d7');
     await expect(t.locator('table.facts tbody tr').first()).toBeVisible();
     const [dl] = await Promise.all([t.waitForEvent('download'), t.getByRole('button', { name: 'CSVで書き出す' }).click()]);
     expect(dl.suggestedFilename()).toMatch(/^利用状況_Aチーム_.*\.csv$/);
+    // チームの中の比較: メンバーの割合 (積み上げ棒) と、週ごとの動き (ヒートマップ)
+    await expect(t.locator('.share-bars li').first()).toBeVisible();
+    await t.getByLabel('割合の指標').selectOption('completed');
+    await expect(t.locator('table.heat tbody tr').first()).toBeVisible();
+    // チームどうしの比較は、全チームを読み込むボタンを押したときだけ
+    await t.getByRole('button', { name: 'チームどうし' }).click();
+    await expect(t.getByText('全チームのぶんを読み込んで、比べます')).toBeVisible();
+    await t.getByRole('button', { name: '全チームを読み込んで比べる' }).click();
+    await expect(t.getByRole('row', { name: /^A / }).first()).toBeVisible();
+    await expect(t.getByRole('row', { name: /^B / }).first()).toBeVisible();
+    await expect(t.locator('.dotplot').first()).toBeVisible();
+    await t.getByLabel('点で見る指標').selectOption('done');
     // 古いURLも、利用状況の中を開く
     await t.goto('/teacher/logs');
     await expect(t.getByRole('heading', { name: '作業ログ', exact: true })).toBeVisible();

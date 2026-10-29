@@ -898,3 +898,21 @@ table.access tr.access-detail td { background:var(--bg); }
 .gantt-plus { flex:none; padding:0 6px; min-height:24px; line-height:1; font-size:16px; }
 .gantt-addrow { position:sticky; left:0; padding:6px 0 2px; }
 .gantt-addrow .gantt-add { align-items:center; }
+
+/* 利用状況の比較: メンバーの割合・週ごとの動き・チーム間のドットプロット */
+.cmp-block { margin-top:14px; }
+.share-bars { display:flex; flex-direction:column; gap:6px; margin:8px 0; }
+.share-bars li { display:grid; grid-template-columns:7em 1fr 6.5em; align-items:center; gap:8px; }
+.share-track { position:relative; height:16px; background:var(--accent-soft); border-radius:8px; overflow:hidden; }
+.share-fill { position:absolute; left:0; top:0; bottom:0; background:var(--accent); border-radius:8px; }
+.share-even { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--fg); opacity:.55; }
+.share-val { font-variant-numeric:tabular-nums; text-align:right; }
+table.heat { border-collapse:separate; border-spacing:2px; }
+table.heat th { font-weight:600; text-align:left; padding:2px 6px; white-space:nowrap; }
+table.heat td { min-width:3.2em; text-align:center; padding:4px 6px; border-radius:4px; background:var(--card); border:1px solid var(--line); }
+table.heat td.zero { color:var(--muted); background:transparent; }
+.dotcell { min-width:220px; }
+.dotplot { position:relative; display:block; height:22px; margin:0 8px; border-bottom:1px solid var(--line); background:linear-gradient(to right, var(--line) 1px, transparent 1px) 0 0 / 25% 100%; }
+.dp { position:absolute; top:5px; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--accent); opacity:.75; }
+.dp-avg { position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--fg); }
+@media (max-width:600px) { .share-bars li { grid-template-columns:5em 1fr 5.5em; } }
