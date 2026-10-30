@@ -1,4 +1,4 @@
-"""説明資料 (PPTX) を作る。画面写真・手順・デモ動画は、操作マニュアルと同じ (manual/content.json)。"""
+"""説明資料 (PPTX) を作る。画面写真・手順・デモ動画は、操作マニュアルと同じ (学生編: manual/content.json / 教員編: manual/content-teacher.json。EDITION=teacher で教員編)。"""
 import json, os, subprocess, tempfile
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -7,7 +7,8 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 
-c = json.load(open('manual/content.json', encoding='utf-8'))
+EDITION = 'teacher' if os.environ.get('EDITION') == 'teacher' else 'student'
+c = json.load(open('manual/content-teacher.json' if EDITION == 'teacher' else 'manual/content.json', encoding='utf-8'))
 OUT = '../docs/manual'
 AC, FG, MUTED, HOT, SOFT = RGBColor(0x0A, 0x84, 0xFF), RGBColor(0x14, 0x22, 0x3A), RGBColor(0x5A, 0x6A, 0x85), RGBColor(0xFF, 0x7A, 0x00), RGBColor(0xE8, 0xF2, 0xFF)
 FONT = 'Noto Sans JP'
@@ -178,12 +179,26 @@ for i, (k, v) in enumerate(cols):
     text(s, x + 0.2, 1.55, 3.6, 0.6, k, 20, True, AC)
     text(s, x + 0.2, 2.3, 3.6, 4.4, v, 14)
 
+# 教員編だけ: 運用で気をつけること (無料枠・関与の見方)
+if EDITION == 'teacher':
+    s = prs.slides.add_slide(blank); header(s, '運用の注意 — 無料枠と、数の見方', '無料のプラン(Spark)で運用しています。上限と、数の読み方を知っておくと安心です')
+    cols = [
+        ('Firestoreの無料枠(1日)', '・読み取り 5万回\n・書き込み 2万回\n・削除 2万回\n(日本時間の午後4〜5時台に、1日が切り替わる)\n\n超えると、その日の分は読み書きが止まる(課金はされない)。読み取りは、ドキュメント1件で1回。データの大きさは関係しない'),
+        ('読み取りを増やす操作', '・利用状況の「全チームを読み込んで比べる」(学期が進むと1回で1万回ほど)\n・ダッシュボードの「最新にする」(約500回)\n・利用状況でチームを「すべて」にする\n\nダッシュボードを開くだけなら、チームごとの「集計」(1件)を読むだけで、読み取りは少ない'),
+        ('関与・貢献の数の見方', '・点数や順位は、つけない\n・数は関与の目安。内容の質は、作業ログや成果物で確かめる\n・変更履歴は10/24に記録が始まった。それ以前の変更は含まない\n・ハード系は機材の待ち時間があり、ソフト系と進み方が違う\n・CSVで書き出して、成績や面談の資料に使える'),
+    ]
+    for i, (k, v) in enumerate(cols):
+        x = 0.5 + i * 4.2
+        box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(1.9), Inches(4.0), Inches(4.9)); box.fill.solid(); box.fill.fore_color.rgb = SOFT; box.line.color.rgb = RGBColor(0xD7, 0xE2, 0xF2)
+        text(s, x + 0.2, 2.05, 3.6, 0.6, k, 19, True, AC)
+        text(s, x + 0.2, 2.8, 3.6, 3.9, v, 14)
+
 # 困ったとき
 s = prs.slides.add_slide(blank); header(s, '困ったとき')
 for i, f in enumerate(c['faq']):
-    y = 1.2 + i * 1.2
+    y = 1.2 + i * (1.2 if len(c['faq']) <= 6 and EDITION != 'teacher' else 0.98)
     text(s, 0.6, y, 12, 0.4, f['q'], 18, True, AC)
     text(s, 0.6, y + 0.38, 12.1, 0.8, f['a'], 14, False, FG)
 
-prs.save(f"{OUT}/卒研PJ管理_説明資料_学生編.pptx")
+prs.save(f"{OUT}/卒研PJ管理_説明資料_{'教員編' if EDITION == 'teacher' else '学生編'}.pptx")
 print('pptx built')

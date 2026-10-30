@@ -13,7 +13,7 @@
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-sotsuken \"playwright test\"",
     "build:gas": "node scripts/build-gas-report.mjs",
     "check-draft": "vite-node scripts/check-draft.ts",
-    "manual": "firebase emulators:exec --only auth,firestore --project demo-sotsuken \"playwright test -c playwright.manual.config.ts\" && node manual/build.mjs && EDITION=teacher node manual/build.mjs && python3 manual/build_pptx.py"
+    "manual": "firebase emulators:exec --only auth,firestore --project demo-sotsuken \"playwright test -c playwright.manual.config.ts\" && node manual/build.mjs && EDITION=teacher node manual/build.mjs && python3 manual/build_pptx.py && EDITION=teacher python3 manual/build_pptx.py"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
