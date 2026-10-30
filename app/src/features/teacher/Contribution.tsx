@@ -137,7 +137,7 @@ function Heatmap({ weekly, withAccess }: { weekly: ReturnType<typeof weeklyActiv
               <th>{r.name}</th>
               {r.counts.map((n, i) => (
                 <td key={weekly.weeks[i]} className={n === 0 ? 'zero' : ''} title={`${r.name} ${shortDate(weekly.weeks[i])}の週: ${n}回`}
-                  style={n > 0 ? { background: `color-mix(in srgb, var(--accent) ${Math.max(15, Math.round((n / weekly.max) * 85))}%, var(--card))` } : undefined}>{n}</td>
+                  style={n > 0 ? { background: `color-mix(in srgb, var(--accent) ${Math.max(15, Math.round((n / weekly.max) * 85))}%, var(--card))`, ...(n / weekly.max >= 0.5 ? { color: 'var(--on-accent)' } : {}) } : undefined}>{n}</td>
               ))}
             </tr>
           ))}
