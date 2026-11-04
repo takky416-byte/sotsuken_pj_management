@@ -35,7 +35,7 @@ export type Team = {
   driveUrl: string;
   kickoffAt: number | null;
   teamMeetingInput: boolean;
-  /** 教員からチームへの短いメッセージ (学生のホームに出る)。なければ未設定 */
+  /** 教員からチームへの短い連絡事項 (学生のホームに出る)。なければ未設定 */
   message?: { text: string; at: number } | null;
   /** 成果物を提出する Google ドライブのフォルダ (教員が設定) */
   submitUrl?: string;

@@ -52,7 +52,7 @@ const SIMPLE_TOUR: Record<string, StepText> = {
   home: {
     title: 'ホーム',
     lead: '最初にホームを確認します。',
-    points: ['今日やること・次にやること', '「作業ログを書く」から記入', '先生のメッセージ・提出先も表示'],
+    points: ['今日やること・次にやること', '「作業ログを書く」から記入', '先生の連絡事項・提出先も表示'],
   },
   wbs: {
     title: 'WBS',

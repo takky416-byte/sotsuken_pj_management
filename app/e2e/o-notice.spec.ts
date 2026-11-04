@@ -2,13 +2,13 @@ import { expect, test } from '@playwright/test';
 import { login } from './helpers';
 
 test.describe.serial('チームへのお知らせ', () => {
-  test('教員がメッセージと提出先を設定すると、学生のホームに出る。消すと出なくなる', async ({ browser }) => {
+  test('教員が連絡事項と提出先を設定すると、学生のホームに出る。消すと出なくなる', async ({ browser }) => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher/team/A');
-    await t.getByLabel('Aチームへのメッセージ').fill('来週は中間確認をします。');
-    await t.getByRole('button', { name: 'メッセージを送る' }).click();
-    await expect(t.getByText('メッセージを送りました')).toBeVisible();
+    await t.getByLabel('Aチームへの連絡事項').fill('来週は中間確認をします。');
+    await t.getByRole('button', { name: '連絡事項を送る' }).click();
+    await expect(t.getByText('連絡事項を送りました')).toBeVisible();
     await t.getByLabel(/成果物の提出先/).fill('not a url');
     await expect(t.getByRole('button', { name: '提出先を保存' })).toBeDisabled();
     await t.getByLabel(/成果物の提出先/).fill('https://drive.google.com/drive/folders/abc123');
@@ -27,8 +27,8 @@ test.describe.serial('チームへのお知らせ', () => {
     await login(o, 'b1@trident.ac.jp');
     await expect(o.getByText('来週は中間確認をします。')).toHaveCount(0);
 
-    await t.getByRole('button', { name: 'メッセージを消す' }).click();
-    await expect(t.getByText('メッセージを消しました')).toBeVisible();
+    await t.getByRole('button', { name: '連絡事項を消す' }).click();
+    await expect(t.getByText('連絡事項を消しました')).toBeVisible();
     await s.reload();
     await expect(s.getByText('来週は中間確認をします。')).toHaveCount(0);
   });
@@ -47,12 +47,12 @@ test.describe.serial('チームへのお知らせ', () => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher/team/A');
-    await t.getByLabel('Aチームへのメッセージ').fill(long);
+    await t.getByLabel('Aチームへの連絡事項').fill(long);
     await expect(t.getByText(/\/ 3000字/)).toBeVisible();
     await t.getByText('学生の画面での見え方').click();
     await expect(t.locator('.msg-preview u')).toHaveText('【チーム名】を書き替えること');
-    await t.getByRole('button', { name: 'メッセージを送る' }).click();
-    await expect(t.getByText('メッセージを送りました')).toBeVisible();
+    await t.getByRole('button', { name: '連絡事項を送る' }).click();
+    await expect(t.getByText('連絡事項を送りました')).toBeVisible();
 
     for (const vp of [{ width: 1280, height: 800 }, { width: 390, height: 800 }]) {
       const s = await (await browser.newContext({ viewport: vp })).newPage();
@@ -66,17 +66,17 @@ test.describe.serial('チームへのお知らせ', () => {
       expect(y).toBeLessThan(vp.width > 600 ? 400 : 650);
       await s.screenshot({ path: `e2e-shots/student-home-longmsg-${vp.width}.png` });
     }
-    await t.getByRole('button', { name: 'メッセージを消す' }).click();
-    await expect(t.getByText('メッセージを消しました')).toBeVisible();
+    await t.getByRole('button', { name: '連絡事項を消す' }).click();
+    await expect(t.getByText('連絡事項を消しました')).toBeVisible();
   });
 
-  test('教員が、全チームにまとめてメッセージを送ると、学生のホームに出る。一覧は要確認の設定で並ぶ', async ({ browser }) => {
+  test('教員が、全チームにまとめて連絡事項を送ると、学生のホームに出る。一覧は要確認の設定で並ぶ', async ({ browser }) => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher');
     await expect(t.getByLabel('要確認のチームを上に並べる')).toBeChecked();
-    await t.getByText('全チームにメッセージを送る').click();
-    await t.getByLabel('全チームへのメッセージ').fill('全チームへ: 提出物の確認をします。');
+    await t.getByText('全チームに連絡事項を送る').click();
+    await t.getByLabel('全チームへの連絡事項').fill('全チームへ: 提出物の確認をします。');
     await t.getByRole('button', { name: /チームに送る/ }).click();
     await expect(t.getByText(/チームに送りました/)).toBeVisible();
 
@@ -84,9 +84,9 @@ test.describe.serial('チームへのお知らせ', () => {
     await login(s, 'a1@trident.ac.jp');
     await expect(s.getByText('全チームへ: 提出物の確認をします。')).toBeVisible();
 
-    await t.getByLabel('全チームへのメッセージ').fill('');
+    await t.getByLabel('全チームへの連絡事項').fill('');
     await t.getByRole('button', { name: /チームに送る/ }).click();
-    await expect(t.getByText(/メッセージを消しました/)).toBeVisible();
+    await expect(t.getByText(/連絡事項を消しました/)).toBeVisible();
   });
 
   test('WBS: 自分の担当だけ・すべて閉じる/開く', async ({ page }) => {

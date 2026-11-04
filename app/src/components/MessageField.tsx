@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { MESSAGE_MAX } from '../lib/teamMessage';
 import { Markdown } from './Markdown';
 
-/** 先生がチームへのメッセージを書く欄。長文・書式 (太字・下線など) に対応し、学生の画面と同じ見た目のプレビューが出る */
+/** 先生がチームへの連絡事項を書く欄。長文・書式 (太字・下線など) に対応し、学生の画面と同じ見た目のプレビューが出る */
 export function MessageField({ value, onChange, label, id }: { value: string; onChange: (v: string) => void; label: string; id?: string }) {
   const auto = useId();
   const fid = id ?? auto;

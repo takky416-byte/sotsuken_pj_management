@@ -27,7 +27,7 @@ describe('下線', () => {
     expect(parseInline('++**x**++')).toEqual([{ t: 'u', c: [{ t: 'b', c: [{ t: 'text', s: 'x' }] }] }]);
     expect(parseInline('1 ++ 2')).toEqual([{ t: 'text', s: '1 ++ 2' }]);
   });
-  test('先生のメッセージの例: \\ のパス・[ ] ・・ の行が、そのまま出る', () => {
+  test('先生の連絡事項の例: \\ のパス・[ ] ・・ の行が、そのまま出る', () => {
     const b = parseMarkdown('◎**設計書**\n\\\\f33t2\\pub\n・[成果物を提出]ボタン');
     expect(b).toHaveLength(1);
     expect(JSON.stringify(b)).toContain('f33t2');

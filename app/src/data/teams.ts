@@ -53,7 +53,7 @@ export const WIPE_COLLECTIONS = ['tasks', 'digest', 'dailyReports', 'taskLogs', 
 
 /**
  * チームを、キックオフ前の状態に戻す (教員だけ)。WIPE_COLLECTIONS をすべて消し、チームを「企画検討中」にして、
- * 企画名・企画の記録・見直しの記録・報告書の文章を空にする。共有フォルダ・成果物の提出先・先生のメッセージ・登録した叩き台・アクセス履歴は、そのまま。
+ * 企画名・企画の記録・見直しの記録・報告書の文章を空にする。共有フォルダ・成果物の提出先・先生の連絡事項・登録した叩き台・アクセス履歴は、そのまま。
  * 元には戻せない。返り値は、消した件数。
  */
 export async function wipeTeamForRestart(teamId: string): Promise<number> {

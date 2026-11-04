@@ -192,7 +192,7 @@ function KickoffForm({ team }: { team: Team }) {
         {team.status === 'active' && (
           <label className="card chip restart-box">
             <input type="checkbox" checked={restart} onChange={(e) => setRestart(e.target.checked)} />
-            <span><strong>最初からやり直す</strong>(いまのタスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録を、すべて消して、上の叩き台から作り直します。共有フォルダ・成果物の提出先・先生のメッセージ・登録した叩き台は、そのまま。<strong>元には戻せません</strong>)</span>
+            <span><strong>最初からやり直す</strong>(いまのタスク・作業ログ・変更履歴・ミーティング記録・コメント・ありがとう・議事録を、すべて消して、上の叩き台から作り直します。共有フォルダ・成果物の提出先・先生の連絡事項・登録した叩き台は、そのまま。<strong>元には戻せません</strong>)</span>
           </label>
         )}
         {plan && (

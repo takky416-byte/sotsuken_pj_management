@@ -130,7 +130,7 @@ function TeamDaily({ team }: { team: Team }) {
 }
 
 
-/** 教員から、このチームへのメッセージと、成果物の提出先 (Google ドライブ)。学生のホームに出る */
+/** 教員から、このチームへの連絡事項と、成果物の提出先 (Google ドライブ)。学生のホームに出る */
 function TeamNotice({ team }: { team: Team }) {
   const [text, setText] = useState(team.message?.text ?? '');
   const [url, setUrl] = useState(team.submitUrl ?? '');
@@ -141,15 +141,15 @@ function TeamNotice({ team }: { team: Team }) {
     setErr(''); setSaved('');
     try { await fn(); setSaved(what); } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); }
   };
-  const sendMessage = () => run('メッセージを送りました', () => updateTeam(team.id, { message: text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null }));
+  const sendMessage = () => run('連絡事項を送りました', () => updateTeam(team.id, { message: text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null }));
   return (
     <div className="card team-notice">
       <h3>チームへのお知らせ</h3>
-      <label className="label" htmlFor={`msg-${team.id}`}>メッセージ(学生のホームに出ます。送り直すと入れ替わります)</label>
-      <MessageField id={`msg-${team.id}`} value={text} label={`${team.id}チームへのメッセージ`} onChange={(v) => { setText(v); setSaved(''); }} />
+      <label className="label" htmlFor={`msg-${team.id}`}>連絡事項(学生のホームに出ます。送り直すと入れ替わります)</label>
+      <MessageField id={`msg-${team.id}`} value={text} label={`${team.id}チームへの連絡事項`} onChange={(v) => { setText(v); setSaved(''); }} />
       <div className="row">
-        <button type="button" onClick={sendMessage}>メッセージを送る</button>
-        {team.message && <button type="button" className="ghost" onClick={() => { setText(''); run('メッセージを消しました', () => updateTeam(team.id, { message: null })); }}>メッセージを消す</button>}
+        <button type="button" onClick={sendMessage}>連絡事項を送る</button>
+        {team.message && <button type="button" className="ghost" onClick={() => { setText(''); run('連絡事項を消しました', () => updateTeam(team.id, { message: null })); }}>連絡事項を消す</button>}
         {team.message && <span className="hint">送信: {new Date(team.message.at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
       <label className="label" htmlFor={`submit-${team.id}`}>成果物の提出先(Google ドライブのフォルダのURL)</label>
