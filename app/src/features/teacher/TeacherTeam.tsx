@@ -12,6 +12,8 @@ import { useSettings, useTeamDailies } from '../../data/daily';
 import { healDigest, useDigest } from '../../data/digest';
 import { useTasks } from '../../data/tasks';
 import { resetWbsReview } from '../../data/teams';
+import { MessageField } from '../../components/MessageField';
+import { MESSAGE_MAX } from '../../lib/teamMessage';
 import { reviewState, WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
@@ -127,7 +129,6 @@ function TeamDaily({ team }: { team: Team }) {
   );
 }
 
-const MESSAGE_MAX = 200;
 
 /** 教員から、このチームへのメッセージと、成果物の提出先 (Google ドライブ)。学生のホームに出る */
 function TeamNotice({ team }: { team: Team }) {
@@ -145,7 +146,7 @@ function TeamNotice({ team }: { team: Team }) {
     <div className="card team-notice">
       <h3>チームへのお知らせ</h3>
       <label className="label" htmlFor={`msg-${team.id}`}>メッセージ(学生のホームに出ます。送り直すと入れ替わります)</label>
-      <textarea id={`msg-${team.id}`} rows={2} maxLength={MESSAGE_MAX} value={text} placeholder="例: 来週は中間確認をします。WBSの期間を入れておいてください。" onChange={(e) => { setText(e.target.value); setSaved(''); }} />
+      <MessageField id={`msg-${team.id}`} value={text} label={`${team.id}チームへのメッセージ`} onChange={(v) => { setText(v); setSaved(''); }} />
       <div className="row">
         <button type="button" onClick={sendMessage}>メッセージを送る</button>
         {team.message && <button type="button" className="ghost" onClick={() => { setText(''); run('メッセージを消しました', () => updateTeam(team.id, { message: null })); }}>メッセージを消す</button>}

@@ -765,8 +765,17 @@ table.access tr.access-detail td { background:var(--bg); }
 .ms-until { background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:13px; padding:1px 8px; border-radius:10px; }
 
 /* 教員からのメッセージ (ホーム) と、教員のお知らせ欄 */
-.teacher-msg { border-left:4px solid var(--accent); background:var(--accent-soft); }
-.teacher-msg .msg-text { margin:2px 0 0; font-size:17px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.teacher-msg { border-left:5px solid var(--accent); background:var(--accent-soft); margin:2px 0 14px; }
+.teacher-msg .msg-text { margin:4px 0 0; font-size:16px; line-height:1.75; overflow-wrap:anywhere; }
+.teacher-msg .msg-text p { margin:0 0 .7em; }
+.teacher-msg .msg-text p:last-child { margin-bottom:0; }
+.teacher-msg .msg-text ul, .teacher-msg .msg-text ol { margin:0 0 .7em; }
+.teacher-msg .msg-text h4 { font-size:18px; margin:.6em 0 .3em; } .teacher-msg .msg-text h5 { font-size:16.5px; margin:.6em 0 .3em; }
+.teacher-msg .msg-text strong { font-weight:800; }
+.msg-field textarea { width:100%; min-height:12em; resize:vertical; line-height:1.6; }
+.msg-field-meta { justify-content:space-between; margin:2px 0 6px; }
+.msg-preview { margin:6px 0 8px; }
+.md u { text-underline-offset:3px; text-decoration-thickness:1.5px; }
 .team-notice textarea { width:100%; box-sizing:border-box; }
 .team-notice .grow { flex:1; min-width:200px; }
 .team-notice .row { margin:4px 0 8px; }

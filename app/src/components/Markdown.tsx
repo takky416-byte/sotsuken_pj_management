@@ -8,6 +8,7 @@ const inline = (xs: Inline[]): ReactNode[] => xs.map((x, i) => {
     case 'b': return <strong key={i}>{inline(x.c)}</strong>;
     case 'i': return <em key={i}>{inline(x.c)}</em>;
     case 's': return <s key={i}>{inline(x.c)}</s>;
+    case 'u': return <u key={i}>{inline(x.c)}</u>;
     case 'code': return <code key={i}>{x.s}</code>;
     case 'a': return <a key={i} href={x.href} target="_blank" rel="noopener noreferrer">{inline(x.c)}</a>;
   }

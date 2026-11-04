@@ -94,7 +94,7 @@ export function StudentHome() {
   const notice = team.message && team.message.text ? (
     <section className="card teacher-msg" aria-label={`先生から${team.id}チームへのメッセージ`}>
       <div className="label">先生から{team.id}チームへのメッセージ <span className="hint">{formatDate(jstDate(new Date(team.message.at)))}</span></div>
-      <p className="msg-text">{team.message.text}</p>
+      <Markdown text={team.message.text} className="msg-text" />
     </section>
   ) : null;
   const minutesCard = minutes && minutes.length > 0 ? <MeetingMinutesCard minutes={minutes} /> : null;
@@ -115,10 +115,10 @@ export function StudentHome() {
       <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
       <BookmarkPrompt email={me.email} />
       </div>
+      {notice}
       <WbsReviewCard />
       {err && <p className="error">{err}</p>}
 
-      {narrow && notice}
       {narrow && minutesCard}
       <div className="home-grid">
         <div className="col">
@@ -188,7 +188,6 @@ export function StudentHome() {
 
         </div>
         <div className="col">
-        {!narrow && notice}
         {!narrow && minutesCard}
       <DailyMissions sid={sid} today={today} daily={dailyMissions(tasks, sid, today, { dailySubmitted: info.status === 'submitted', isClassDay: info.isClassDay, thankedToday: thanks.some((t) => t.from === sid && t.date === today) })} />
 

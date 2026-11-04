@@ -21,6 +21,19 @@ describe('parseInline', () => {
   });
 });
 
+describe('下線', () => {
+  test('++文字++ は下線。太字との組み合わせもできる。++ だけは、そのまま', () => {
+    expect(parseInline('a ++b++ c')).toEqual([{ t: 'text', s: 'a ' }, { t: 'u', c: [{ t: 'text', s: 'b' }] }, { t: 'text', s: ' c' }]);
+    expect(parseInline('++**x**++')).toEqual([{ t: 'u', c: [{ t: 'b', c: [{ t: 'text', s: 'x' }] }] }]);
+    expect(parseInline('1 ++ 2')).toEqual([{ t: 'text', s: '1 ++ 2' }]);
+  });
+  test('先生のメッセージの例: \\ のパス・[ ] ・・ の行が、そのまま出る', () => {
+    const b = parseMarkdown('◎**設計書**\n\\\\f33t2\\pub\n・[成果物を提出]ボタン');
+    expect(b).toHaveLength(1);
+    expect(JSON.stringify(b)).toContain('f33t2');
+  });
+});
+
 describe('parseMarkdown', () => {
   test('段落(改行は<br>)・見出し・箇条書き・番号つき・引用・コードのかたまり', () => {
     const b = parseMarkdown('# 見出し\n1行目\n2行目\n\n- a\n- b\n\n1. x\n2. y\n\n> 引用\n\n```\ncode **not bold**\n```');

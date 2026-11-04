@@ -1,10 +1,10 @@
 // 作業ログの説明を、画面に出すときの Markdown の読み取り。HTML は通さない (React の要素に直して出す)。
-// 使えるのは、見出し (# ## ###)・箇条書き (- * 1.)・引用 (>)・コードのかたまり (```)・太字 (**)・斜体 (*)・取り消し線 (~~)・コード (`)・リンク ([文字](https://…) と、そのままのURL)。
+// 使えるのは、見出し (# ## ###)・箇条書き (- * 1.)・引用 (>)・コードのかたまり (```)・太字 (**)・下線 (++)・斜体 (*)・取り消し線 (~~)・コード (`)・リンク ([文字](https://…) と、そのままのURL)。
 // 1回の改行は、そのまま改行として出す (作業ログは、改行しながら書くことが多いため)。
 
 export type Inline =
   | { t: 'text'; s: string }
-  | { t: 'b' | 'i' | 's'; c: Inline[] }
+  | { t: 'b' | 'i' | 's' | 'u'; c: Inline[] }
   | { t: 'code'; s: string }
   | { t: 'a'; href: string; c: Inline[] }
   | { t: 'br' };
@@ -16,7 +16,7 @@ export type Block =
   | { t: 'quote'; c: Inline[] }
   | { t: 'code'; s: string };
 
-const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)/;
+const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)|(\+\+[^+\n]+?\+\+)/;
 
 /** 1行の中の、太字・コード・リンクなど */
 export function parseInline(text: string): Inline[] {
@@ -31,6 +31,7 @@ export function parseInline(text: string): Inline[] {
     else if (m[2]) out.push({ t: 'b', c: parseInline(tok.slice(2, -2)) });
     else if (m[3]) out.push({ t: 's', c: parseInline(tok.slice(2, -2)) });
     else if (m[4]) out.push({ t: 'i', c: parseInline(tok.slice(1, -1)) });
+    else if (m[7]) out.push({ t: 'u', c: parseInline(tok.slice(2, -2)) });
     else if (m[5]) {
       const lm = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/.exec(tok)!;
       out.push({ t: 'a', href: lm[2], c: parseInline(lm[1]) });

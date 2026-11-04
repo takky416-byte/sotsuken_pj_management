@@ -1,3 +1,5 @@
+import { MessageField } from '../../components/MessageField';
+import { MESSAGE_MAX } from '../../lib/teamMessage';
 import { WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
 import { useEffect, useState } from 'react';
 import { StackTable } from '../../components/StackTable';
@@ -143,7 +145,6 @@ function SubmitList({ teams }: { teams: Team[] }) {
   );
 }
 
-const MESSAGE_MAX = 200;
 
 /** 全チーム(または選んだチーム)に、同じメッセージを一度に送る。学生のホームに出る。 */
 function Broadcast({ teams }: { teams: Team[] }) {
@@ -165,7 +166,7 @@ function Broadcast({ teams }: { teams: Team[] }) {
     <details className="card broadcast">
       <summary><strong>全チームにメッセージを送る</strong></summary>
       <p className="hint">学生のホームの上に出ます。送り直すと入れ替わります。空のまま送ると、メッセージが消えます。1チームだけに送るときは、チームの詳細から。</p>
-      <textarea rows={2} maxLength={MESSAGE_MAX} value={text} aria-label="全チームへのメッセージ" placeholder="例: 来週は中間確認をします。WBSの期間を入れておいてください。" onChange={(e) => { setText(e.target.value); setDone(''); }} />
+      <MessageField value={text} label="全チームへのメッセージ" onChange={(v) => { setText(v); setDone(''); }} />
       <div className="row broadcast-teams" role="group" aria-label="送るチーム">
         {teams.map((t) => <label key={t.id} className="check"><input type="checkbox" checked={picked.has(t.id)} onChange={() => toggle(t.id)} />{t.id}</label>)}
       </div>

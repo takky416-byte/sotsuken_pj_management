@@ -6,7 +6,7 @@ test.describe.serial('チームへのお知らせ', () => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher/team/A');
-    await t.getByLabel(/^メッセージ/).fill('来週は中間確認をします。');
+    await t.getByLabel('Aチームへのメッセージ').fill('来週は中間確認をします。');
     await t.getByRole('button', { name: 'メッセージを送る' }).click();
     await expect(t.getByText('メッセージを送りました')).toBeVisible();
     await t.getByLabel(/成果物の提出先/).fill('not a url');
@@ -31,6 +31,43 @@ test.describe.serial('チームへのお知らせ', () => {
     await expect(t.getByText('メッセージを消しました')).toBeVisible();
     await s.reload();
     await expect(s.getByText('来週は中間確認をします。')).toHaveCount(0);
+  });
+
+  test('長い連絡事項を、太字・下線つきで送れる。学生のホームを開くと、すぐ全文が見える', async ({ browser }) => {
+    const long = [
+      '【連絡事項】11月4日(水)', '',
+      '◎**機材購入申請リストについて**(11月5日(木)2限終了〆切)',
+      '必要な機材がある場合は、リストを作成して提出してください。',
+      '\\\\f33t2\\pub\\takikawa\\ST1卒研\\機材購入申請リストテンプレート',
+      '・【チーム名】26卒研購入申請リスト.xlsx', '・++【チーム名】を書き替えること++', '',
+      '◎**設計書作成について**(中間報告でのレビュー対象)', '提出場所:ホーム画面の[成果物を提出]ボタンのリンク先', '',
+      '◎**進捗確認MTG**', '11月5日(木)の1限に、1チーム10分程度で実施します。',
+      '進捗確認MTGでは、入力した作業ログやWBSをもとに、「これまでやったこと」「これからやること」を1人ずつ確認します。',
+    ].join('\n');
+    const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await login(t, 'teacher@trident.ac.jp');
+    await t.goto('/teacher/team/A');
+    await t.getByLabel('Aチームへのメッセージ').fill(long);
+    await expect(t.getByText(/\/ 3000字/)).toBeVisible();
+    await t.getByText('学生の画面での見え方').click();
+    await expect(t.locator('.msg-preview u')).toHaveText('【チーム名】を書き替えること');
+    await t.getByRole('button', { name: 'メッセージを送る' }).click();
+    await expect(t.getByText('メッセージを送りました')).toBeVisible();
+
+    for (const vp of [{ width: 1280, height: 800 }, { width: 390, height: 800 }]) {
+      const s = await (await browser.newContext({ viewport: vp })).newPage();
+      await login(s, 'a1@trident.ac.jp');
+      const box = s.locator('.teacher-msg').first();
+      await expect(box.locator('strong').first()).toHaveText('機材購入申請リストについて');
+      await expect(box.locator('u')).toHaveText('【チーム名】を書き替えること');
+      await expect(box.getByText('1人ずつ確認します', { exact: false })).toBeVisible();
+      // ホームの上の方 (最初の画面の中) に出ている
+      const y = (await box.boundingBox())!.y;
+      expect(y).toBeLessThan(vp.width > 600 ? 400 : 650);
+      await s.screenshot({ path: `e2e-shots/student-home-longmsg-${vp.width}.png` });
+    }
+    await t.getByRole('button', { name: 'メッセージを消す' }).click();
+    await expect(t.getByText('メッセージを消しました')).toBeVisible();
   });
 
   test('教員が、全チームにまとめてメッセージを送ると、学生のホームに出る。一覧は要確認の設定で並ぶ', async ({ browser }) => {
