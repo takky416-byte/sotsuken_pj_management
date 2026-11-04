@@ -92,8 +92,8 @@ export function StudentHome() {
   });
 
   const notice = team.message && team.message.text ? (
-    <section className="card teacher-msg" aria-label={`先生から${team.id}チームへのメッセージ`}>
-      <h3 className="msg-title">先生から{team.id}チームへのメッセージ <span className="msg-date">{formatDate(jstDate(new Date(team.message.at)))}</span></h3>
+    <section className="card teacher-msg" aria-label={`先生から${team.id}チームへの連絡事項`}>
+      <h3 className="msg-title">先生から{team.id}チームへの連絡事項 <span className="msg-date">{formatDate(jstDate(new Date(team.message.at)))}</span></h3>
       <Markdown text={team.message.text} className="msg-text" />
     </section>
   ) : null;
