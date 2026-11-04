@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useProfile } from '../auth/AuthProvider';
 import { confirmWbsReview, useTeam } from '../data/teams';
 import { useTasks } from '../data/tasks';
-import { reviewState } from '../lib/wbsReview';
+import { reviewState, WBS_REVIEW_ENABLED } from '../lib/wbsReview';
 import { useBase } from './Base';
 
 /**
@@ -19,7 +19,7 @@ export function WbsReviewCard({ compact = false }: { compact?: boolean }) {
   const [ok, setOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  if (!team || !tasks || !me.teamId || !me.sid) return null;
+  if (!WBS_REVIEW_ENABLED || !team || !tasks || !me.teamId || !me.sid) return null;
   const s = reviewState(team, tasks);
   if (!s.needed) return null;
 

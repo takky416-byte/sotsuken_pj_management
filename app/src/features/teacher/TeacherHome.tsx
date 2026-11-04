@@ -1,3 +1,4 @@
+import { WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
 import { useEffect, useState } from 'react';
 import { StackTable } from '../../components/StackTable';
 import { Link } from 'react-router-dom';
@@ -41,7 +42,7 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
       <td>{team.members.map((m) => m.name).join('・') || '—'}</td>
       <td>
         {active ? team.projectName : <span className="hint">企画検討中</span>}
-        {active && ready && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}
+        {WBS_REVIEW_ENABLED && active && ready && !team.wbsReview && <div className="warn">初期WBSの見直し: 未</div>}
         {active && <div className="hint">提出先: {team.submitUrl ? '設定済み' : <span className="warn">未設定</span>}</div>}
       </td>
       <td>

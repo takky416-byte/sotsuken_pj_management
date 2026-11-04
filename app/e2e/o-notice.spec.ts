@@ -112,7 +112,8 @@ test.describe.serial('チームへのお知らせ', () => {
   });
 });
 
-test.describe.serial('キックオフ直後の初期WBSの見直し', () => {
+// 案内は、いまは出さない (WBS_REVIEW_ENABLED = false)。戻すときは skip を外す
+test.describe.skip('キックオフ直後の初期WBSの見直し', () => {
   test.setTimeout(180_000); // 担当を1件ずつ付けるので、時間がかかる
   test('学生のホームに案内が出る。担当のない項目がある間は「終えた」を押せない。ほかの画面にも案内が出る', async ({ browser }) => {
     const s = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();

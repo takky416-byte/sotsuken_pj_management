@@ -124,7 +124,7 @@ function KickoffForm({ team }: { team: Team }) {
         kickoffAt: restart ? Date.now() : team.kickoffAt ?? Date.now(),
       });
       const sp = split(real.created);
-      setResult(`${restart ? '最初からやり直しました。' : 'キックオフしました。'}タスクを${real.created.length}件作成しました(雛形の大項目 ${sp.heads}件 + 叩き台の項目 ${sp.items}件。既にあった${real.reused}件は、そのまま使いました)。学生のホームに「初期WBSの見直し」が出ます。`);
+      setResult(`${restart ? '最初からやり直しました。' : 'キックオフしました。'}タスクを${real.created.length}件作成しました(雛形の大項目 ${sp.heads}件 + 叩き台の項目 ${sp.items}件。既にあった${real.reused}件は、そのまま使いました)。`);
       setOutline(''); setRestart(false);
     } catch (e) {
       setErr(`できませんでした: ${(e as Error).message}`);

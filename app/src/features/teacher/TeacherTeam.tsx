@@ -12,7 +12,7 @@ import { useSettings, useTeamDailies } from '../../data/daily';
 import { healDigest, useDigest } from '../../data/digest';
 import { useTasks } from '../../data/tasks';
 import { resetWbsReview } from '../../data/teams';
-import { reviewState } from '../../lib/wbsReview';
+import { reviewState, WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
 import { updateTeam, useTeam } from '../../data/teams';
 import { isHttpUrl } from '../../data/util';
 import { classDatesBetween, fromDailyStart } from '../../lib/daily';
@@ -32,7 +32,7 @@ export function TeacherTeam() {
 function ReviewStatus({ team }: { team: Team }) {
   const { data: tasks } = useTasks(team.id);
   const [err, setErr] = useState('');
-  if (team.status !== 'active' || !tasks) return null;
+  if (!WBS_REVIEW_ENABLED || team.status !== 'active' || !tasks) return null;
   const s = reviewState(team, tasks);
   const by = team.members.find((m) => m.sid === team.wbsReview?.by)?.name ?? team.wbsReview?.by;
   return (

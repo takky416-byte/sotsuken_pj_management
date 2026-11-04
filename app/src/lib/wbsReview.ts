@@ -2,6 +2,9 @@ import type { Task, Team } from '../types';
 import { ADHOC_ROOT_ID } from './adhoc';
 import { isLeaf, isPlaceholder } from './meetingView';
 
+/** キックオフ直後の「初期WBSの見直し」の案内を出すか。授業が進んだので、いまは出さない (戻すときは true)。 */
+export const WBS_REVIEW_ENABLED = false;
+
 export type ReviewState = {
   /** キックオフのあと、チームがまだ「見直しを終えた」と記録していない */
   needed: boolean;

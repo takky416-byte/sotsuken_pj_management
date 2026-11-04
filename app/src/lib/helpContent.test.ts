@@ -12,7 +12,7 @@ describe('使い方ページ (トーンごと)', () => {
   it('どのトーンでも、実際の画面のボタン名・画面名が入っている', () => {
     for (const { id } of TONES) {
       const t = text(id);
-      for (const label of ['作業ログを送信', 'ホーム画面に追加', 'デスクトップ用ショートカットを保存', '詰まっていること', 'ぜんぶ表示', '次へ', '初期WBSの見直し']) expect(t, `${id}:${label}`).toContain(label);
+      for (const label of ['作業ログを送信', 'ホーム画面に追加', 'デスクトップ用ショートカットを保存', '詰まっていること', 'ぜんぶ表示', '次へ']) expect(t, `${id}:${label}`).toContain(label);
       expect(t, id).toContain('10字以上');
     }
   });
