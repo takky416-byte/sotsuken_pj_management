@@ -766,7 +766,10 @@ table.access tr.access-detail td { background:var(--bg); }
 
 /* 教員からのメッセージ (ホーム) と、教員のお知らせ欄 */
 .teacher-msg { border-left:5px solid var(--accent); background:var(--accent-soft); margin:2px 0 14px; }
-.teacher-msg .msg-text { margin:4px 0 0; font-size:16px; line-height:1.75; overflow-wrap:anywhere; }
+.teacher-msg .msg-title { margin:0 0 6px; font-size:22px; line-height:1.4; font-weight:800; color:var(--fg); }
+.teacher-msg .msg-date { font-size:16px; font-weight:700; color:var(--accent); margin-left:6px; white-space:nowrap; }
+@media (max-width:600px) { .teacher-msg .msg-title { font-size:19px; } }
+.teacher-msg .msg-text { margin:4px 0 0; font-size:17px; line-height:1.75; overflow-wrap:anywhere; }
 .teacher-msg .msg-text p { margin:0 0 .7em; }
 .teacher-msg .msg-text p:last-child { margin-bottom:0; }
 .teacher-msg .msg-text ul, .teacher-msg .msg-text ol { margin:0 0 .7em; }
