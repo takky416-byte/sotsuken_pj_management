@@ -121,7 +121,7 @@ function TeamDaily({ team }: { team: Team }) {
   const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), dailyWindowFrom(today), addDays(today, 1)).slice(-8);
   return (
     <>
-      <h3>提出状況(○ 提出 / × 未提出 / 欠 欠席)</h3>
+      <h3>提出状況(○ 提出 / 無 作業なしで提出 / × 未提出 / 欠 欠席)</h3>
       <DailyMatrix members={team.members} dates={dates} dailies={dailies} />
       <h3>作業ログの内容</h3>
       <DailyFeed dailies={dailies} members={team.members} tasks={tasks} />

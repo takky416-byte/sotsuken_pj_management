@@ -4,8 +4,8 @@ import { useBase } from '../../components/Base';
 import { saveDaily } from '../../data/daily';
 import { createTasks, newTaskId, setDeleted, updateTask, updateTaskArray } from '../../data/tasks';
 import {
-  FIXED_KINDS, MIN_NEXT_CHARS, MIN_NOTE_CHARS, RESULT_LABEL, charCount, statusOf, validateDaily,
-  type Daily, type DailyKind, type DailyResult,
+  FIXED_KINDS, MIN_NEXT_CHARS, MIN_NOTE_CHARS, NO_WORK_REASONS, NO_WORK_REASON_LABEL, RESULT_LABEL, charCount, statusOf, validateDaily,
+  type Daily, type DailyKind, type DailyResult, type NoWorkReason,
 } from '../../lib/daily';
 import {
   ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, newAssignments, nextCandidates, statusChanges, type DraftItem,
@@ -46,7 +46,7 @@ const PHRASES: Record<DailyResult, { label: string; text: string }[]> = {
 const addPhrase = (note: string, text: string) => `${note}${note && !/\n$/.test(note) ? '\n' : ''}${text}`;
 
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
-type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string; removed?: string[] };
+type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string; removed?: string[]; noWork?: boolean; reason?: NoWorkReason | null; undecided?: boolean };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
 const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, JSON.stringify(d)); } catch { /* 保存できなくても入力はできる */ } };
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
@@ -76,6 +76,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   });
   const [removed, setRemoved] = useState<string[]>(() => (prev ? [] : loadDraft(key)?.removed ?? [])); // 作業ログから外したタスク (下書きにも残す)
   const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
+  const [noWork, setNoWork] = useState(() => (prev ? prev.noWork === true : loadDraft(key)?.noWork ?? false)); // 今日は何も作業していない (正直に出せる)
+  const [reason, setReason] = useState<NoWorkReason | null>(() => (prev ? prev.noWorkReason ?? null : loadDraft(key)?.reason ?? null));
+  const [undecided, setUndecided] = useState(() => (prev ? prev.nextUndecided === true : loadDraft(key)?.undecided ?? false)); // 次にやることは、まだ決まっていない
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const [focusId, setFocusId] = useState<string | null>(null); // 結果を押したら、そのまま説明を書き始められるように
@@ -85,17 +88,17 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const [open, setOpen] = useState<Set<string>>(new Set()); // 詳細を開いているタスクのカード
   const toggleOpen = (id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next, removed }); }, [items, next, removed, key, prev]);
-  useEffect(() => setState('idle'), [items, next]);
+  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next, removed, noWork, reason, undecided }); }, [items, next, removed, noWork, reason, undecided, key, prev]);
+  useEffect(() => setState('idle'), [items, next, noWork, reason, undecided]);
 
   const title = (i: DraftItem) => (i.adhoc ? i.adhoc.title.trim() || 'WBSにない作業' : i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
   const included = items.filter((i) => i.kind !== 'task' || i.result !== null);
   const entries = itemsToEntries(items);
   const adhocItems = items.filter((i) => i.adhoc && i.result !== null);
   const adhocTitle = (id?: string) => items.find((i) => i.id === id)?.adhoc?.title.trim();
-  const problems = [
+  const problems = noWork ? validateDaily([], next, () => '', { noWork: true, nextUndecided: undecided }) : [
     ...adhocItems.filter((i) => charCount(i.adhoc!.title) < MIN_ADHOC_TITLE).map((i) => ({ key: `adhoc-title:${i.id}`, message: '「WBSにない作業」の名前を書いてください' })),
-    ...validateDaily(entries, next, (e) => (e.taskId ? live.find((t) => t.id === e.taskId)?.title ?? adhocTitle(e.taskId) ?? '' : FIXED_KINDS.find((k) => k.kind === e.kind)?.label ?? '')),
+    ...validateDaily(entries, next, (e) => (e.taskId ? live.find((t) => t.id === e.taskId)?.title ?? adhocTitle(e.taskId) ?? '' : FIXED_KINDS.find((k) => k.kind === e.kind)?.label ?? ''), { nextUndecided: undecided }),
   ];
   const patch = (id: string, change: Partial<DraftItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...change } : x)));
   const pick = (i: DraftItem, r: DailyResult) => { patch(i.id, { result: i.result === r ? null : r }); if (i.result !== r) setFocusId(i.id); };
@@ -130,7 +133,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       const first = statusOf(prev) !== 'submitted';
       // WBSにない作業は、先にタスクとして作る (WBSとガントチャートに載り、作業ログとひも付く)
       const idOf = new Map<string, string>();
-      if (adhocItems.length > 0) {
+      if (!noWork && adhocItems.length > 0) {
         const plan = planAdhoc(tasks, sid, today, adhocItems.map((i) => ({ key: i.id, title: i.adhoc!.title, result: i.result as DailyResult, parentId: i.adhoc!.parentId, date: i.adhoc!.date || undefined })), () => newTaskId(teamId));
         if (plan.restoreRoot) await setDeleted(teamId, sid, [ADHOC_ROOT_ID], false);
         // 「WBS外の作業」の大項目は、チームに1つ。ほかの人が先に作っていたときは、作れなくても続ける
@@ -138,12 +141,13 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         await createTasks(teamId, sid, plan.tasks.map((p) => p.task), 'adhoc');
         plan.tasks.forEach((p) => idOf.set(p.key, p.task.id));
       }
-      const real = entries.map((e) => (e.taskId && idOf.has(e.taskId) ? { ...e, taskId: idOf.get(e.taskId) } : e));
-      await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, next.trim()); // 以前の作業ログの「困っていること」は、そのまま残す (新しくは書かない)
+      const real = noWork ? [] : entries.map((e) => (e.taskId && idOf.has(e.taskId) ? { ...e, taskId: idOf.get(e.taskId) } : e));
+      await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, undecided ? '' : next.trim(), { ...(noWork ? { noWork: true, ...(reason ? { noWorkReason: reason } : {}) } : {}), ...(undecided ? { nextUndecided: true } : {}) }); // 以前の作業ログの「困っていること」は、そのまま残す (新しくは書かない)
       setState('saved');
       clearDraft(key);
       onSubmitted(first);
       // 結果に合わせて、タスクの状態も更新する (完了した → 完了。着手前なら、進行中に)
+      if (noWork) return;
       await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status }, '作業ログ')));
       // 担当でないタスクを選んで書いたときは、その人も担当に加える
       await Promise.allSettled(newAssignments(items, tasks, sid).map((id) => updateTaskArray(teamId, sid, id, 'assignees', 'add', sid)));
@@ -167,6 +171,22 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         <h3>1. やったこと</h3>
         <p className="hint">{prevDate ? `前回(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを選んで、何をどこまでやったかを書きます。授業時間外の作業も含めます。</p>
         <p className="hint md-hint">Markdownで書けます(例: <code>**太字**</code>・<code>- 箇条書き</code>・<code>`コード`</code>・<code>[文字](https://…)</code>)。URLは、そのままリンクになります。</p>
+        <div className="nowork-bar">
+          <button type="button" className="ghost nowork-btn" onClick={() => setNoWork(true)}>今日は何も作業していない</button>
+          <span className="hint">作業していないときは、正直にこれを押して出せます。</span>
+        </div>
+        {noWork ? (
+          <div className="dcard on nowork-card">
+            <div className="dcard-head"><strong>今日は何も作業していない</strong></div>
+            <p className="hint">正直に出して大丈夫です。やったことの記入は要りません。理由は、選べるときだけ選んでください(あとで、先生やチームが力になるための参考です)。</p>
+            <div className="chips" role="group" aria-label="作業しなかった理由">
+              {NO_WORK_REASONS.map((r) => (
+                <button key={r} type="button" className={`chip-btn ${reason === r ? 'on' : ''}`} aria-pressed={reason === r} onClick={() => setReason(reason === r ? null : r)}>{NO_WORK_REASON_LABEL[r]}</button>
+              ))}
+            </div>
+            <button type="button" className="ghost" onClick={() => setNoWork(false)}>やっぱり作業した(やったことを書く)</button>
+          </div>
+        ) : (<>
         {taskCards.length === 0 && <p className="hint">タスクが選ばれていません。下の「ほかのタスクを選ぶ」から選んでください(タスクを1つも選ばないと、提出できません)。</p>}
         {taskCards.map((i) => {
           const t = live.find((x) => x.id === i.taskId);
@@ -266,24 +286,29 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
             <button key={k.kind} type="button" className="chip-btn" onClick={() => addKind(k.kind)}>＋ {k.label}</button>
           ))}
         </div>
+        </>)}
       </section>
 
       <section className="card">
         <h3>2. つぎにやること</h3>
-        <p className="hint">次の授業日までに、何をやるかを書きます。</p>
-        {suggestions.length > 0 && !next.trim() && (
+        <p className="hint">次の授業日までに、何をやるかを書きます。まだ決まっていないときは、「まだ決まっていない」でも出せます。</p>
+        <div className="chips">
+          <button type="button" className={`chip-btn ${undecided ? 'on' : ''}`} aria-pressed={undecided} onClick={() => setUndecided((u) => !u)}>まだ決まっていない</button>
+        </div>
+        {undecided && <p className="hint" role="note">未定でも大丈夫です。次の授業のはじめに、担当のタスクがなければ、タスクの確認をお知らせします。</p>}
+        {!undecided && suggestions.length > 0 && !next.trim() && (
           <div className="chips" aria-label="次にやることの候補">
             {suggestions.map((t) => (
               <button key={t.id} type="button" className="chip-btn" onClick={() => setNext((v) => `${v}${v && !v.endsWith('\n') ? '\n' : ''}「${t.title}」を進める。`)}>＋ {t.title}</button>
             ))}
           </div>
         )}
-        <textarea
+        {!undecided && <textarea
           className={`note-area ${shown && charCount(next) < MIN_NEXT_CHARS ? 'need' : ''}`} rows={3} maxLength={1000} aria-label="次にやること"
           placeholder={'次の授業日までに、何をどこまでやる?\n例: 管理者画面のワイヤーフレームを描き終える。ログイン機能の画面を作り始める。'}
           value={next} onChange={(e) => setNext(e.target.value)} onBlur={() => touch('next')}
-        />
-        <div className="counter-row">{counter('next', charCount(next), MIN_NEXT_CHARS, 'いつまでに、何をやるか')}</div>
+        />}
+        {!undecided && <div className="counter-row">{counter('next', charCount(next), MIN_NEXT_CHARS, 'いつまでに、何をやるか')}</div>}
       </section>
 
 
@@ -307,7 +332,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         )}
         {state !== 'saved' && (
           <span className={problems.length === 0 ? 'ok' : 'hint'}>
-            {problems.length === 0 ? `提出できます(${included.length}項目)` : `提出まで あと${problems.length}か所`}
+            {problems.length === 0 ? (noWork ? '提出できます(今日は作業なし)' : `提出できます(${included.length}項目)`) : `提出まで あと${problems.length}か所`}
             {!submitted && <> ・ 自動で保存されます</>}
           </span>
         )}

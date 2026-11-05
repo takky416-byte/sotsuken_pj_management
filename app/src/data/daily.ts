@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { DEFAULT_DAILY_START, dailyDoc, dailyId, type Daily, type DailyEntry } from '../lib/daily';
+import { DEFAULT_DAILY_START, dailyDoc, dailyId, type Daily, type DailyEntry, type NoWorkReason } from '../lib/daily';
 import { countReads } from '../lib/readMeter';
 import { useShared } from './shared';
 import { useQuery } from './util';
@@ -49,7 +49,8 @@ export function useSettings(): Settings | null {
 
 export const saveDaily = (
   teamId: string, sid: string, date: string, entries: DailyEntry[], blocker: string, prev?: Daily, next = '',
-) => setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries, blocker, absent: false, next }, prev));
+  extra: { noWork?: boolean; noWorkReason?: NoWorkReason; nextUndecided?: boolean } = {},
+) => setDoc(doc(col(teamId), dailyId(date, sid)), dailyDoc({ sid, date, entries, blocker, absent: false, next, ...extra }, prev));
 
 /** 教員のみ。欠席にすると内容は空になる。欠席を取り消しても、作業ログは空のまま (未提出) になる。 */
 export const setAbsent = (teamId: string, sid: string, date: string, absent: boolean, prev?: Daily) =>

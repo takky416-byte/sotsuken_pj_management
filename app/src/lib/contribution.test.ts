@@ -52,7 +52,10 @@ describe('メンバーごとの関与・貢献', () => {
   test('作業ログは、期間内の授業日のうち提出した日 (今日の未提出は、まだ数えない)', () => {
     const d = (date: string, sid: string) => ({ id: `${date}_${sid}`, date, sid, entries: [{ kind: 'task', taskId: 't1', note: 'x', result: 'done' }] } as never);
     const [a1] = contributions(base({ dailies: [d('2026-10-28', 'A1')] }));
-    expect(a1.daily).toEqual({ submitted: 1, days: 1 });
+    expect(a1.daily).toEqual({ submitted: 1, days: 1, noWork: 0 });
+    // 「今日は何も作業していない」で出した日は、提出に数え、作業なしの回数にも数える
+    const [b1] = contributions(base({ dailies: [{ id: '2026-10-28_A1', date: '2026-10-28', sid: 'A1', entries: [], noWork: true } as never] }));
+    expect(b1.daily).toEqual({ submitted: 1, days: 1, noWork: 1 });
   });
 });
 

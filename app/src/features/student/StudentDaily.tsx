@@ -13,6 +13,8 @@ import { dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import { sinceOf } from '../../lib/dailyDraft';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyNudge } from '../../components/DailyNudge';
+import { UndecidedNudge } from '../../components/UndecidedNudge';
+import { undecidedNudge } from '../../lib/undecided';
 
 
 export function StudentDaily() {
@@ -41,6 +43,7 @@ export function StudentDaily() {
       <h2>作業ログ</h2>
       <p className="hint">{formatDate(today)}の授業の作業ログです。提出した日のうちは、何度でも直せます。</p>
       <DailyNudge nudge={nudgeOf(dailies, me.sid, today, classDays, settings.dailyStartDate, from)} isClassDay={isClassDay} link={false} />
+      <UndecidedNudge nudge={undecidedNudge(dailies, tasks, me.sid, today)} />
       {!started && <p className="hint">作業ログは {formatDate(settings.dailyStartDate)} から始まります。それまでは、試しに書けます。</p>}
       {started && !isClassDay && <p className="hint">今日は授業日ではありません。書きたいときだけ書いてください。</p>}
       <div className="home-grid">

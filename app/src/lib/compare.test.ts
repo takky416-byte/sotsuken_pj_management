@@ -3,7 +3,7 @@ import type { Contribution } from './contribution';
 import { periodDays, rateOf, shares, skew, summarize, weekStart, weeklyActivity } from './compare';
 
 const row = (sid: string, over: Partial<Contribution> = {}): Contribution => ({
-  sid, name: sid, teamId: 'A', daily: { submitted: 0, days: 0 }, wbsEdits: 0, viaDaily: 0, created: 0, completed: 0,
+  sid, name: sid, teamId: 'A', daily: { submitted: 0, days: 0, noWork: 0 }, wbsEdits: 0, viaDaily: 0, created: 0, completed: 0,
   assigned: { total: 0, done: 0 }, overdue: 0, access: { days: 0, views: 0 }, thanksSent: 0, thanksReceived: 0, promises: { done: 0, total: 0 }, lastActive: null, ...over,
 });
 const at = (d: string) => Date.parse(`${d}T12:00:00+09:00`);
@@ -47,8 +47,8 @@ describe('週ごとの動き', () => {
 describe('チーム間の比較', () => {
   test('率はメンバーの率の平均。分母が0の人は除く', () => {
     const rows = [
-      row('A1', { daily: { submitted: 2, days: 4 }, assigned: { total: 4, done: 1 }, completed: 3, overdue: 1 }),
-      row('A2', { daily: { submitted: 4, days: 4 }, assigned: { total: 0, done: 0 }, completed: 1, access: { days: 5, views: 9 } }),
+      row('A1', { daily: { submitted: 2, days: 4, noWork: 0 }, assigned: { total: 4, done: 1 }, completed: 3, overdue: 1 }),
+      row('A2', { daily: { submitted: 4, days: 4, noWork: 0 }, assigned: { total: 0, done: 0 }, completed: 1, access: { days: 5, views: 9 } }),
     ];
     const s = summarize('A', rows, 10);
     expect(s.daily).toBeCloseTo(0.75);

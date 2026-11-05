@@ -69,7 +69,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
             {rows.map((r) => (
               <tr key={r.sid}>
                 <td><strong>{r.name}</strong></td>
-                <td>{rate(r.daily.submitted, r.daily.days)}</td>
+                <td>{rate(r.daily.submitted, r.daily.days)}{r.daily.noWork > 0 && <small> (作業なし {r.daily.noWork})</small>}</td>
                 <td>{r.wbsEdits}</td><td>{r.viaDaily}</td><td>{r.created}</td><td>{r.completed}</td>
                 <td>{rate(r.assigned.done, r.assigned.total)}</td>
                 <td>{r.overdue}</td>

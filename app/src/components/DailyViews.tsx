@@ -1,4 +1,4 @@
-import { FIXED_KINDS, RESULT_LABEL, statusOf, type Daily, type DayStatus } from '../lib/daily';
+import { FIXED_KINDS, NO_WORK_REASON_LABEL, RESULT_LABEL, statusOf, type Daily, type DayStatus } from '../lib/daily';
 import { formatDate } from '../lib/dates';
 import { Markdown } from './Markdown';
 import type { Member, Task } from '../types';
@@ -20,7 +20,9 @@ export function DailyMatrix({ members, dates, dailies }: { members: Member[]; da
             <tr key={m.sid}>
               <th>{m.name}</th>
               {dates.map((d) => {
-                const s = statusOf(by.get(`${d}_${m.sid}`));
+                const doc = by.get(`${d}_${m.sid}`);
+                const s = statusOf(doc);
+                if (s === 'submitted' && doc?.noWork) return <td key={d} className="mk-nowork" title="作業なしで提出">無</td>;
                 return <td key={d} className={`mk-${s}`} title={s === 'submitted' ? '提出済み' : s === 'absent' ? '欠席' : '未提出'}>{MARK[s]}</td>;
               })}
             </tr>
@@ -49,6 +51,7 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
       {shown.map((d) => (
         <div className="card" key={d.id}>
           <strong>{formatDate(d.date)}</strong> {name.get(d.sid) ?? d.sid}
+          {d.noWork && <p className="hint nowork-note"><span className="badge">作業なし</span> 今日は何も作業していない{d.noWorkReason ? `(${NO_WORK_REASON_LABEL[d.noWorkReason]})` : ''}</p>}
           <ul className="plain">
             {d.entries.map((e, i) => (
               <li key={i}>
@@ -60,6 +63,7 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
             ))}
           </ul>
           {d.next?.trim() && <div className="next-plan"><strong>次にやること</strong><Markdown text={d.next} /></div>}
+          {d.nextUndecided && <div className="next-plan"><strong>次にやること</strong> <span className="hint">まだ決まっていない</span></div>}
         </div>
       ))}
     </div>

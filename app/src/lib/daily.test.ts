@@ -104,3 +104,28 @@ describe('recentClassDates', () => {
     expect(recentClassDates(days, '2026-10-01', '2026-10-14', 3)).toEqual([]);
   });
 });
+
+describe('作業なしの提出・次にやることが未定', () => {
+  const base = { id: 'x', sid: 'A1', date: '2026-11-05', dayKey: 20261105, entries: [], blocker: '', absent: false } as Daily;
+  test('作業なしは、提出として数える (欠席が優先)', () => {
+    expect(statusOf({ ...base, noWork: true })).toBe('submitted');
+    expect(statusOf({ ...base, noWork: true, absent: true })).toBe('absent');
+    expect(statusOf(base)).toBe('missing');
+  });
+  test('作業なしのときは、やったことの記入は要らない。次にやること(か、未定)だけ', () => {
+    expect(validateDaily([], '', () => '', { noWork: true })).toHaveLength(1);
+    expect(validateDaily([], '', () => '', { noWork: true, nextUndecided: true })).toEqual([]);
+    expect(validateDaily([], 'ER図の主なテーブルを3つ作る予定です', () => '', { noWork: true })).toEqual([]);
+  });
+  test('作業ありでも、次にやることは未定にできる。作業なし以外では、取り組みの記入が要る', () => {
+    const e = [{ kind: 'task' as const, taskId: 't', note: 'ER図の主なテーブルを3つ作った', result: 'progress' as const }];
+    expect(validateDaily(e, '', () => '', { nextUndecided: true })).toEqual([]);
+    expect(validateDaily([], '', () => '').some((p) => p.key === 'entries')).toBe(true);
+  });
+  test('書き込む形: noWork・理由・未定は、あるときだけ入る', () => {
+    const plain = dailyDoc({ sid: 'A1', date: '2026-11-05', entries: [], blocker: '', absent: false, next: 'x' }, undefined, 1);
+    expect('noWork' in plain || 'nextUndecided' in plain).toBe(false);
+    const nw = dailyDoc({ sid: 'A1', date: '2026-11-05', entries: [], blocker: '', absent: false, noWork: true, noWorkReason: 'time', nextUndecided: true }, undefined, 1);
+    expect(nw).toMatchObject({ noWork: true, noWorkReason: 'time', nextUndecided: true });
+  });
+});

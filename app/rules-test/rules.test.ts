@@ -377,6 +377,17 @@ describe('作業ログ: アプリの書き込みの形', () => {
     await assertSucceeds(setDoc(t, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false }, { submittedAt: 1 })));
     await assertSucceeds(setDoc(ref, mk('A1')));
   });
+  test('学生: 今日は何も作業していない (理由つき・次にやることは未定) でも提出できる。ほかの型は通らない', async () => {
+    const ref = doc(as(A1), `teams/A/dailyReports/${dailyId(d, 'A1')}`);
+    await assertSucceeds(setDoc(ref, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false, noWork: true, noWorkReason: 'time', nextUndecided: true }, undefined)));
+    await assertSucceeds(setDoc(ref, dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false, noWork: true, next: 'ER図を描く' }, { submittedAt: 1 })));
+    // 型が違うもの・知らない項目は、通らない
+    const base = dailyDoc({ sid: 'A1', date: d, entries: [], blocker: '', absent: false }, { submittedAt: 1 });
+    await assertFails(setDoc(ref, { ...base, noWork: 'yes' }));
+    await assertFails(setDoc(ref, { ...base, nextUndecided: 1 }));
+    await assertFails(setDoc(ref, { ...base, noWorkReason: 'x'.repeat(30) }));
+    await assertFails(setDoc(ref, { ...base, mystery: true }));
+  });
   test('学生: 自分の作業ログを読むクエリと、設定ONのときのチーム全体のクエリ', async () => {
     const db = as(A1);
     await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('sid', '==', 'A1'), where('date', '>=', '2026-10-01'))));

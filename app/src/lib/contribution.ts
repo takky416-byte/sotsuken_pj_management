@@ -14,7 +14,8 @@ export type Contribution = {
   name: string;
   teamId: string;
   /** 作業ログ: 提出した授業日 / 数える授業日 (欠席は除く) */
-  daily: { submitted: number; days: number };
+  /** うち noWork: 「今日は何も作業していない」で出した回数 (提出には数える) */
+  daily: { submitted: number; days: number; noWork: number };
   /** WBSを直接変えた回数 (追加・削除・復元を含む。作業ログの提出による更新は除く) */
   wbsEdits: number;
   /** 作業ログの提出で、WBSが更新された回数 */
@@ -70,13 +71,14 @@ export function contributions(input: ContributionInput): Contribution[] {
     const sts = dates.map((d) => statusOf(byKey.get(`${d}_${m.sid}`)));
     const counted = dates.filter((d, i) => sts[i] !== 'absent' && (d < today || sts[i] === 'submitted'));
     const submitted = counted.filter((d) => statusOf(byKey.get(`${d}_${m.sid}`)) === 'submitted').length;
+    const noWorkDays = counted.filter((d) => statusOf(byKey.get(`${d}_${m.sid}`)) === 'submitted' && byKey.get(`${d}_${m.sid}`)?.noWork === true).length;
     const leaves = live.filter((t) => isLeaf(live, t) && !isPlaceholder(live, t) && (t.assignees ?? []).includes(m.sid) && t.status !== 'hold');
     const myAccess = input.access?.filter((l) => l.sid === m.sid && l.date >= from) ?? [];
     const promises = input.meetings.filter((x) => x.id >= from && x.id < today).flatMap((x) => x.actions).filter((a) => a.owner === m.sid);
     const dailyDates = input.dailies.filter((d) => d.sid === m.sid && statusOf(d) === 'submitted').map((d) => d.date);
     return {
       sid: m.sid, name: m.name, teamId: input.teamId,
-      daily: { submitted, days: counted.length },
+      daily: { submitted, days: counted.length, noWork: noWorkDays },
       wbsEdits: direct.length,
       viaDaily: mine.length - direct.length,
       created: mine.filter((l) => l.kind === 'create').reduce((n, l) => n + (l.taskId ? 1 : 0), 0),
@@ -102,7 +104,7 @@ export function periodFrom(period: Period, today: string, kickoffAt: number | nu
   return kickoffAt ? dayOf(kickoffAt) : dailyStart;
 }
 
-const CSV_HEAD = ['チーム', '学籍番号', '名前', '作業ログ提出', '作業ログ対象日', 'WBS直接編集', '作業ログ経由の更新', '追加したタスク', '完了にした回数', '担当タスク', '担当のうち完了', '期限超過', 'アクセス日数', '画面表示回数', 'ありがとう送信', 'ありがとう受信', '約束(果たした)', '約束(全体)', '最後に動いた日'];
+const CSV_HEAD = ['チーム', '学籍番号', '名前', '作業ログ提出', '作業ログ対象日', '作業なしで提出', 'WBS直接編集', '作業ログ経由の更新', '追加したタスク', '完了にした回数', '担当タスク', '担当のうち完了', '期限超過', 'アクセス日数', '画面表示回数', 'ありがとう送信', 'ありがとう受信', '約束(果たした)', '約束(全体)', '最後に動いた日'];
 
 const cell = (v: string | number): string => {
   const s = String(v);
@@ -114,7 +116,7 @@ const cell = (v: string | number): string => {
 /** 成績や指導の資料に使える、CSV (表計算ソフトで開ける) */
 export function contributionCsv(rows: Contribution[]): string {
   const body = rows.map((r) => [
-    r.teamId, r.sid, r.name, r.daily.submitted, r.daily.days, r.wbsEdits, r.viaDaily, r.created, r.completed, r.assigned.total, r.assigned.done, r.overdue,
+    r.teamId, r.sid, r.name, r.daily.submitted, r.daily.days, r.daily.noWork, r.wbsEdits, r.viaDaily, r.created, r.completed, r.assigned.total, r.assigned.done, r.overdue,
     r.access?.days ?? '', r.access?.views ?? '', r.thanksSent, r.thanksReceived, r.promises.done, r.promises.total, r.lastActive ?? '',
   ].map(cell).join(','));
   return `﻿${[CSV_HEAD.map(cell).join(','), ...body].join('\r\n')}\r\n`;

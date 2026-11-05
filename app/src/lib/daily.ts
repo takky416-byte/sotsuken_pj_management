@@ -6,6 +6,11 @@ export type DailyKind = 'task' | 'study' | 'discuss' | 'other';
 export type DailyResult = 'progress' | 'done' | 'stuck';
 export const RESULT_LABEL: Record<DailyResult, string> = { progress: '進んだ', done: '完了した', stuck: '詰まった' };
 
+/** 「今日は何も作業していない」の理由 (任意。1タップで選ぶ) */
+export type NoWorkReason = 'time' | 'unknown' | 'later' | 'other';
+export const NO_WORK_REASON_LABEL: Record<NoWorkReason, string> = { time: '時間がなかった', unknown: 'やり方が分からない', later: '後回しにした', other: 'その他' };
+export const NO_WORK_REASONS = Object.keys(NO_WORK_REASON_LABEL) as NoWorkReason[];
+
 export type DailyEntry = { kind: DailyKind; taskId?: string; note: string; result?: DailyResult };
 
 export type Daily = {
@@ -17,6 +22,11 @@ export type Daily = {
   blocker: string;
   /** 次にやること (次の授業日までに何をやるか) */
   next?: string;
+  /** 今日は何も作業していない (正直に出せる。提出として数える) */
+  noWork?: boolean;
+  noWorkReason?: NoWorkReason;
+  /** 次にやることは、まだ決まっていない (次の授業で、担当のタスクがなければ、確認を促す) */
+  nextUndecided?: boolean;
   absent: boolean;
   submittedAt?: number;
   updatedAt?: number;
@@ -58,15 +68,21 @@ export type DailyProblem = { key: string; message: string };
  */
 export function validateDaily(
   entries: DailyEntry[], next: string, titleOf: (e: DailyEntry) => string = () => '',
+  opts: { noWork?: boolean; nextUndecided?: boolean } = {},
 ): DailyProblem[] {
   const out: DailyProblem[] = [];
+  if (opts.noWork) {
+    // 何も作業していないときは、やったことの記入は要らない。次にやること (未定でもよい) だけ
+    if (!opts.nextUndecided && charCount(next) < MIN_NEXT_CHARS) out.push({ key: 'next', message: '「次にやること」を書くか、「まだ決まっていない」を選んでください' });
+    return out;
+  }
   if (entries.length === 0) out.push({ key: 'entries', message: '前回の作業ログのあとにやったタスクを、1つ以上選んでください(間違って外したときは、「ほかのタスクを選ぶ」から選び直せます)' });
   entries.forEach((e, i) => {
     const n = charCount(e.note);
     if (n < MIN_NOTE_CHARS) out.push({ key: `note:${i}`, message: `${titleOf(e) || '取り組み'}の説明を、もう少し具体的に書いてください(何を、どこまでやったか)` });
   });
   const n = charCount(next);
-  if (n < MIN_NEXT_CHARS) out.push({ key: 'next', message: `「次にやること」を、もう少し具体的に書いてください(いつまでに、何をやるか)` });
+  if (!opts.nextUndecided && n < MIN_NEXT_CHARS) out.push({ key: 'next', message: `「次にやること」を、もう少し具体的に書いてください(いつまでに、何をやるか)` });
   return out;
 }
 
@@ -80,12 +96,12 @@ export const entriesMissingNote = (entries: DailyEntry[]): DailyEntry[] => entri
 export function statusOf(d: Daily | undefined): DayStatus {
   if (!d) return 'missing';
   if (d.absent) return 'absent';
-  return d.entries.some(hasNote) || d.blocker.trim() !== '' ? 'submitted' : 'missing';
+  return d.noWork === true || d.entries.some(hasNote) || d.blocker.trim() !== '' ? 'submitted' : 'missing';
 }
 
 /** Firestore に書き込む形。firestore.rules の validDaily と対応している。 */
 export function dailyDoc(
-  p: { sid: string; date: string; entries: DailyEntry[]; blocker: string; absent: boolean; next?: string },
+  p: { sid: string; date: string; entries: DailyEntry[]; blocker: string; absent: boolean; next?: string; noWork?: boolean; noWorkReason?: NoWorkReason; nextUndecided?: boolean },
   prev: Pick<Daily, 'submittedAt'> | undefined,
   now = Date.now(),
 ) {
@@ -95,6 +111,8 @@ export function dailyDoc(
       kind: e.kind, ...(e.taskId ? { taskId: e.taskId } : {}), note: e.note, ...(e.result ? { result: e.result } : {}),
     })),
     blocker: p.blocker, next: p.next ?? '', absent: p.absent,
+    ...(p.noWork ? { noWork: true, ...(p.noWorkReason ? { noWorkReason: p.noWorkReason } : {}) } : {}),
+    ...(p.nextUndecided ? { nextUndecided: true } : {}),
     submittedAt: prev?.submittedAt ?? now, updatedAt: now,
   };
 }

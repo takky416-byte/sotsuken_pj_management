@@ -175,7 +175,7 @@ function MeetingScreen({ team }: { team: Team }) {
         </section>
 
         <section className="card">
-          <h3>作業ログの提出状況<span className="hint">(直近3回の授業日。今日は含みません。○提出 ×未提出 欠 欠席)</span></h3>
+          <h3>作業ログの提出状況<span className="hint">(直近3回の授業日。今日は含みません。○提出 無 作業なしで提出 ×未提出 欠 欠席)</span></h3>
           <DailyMatrix members={members} dates={submitDates} dailies={dailies} />
           <div className="label">前回のミーティングから、作業ログでタスクに触れた人</div>
           <ul className="plain touched">

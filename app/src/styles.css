@@ -99,6 +99,7 @@ select.status.st-doing { border-color:var(--accent); } select.status.st-done { b
 .tabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
 .matrix th, .matrix td { text-align:center; }
 .matrix tbody th { text-align:left; font-weight:600; }
+.mk-nowork { color:var(--warn); font-weight:600; }
 .mk-submitted { color:var(--ok); font-weight:600; } .mk-missing { color:var(--danger); } .mk-absent { color:var(--muted); }
 .pick { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .note-input { flex:1; min-width:160px; }
@@ -933,3 +934,8 @@ table.heat td.zero { color:var(--muted); background:transparent; }
 /* 作業ログのカード: 「今日は作業していない」 (×ではなく、言葉で) */
 button.ghost.skip-btn { font-size:13px; padding:4px 10px; min-height:32px; white-space:nowrap; }
 .next-quote .md { white-space:normal; }
+
+.nowork-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:4px 0 10px; }
+.nowork-card { background:color-mix(in srgb, var(--warn) 8%, var(--card)); }
+.nowork-card .chips { margin:6px 0 10px; }
+.nowork-note { margin:2px 0 4px; }

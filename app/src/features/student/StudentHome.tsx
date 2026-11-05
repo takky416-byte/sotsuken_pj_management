@@ -8,6 +8,8 @@ import { TeamBoard } from '../../components/TeamBoard';
 import { Em } from '../../components/Em';
 import { say } from '../../lib/tone';
 import { DailyNudge } from '../../components/DailyNudge';
+import { UndecidedNudge } from '../../components/UndecidedNudge';
+import { undecidedNudge } from '../../lib/undecided';
 import { nudgeOf } from '../../lib/dailyNudge';
 import { DailyMissions, WeeklyMissions } from '../../components/Missions';
 import { WbsReviewCard } from '../../components/WbsReviewCard';
@@ -113,6 +115,7 @@ export function StudentHome() {
         {openedSubmit && <span className="hero-note" role="status">Googleドライブが開きます。入れたら、チームのみんなに声をかけましょう。</span>}
       </section>
       <DailyNudge nudge={nudgeOf(mine, sid, today, classDays, settings.dailyStartDate, dailyWindowFrom(today))} isClassDay={info.isClassDay} />
+      <UndecidedNudge nudge={undecidedNudge(mine, tasks, sid, today)} />
       <BookmarkPrompt email={me.email} />
       </div>
       {notice}
