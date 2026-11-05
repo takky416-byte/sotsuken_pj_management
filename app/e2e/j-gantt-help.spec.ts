@@ -21,6 +21,9 @@ test.describe.serial('ガントチャートと使い方', () => {
     await page.getByRole('button', { name: /ガントチャートを大きく/ }).click();
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-bar')).toHaveCount(1);
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の日付なし' }).locator('.gantt-bar')).toHaveCount(0);
+    // タスク名と棒にカーソルを乗せると、担当(未定のときは「担当: 未定」)も出る
+    await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-name')).toHaveAttribute('title', /ガントチャート確認用の大項目\n担当: /);
+    await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-bar')).toHaveAttribute('title', /\n担当: /);
     // 稲妻線は、既定で出る。チェックで消せる
     await expect(page.getByRole('img', { name: '稲妻線' })).toBeVisible();
     await page.getByLabel('稲妻線を表示する').uncheck();

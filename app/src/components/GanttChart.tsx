@@ -51,6 +51,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const today = jstDate();
   const g = buildGantt(tasks, milestones, today, deep ? 3 : 2);
   const name = (sid: string) => members.find((m) => m.sid === sid)?.name ?? sid;
+  const who = (t: Task) => (t.assignees.length > 0 ? `担当: ${t.assignees.map(name).join('・')}` : '担当: 未定');
   const ticks = weekTicks(g);
   const pos = (d: string) => `${pct(g, d)}%`;
   const ms = placeMilestones(milestones, g);
@@ -172,7 +173,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
           return (
             <div className={`gantt-row${sel === r.task.id ? ' selected' : ''}`} key={r.task.id}>
               <div
-                className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={r.task.title}
+                className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={`${r.task.title}\n${who(r.task)}`}
                 onClick={direct ? () => { setSel(sel === r.task.id ? null : r.task.id); setAddParent(addParentFor(r.task.id)); } : undefined}
               >
                 <span className="gantt-name-text">
@@ -197,7 +198,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
                   <span
                     className={`gantt-bar ${r.status}${r.derived ? ' derived' : ''}${r.overdue ? ' overdue' : ''}${live1 ? ' editable' : ''}${dragging ? ' dragging' : ''}`}
                     style={{ left: pos(pv.start), width: `max(${live1 ? 14 : 6}px, ${pct(g, addDays(pv.end, 1)) - pct(g, pv.start)}%)` }}
-                    title={`${r.task.title}: ${formatDate(pv.start)}〜${formatDate(pv.end)} / ${STATUS_LABEL[r.status]}${r.overdue ? ' / 期限超過' : ''}`}
+                    title={`${r.task.title}\n${who(r.task)}\n${formatDate(pv.start)}〜${formatDate(pv.end)} / ${STATUS_LABEL[r.status]}${r.overdue ? ' / 期限超過' : ''}`}
                     onPointerDown={live1 ? (e) => down(e, r, 'move') : undefined}
                   >
                     {live1 && <>
