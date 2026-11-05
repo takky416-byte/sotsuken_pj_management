@@ -11,13 +11,23 @@ export function MeetingStepper({ step, onStep, all, onAll }: {
 }) {
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
-  const last = useRef(0);
+  const total = useRef(0); // 一時停止までに数えた秒数
+  const startAt = useRef(0); // 動かし始めた時刻
+  // 経過時間は、動かし始めた時刻からの差で求める (間隔ごとの更新を足し合わせると、処理が遅れたときや画面が裏にあるときに、進みが遅れる)
+  const now = () => total.current + (Date.now() - startAt.current) / 1000;
   useEffect(() => {
     if (!running) return;
-    last.current = Date.now();
-    const id = setInterval(() => { const n = Date.now(); setElapsed((e) => e + (n - last.current) / 1000); last.current = n; }, 500);
-    return () => clearInterval(id);
+    const tick = () => setElapsed(now());
+    const id = setInterval(tick, 250);
+    document.addEventListener('visibilitychange', tick);
+    tick();
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick); };
   }, [running]);
+  const toggle = () => {
+    if (running) { total.current = now(); setElapsed(total.current); setRunning(false); }
+    else { startAt.current = Date.now(); setRunning(true); }
+  };
+  const reset = () => { total.current = 0; setRunning(false); setElapsed(0); };
 
   const cur = MEETING_STEPS[step];
   const timed = stepAtElapsed(elapsed);
@@ -30,8 +40,8 @@ export function MeetingStepper({ step, onStep, all, onAll }: {
         <div className="stepper-timer">
           <span className={`timer ${over ? 'over' : ''}`} aria-label="経過時間">{mmss(elapsed)}</span>
           {(running || elapsed > 0) && <span className={`hint ${over ? 'over' : ''}`}>{MEETING_STEPS[timed.index].title}: 残り {mmss(timed.remainingSec)}</span>}
-          <button type="button" className="ghost" onClick={() => setRunning((r) => !r)}>{running ? '一時停止' : elapsed > 0 ? '再開' : '▶ 開始'}</button>
-          {elapsed > 0 && <button type="button" className="ghost" onClick={() => { setRunning(false); setElapsed(0); }}>リセット</button>}
+          <button type="button" className="ghost" onClick={toggle}>{running ? '一時停止' : elapsed > 0 ? '再開' : '▶ 開始'}</button>
+          {elapsed > 0 && <button type="button" className="ghost" onClick={reset}>リセット</button>}
         </div>
       </div>
       <ol className="steps">
