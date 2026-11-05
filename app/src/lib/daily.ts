@@ -104,6 +104,11 @@ export function classDatesBetween(days: ClassDay[], from: string, before: string
   return days.map((d) => d.date).filter((d) => d >= from && d < before).sort();
 }
 
+/** today より前 (今日は含まない) の授業日のうち、新しい順に n 回。昇順で返す。from より前は含めない (読み込んでいない期間を、未提出と見せないため) */
+export function recentClassDates(days: ClassDay[], from: string, today: string, n: number): string[] {
+  return classDatesBetween(days, from, today).slice(-n);
+}
+
 /**
  * 直近から遡って、未提出が何日続いているか。欠席の日は数えず、途切れさせもしない。
  * dates は対象の授業日 (昇順)。

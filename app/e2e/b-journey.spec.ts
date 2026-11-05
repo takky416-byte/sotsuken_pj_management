@@ -238,7 +238,7 @@ test.describe.serial('運用の流れ', () => {
     await goStep(t, 1);
     await expect(t.getByRole('heading', { name: /事実の確認/ })).toBeVisible();
     await expect(t.locator('table.facts')).toContainText('岩田');
-    await expect(t.getByRole('heading', { name: /今週の活動/ })).toBeVisible();
+    await expect(t.getByRole('heading', { name: /作業ログの提出状況/ })).toBeVisible();
     await expect(t.locator('.matrix')).toContainText('岩田');
     await goStep(t, 2);
     await expect(t.getByRole('heading', { name: '手待ちの人と、タスクの振り分け' })).toBeVisible();

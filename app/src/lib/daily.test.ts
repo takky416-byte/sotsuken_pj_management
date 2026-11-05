@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { ClassDay } from '../types';
 import {
-  charCount, classDatesBetween, consecutiveMisses, dailyDoc, dailyId, entriesMissingNote, statusOf, validateDaily, type Daily, type DayStatus,
+  charCount, classDatesBetween, consecutiveMisses, recentClassDates, dailyDoc, dailyId, entriesMissingNote, statusOf, validateDaily, type Daily, type DayStatus,
 } from './daily';
 
 const d = (over: Partial<Daily> = {}): Daily => ({
@@ -88,5 +88,19 @@ describe('dailyDoc: 結果と次にやること', () => {
     }, undefined, 1);
     expect(doc.next).toBe('続きをやる予定');
     expect(doc.entries).toEqual([{ kind: 'task', taskId: 't', note: 'x', result: 'done' }, { kind: 'study', note: 'y' }]);
+  });
+});
+
+describe('recentClassDates', () => {
+  const days = ['2026-10-14', '2026-10-21', '2026-10-28', '2026-11-04', '2026-11-11'].map((date) => ({ date, periods: '3-4' as const, meeting: false, note: '' }));
+  test('今日を含めず、直近の授業日を新しい順に3回(昇順で返す)', () => {
+    expect(recentClassDates(days, '2026-10-01', '2026-11-11', 3)).toEqual(['2026-10-21', '2026-10-28', '2026-11-04']);
+  });
+  test('今日が授業日でなくても、今日より前の3回', () => {
+    expect(recentClassDates(days, '2026-10-01', '2026-11-06', 3)).toEqual(['2026-10-21', '2026-10-28', '2026-11-04']);
+  });
+  test('読み込んだ期間(from)より前は出さない。足りなければ、あるだけ', () => {
+    expect(recentClassDates(days, '2026-10-28', '2026-11-11', 3)).toEqual(['2026-10-28', '2026-11-04']);
+    expect(recentClassDates(days, '2026-10-01', '2026-10-14', 3)).toEqual([]);
   });
 });

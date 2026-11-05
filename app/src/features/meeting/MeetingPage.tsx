@@ -21,7 +21,7 @@ import { useThanks } from '../../data/thanks';
 import { weekStart } from '../../lib/missions';
 import { useTeam } from '../../data/teams';
 import { analyze } from '../../lib/analysis';
-import { classDatesBetween, fromDailyStart } from '../../lib/daily';
+import { fromDailyStart, recentClassDates } from '../../lib/daily';
 import { addDays, dailyWindowFrom, formatDate, jstDate } from '../../lib/dates';
 import {
   carryOver, meetingOrder, neighborTeam, previousMeeting, type Meeting, type MeetingAction,
@@ -98,7 +98,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const canEdit = teacher || team.teamMeetingInput;
   const prev = previousMeeting(meetings, today);
   const since = prev ? addDays(prev.date, 1) : addDays(today, -7);
-  const dates = classDatesBetween(fromDailyStart(classDays, settings.dailyStartDate), since < from ? from : since, addDays(today, 1));
+  const submitDates = recentClassDates(fromDailyStart(classDays, settings.dailyStartDate), from, today, 3);
   const range = dailies.filter((d) => d.date >= since && d.date <= today);
   const members = peer ? team.members : team.members.filter((m) => m.sid === me.sid);
   const order = meetingOrder(classDays, today, settings.rotateOrder);
@@ -175,8 +175,9 @@ function MeetingScreen({ team }: { team: Team }) {
         </section>
 
         <section className="card">
-          <h3>今週の活動<span className="hint">(○提出 ×未提出 欠 欠席)</span></h3>
-          <DailyMatrix members={members} dates={dates} dailies={dailies} />
+          <h3>作業ログの提出状況<span className="hint">(直近3回の授業日。今日は含みません。○提出 ×未提出 欠 欠席)</span></h3>
+          <DailyMatrix members={members} dates={submitDates} dailies={dailies} />
+          <div className="label">前回のミーティングから、作業ログでタスクに触れた人</div>
           <ul className="plain touched">
             {members.map((m) => (
               <li key={m.sid}><strong>{m.name}</strong>

@@ -17,7 +17,7 @@ export function addDays(date: string, n: number): string {
 
 /**
  * 作業ログを読み込む期間 (今日から何日前まで)。画面ごとに期間を変えると、別々の購読になって読み取りが増えるため、
- * どの画面も同じ期間にそろえる。ミーティング画面 (今週の活動)・教員のチーム詳細・提出状況・要確認の判定に足りる長さ。
+ * どの画面も同じ期間にそろえる。ミーティング画面 (提出状況・今週の活動)・教員のチーム詳細・提出状況・要確認の判定に足りる長さ。
  */
 export const DAILY_WINDOW_DAYS = 21;
 export const dailyWindowFrom = (today: string): string => addDays(today, -DAILY_WINDOW_DAYS);
