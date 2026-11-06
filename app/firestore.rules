@@ -239,9 +239,10 @@ service cloud.firestore {
     match /teacherNotes/{id} { allow read, write: if isTeacher(); }
     match /followups/{id} { allow read, write: if isTeacher(); }
 
-    // アクセス履歴: 学生が自分の今日の分だけ書き (数は増える方向にだけ)、教員だけが読む
+    // アクセス履歴: 学生と閲覧専用の教員が、自分の今日の分だけ書き (数は増える方向にだけ)、教員だけが読む
     function validAccess(d) {
-      return d.keys().hasOnly(['sid', 'teamId', 'date', 'firstAt', 'lastAt', 'visits', 'views', 'screens'])
+      return d.keys().hasOnly(['sid', 'teamId', 'date', 'firstAt', 'lastAt', 'visits', 'views', 'screens', 'name'])
+        && (!('name' in d) || (d.name is string && d.name.size() <= 40))
         && d.sid is string && (d.teamId == null || d.teamId is string)
         && d.date is string && d.date.size() == 10
         && d.firstAt is number && d.lastAt is number && d.lastAt >= d.firstAt
@@ -259,6 +260,17 @@ service cloud.firestore {
         && dateKey(request.resource.data.date) == todayJst();
       allow update: if isStudent() && validAccess(request.resource.data)
         && resource.data.sid == me().sid && request.resource.data.sid == resource.data.sid
+        && request.resource.data.date == resource.data.date && dateKey(resource.data.date) == todayJst()
+        && request.resource.data.teamId == resource.data.teamId && request.resource.data.firstAt == resource.data.firstAt
+        && request.resource.data.lastAt >= resource.data.lastAt
+        && request.resource.data.visits >= resource.data.visits && request.resource.data.views >= resource.data.views;
+      // 閲覧専用の教員の記録 (sid は viewer:メールアドレス)。学生と同じ形で、自分の今日の分だけ書ける
+      allow create: if isViewer() && validAccess(request.resource.data)
+        && request.resource.data.sid == 'viewer:' + myEmail() && request.resource.data.teamId == null
+        && logId == request.resource.data.date + '_' + request.resource.data.sid
+        && dateKey(request.resource.data.date) == todayJst();
+      allow update: if isViewer() && validAccess(request.resource.data)
+        && resource.data.sid == 'viewer:' + myEmail() && request.resource.data.sid == resource.data.sid
         && request.resource.data.date == resource.data.date && dateKey(resource.data.date) == todayJst()
         && request.resource.data.teamId == resource.data.teamId && request.resource.data.firstAt == resource.data.firstAt
         && request.resource.data.lastAt >= resource.data.lastAt

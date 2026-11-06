@@ -19,7 +19,7 @@ import { digestOverdue } from '../../lib/digest';
 import type { ClassDay, Milestone, Team } from '../../types';
 
 
-function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string; onSeverity: (id: string, n: number) => void }) {
+function TeamRow({ team, milestones, classDays, dailyStart }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string }) {
   const today = jstDate();
   // タスク全件の代わりに、チームごとの「集計メモ」(1件) を読む。メモがまだないチームだけ、タスクから作って書く (最初の1回)
   const ro = useReadOnly(); // 閲覧専用の教員は、集計メモを書けない
@@ -38,9 +38,6 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
   const flags = ready && dailies ? teamFlags(team, over.unassigned, dailies, classDays, today, dailyStart) : null;
   const delayed = over.overdue;
   const active = team.status === 'active';
-  // 要確認の多さ (一覧を、要確認の多い順に並べるために、親へ知らせる)
-  const severity = flags ? flags.missing.length * 2 + flags.unassignedOverdue : 0;
-  useEffect(() => { onSeverity(team.id, severity); }, [team.id, severity, onSeverity]);
   return (
     <tr>
       <td><Link to={`/teacher/team/${team.id}`}><strong>{team.id}</strong></Link>{active && <div><Link to={`/teacher/report/${team.id}`} className="hint">PJ分析</Link></div>}</td>
@@ -87,19 +84,15 @@ export function TeacherHome() {
   const milestones = useMilestones('all');
   const classDays = useClassDays();
   const settings = useSettings();
-  const [severity, setSeverity] = useState<Record<string, number>>({});
-  const [flagFirst, setFlagFirst] = useState(true);
   const [rebuilding, setRebuilding] = useState(false);
   const [rebuildErr, setRebuildErr] = useState('');
-  const onSeverity = (id: string, n: number) => setSeverity((s) => (s[id] === n ? s : { ...s, [id]: n }));
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!teams || !milestones || !classDays || !settings) return <p>読み込み中…</p>;
-  const sorted = [...teams].sort((a, b) => (flagFirst ? (severity[b.id] ?? 0) - (severity[a.id] ?? 0) : 0) || a.id.localeCompare(b.id));
+  const sorted = [...teams].sort((a, b) => a.id.localeCompare(b.id));
   return (
     <>
       <h2>チーム一覧</h2>
       <div className="row">
-        <label className="check"><input type="checkbox" checked={flagFirst} onChange={(e) => setFlagFirst(e.target.checked)} />要確認のチームを上に並べる</label>
         {!ro && <button type="button" className="ghost" disabled={rebuilding} title="全チームのタスクを読み直して、WBS進捗・期限超過の数を作り直します(読み取りが約500回増えます)"
           onClick={() => { setRebuilding(true); rebuildAllDigests(teams.map((t) => t.id)).catch((e) => setRebuildErr((e as Error).message)).finally(() => setRebuilding(false)); }}>
           {rebuilding ? '更新中…' : '最新にする'}
@@ -114,7 +107,7 @@ export function TeacherHome() {
               <th>作業ログ(直近の授業日)</th><th>要確認</th><th>ミーティング(前回・次の予定)</th>
             </tr>
           </thead>
-          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} onSeverity={onSeverity} />)}</tbody>
+          <tbody>{sorted.map((t) => <TeamRow key={t.id} team={t} milestones={milestones} classDays={classDays} dailyStart={settings.dailyStartDate} />)}</tbody>
         </StackTable>
       </div>
       <SubmitList teams={sorted} />

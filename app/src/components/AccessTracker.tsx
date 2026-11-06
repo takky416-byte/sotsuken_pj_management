@@ -6,10 +6,10 @@ import { addView, emptyPending, hasPending, screenOf, type Pending } from '../li
 const FLUSH_MS = 120_000; // 書き込みを増やしすぎないよう、画面の表示は2分ごとにまとめて書く
 
 /**
- * 学生のアクセス記録 (教員だけが見る)。開いた回数と、画面の表示回数を、日ごとにまとめて書く。
+ * 学生と、閲覧専用の教員 (name つき) のアクセス記録 (教員だけが見る)。開いた回数と、画面の表示回数を、日ごとにまとめて書く。
  * 画面の中身や入力した内容は記録しない。教員のプレビューや教員自身のアクセスは記録しない (学生本人のときだけ置く)。
  */
-export function AccessTracker({ sid, teamId }: { sid: string; teamId: string | null }) {
+export function AccessTracker({ sid, teamId, name }: { sid: string; teamId: string | null; name?: string }) {
   const { pathname } = useLocation();
   const pending = useRef<Pending>(emptyPending());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -21,7 +21,7 @@ export function AccessTracker({ sid, teamId }: { sid: string; teamId: string | n
     const p = pending.current;
     if (!hasPending(p)) return;
     pending.current = emptyPending();
-    recordAccess(sid, teamId, p).catch(() => undefined);
+    recordAccess(sid, teamId, p, Date.now(), name).catch(() => undefined);
   };
 
   useEffect(() => {

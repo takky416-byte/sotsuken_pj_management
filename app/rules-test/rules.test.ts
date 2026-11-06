@@ -639,6 +639,25 @@ describe('閲覧専用の教員 (role: viewer)', () => {
     await assertFails(setDoc(doc(db, `roster/${VIEWER}`), { name: '閲覧の先生', role: 'teacher', teamId: null, sid: null })); // 自分を教員にもできない
     await assertFails(addDoc(collection(db, 'teacherNotes'), { teamId: 'A', body: 'x', createdAt: 1 }));
   });
+  test('自分の今日のアクセス記録だけ書ける (viewer:メール、チームなし、数は増える方向にだけ)。読めない', async () => {
+    const db = as(VIEWER);
+    const d = jstDate();
+    const sid = `viewer:${VIEWER}`;
+    const log = { sid, teamId: null, date: d, firstAt: 100, lastAt: 100, visits: 1, views: 1, screens: { team: 1 }, name: '閲覧の先生' };
+    const ref = doc(db, 'accessLogs', `${d}_${sid}`);
+    await assertSucceeds(setDoc(ref, log));
+    await assertSucceeds(updateDoc(ref, { lastAt: 200, views: 3, 'screens.team': 3 }));
+    await assertFails(updateDoc(ref, { views: 1 })); // 減らせない
+    await assertFails(getDoc(ref)); // 読めない (教員だけ)
+    // 他人の名前・学生の学生ID・チーム付き・別の日・長すぎる名前では、作れない
+    await assertFails(setDoc(doc(db, 'accessLogs', `${d}_viewer:other@trident.ac.jp`), { ...log, sid: 'viewer:other@trident.ac.jp' }));
+    await assertFails(setDoc(doc(db, 'accessLogs', `${d}_A1`), { ...log, sid: 'A1' }));
+    await assertFails(setDoc(doc(db, 'accessLogs', `2026-01-01_${sid}`), { ...log, date: '2026-01-01' }));
+    await assertFails(setDoc(doc(db, 'accessLogs', `${d}_${sid}`), { ...log, teamId: 'A', name: 'x'.repeat(50) }));
+    // 学生は、閲覧専用の記録を作れない。教員は読める
+    await assertFails(setDoc(doc(as(A1), 'accessLogs', `${d}_${sid}`), log));
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'accessLogs', `${d}_${sid}`)));
+  });
   test('学生や教員の権限は変わらない (教員は書ける。学生は他チームを読めない)', async () => {
     await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/tasks/new'), task('teacher')));
     await assertSucceeds(getDocs(collection(as(TEACHER), 'teacherNotes')));

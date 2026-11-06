@@ -74,7 +74,7 @@ test.describe.serial('チームへのお知らせ', () => {
     const t = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await login(t, 'teacher@trident.ac.jp');
     await t.goto('/teacher');
-    await expect(t.getByLabel('要確認のチームを上に並べる')).toBeChecked();
+    await expect(t.getByLabel('要確認のチームを上に並べる')).toHaveCount(0); // この機能はなくなった
     await t.getByText('全チームに連絡事項を送る').click();
     await t.getByLabel('全チームへの連絡事項').fill('全チームへ: 提出物の確認をします。');
     await t.getByRole('button', { name: /チームに送る/ }).click();

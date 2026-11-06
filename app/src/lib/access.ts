@@ -15,8 +15,14 @@ export type AccessLog = {
   /** 画面を表示した回数 */
   views: number;
   screens: Record<string, number>;
+  /** 閲覧専用の教員の記録だけにある、表示名 (sid は `viewer:メールアドレス`) */
+  name?: string;
 };
 
+export const VIEWER_PREFIX = 'viewer:';
+export const isViewerSid = (sid: string): boolean => sid.startsWith(VIEWER_PREFIX);
+/** アクセス履歴の表で、閲覧専用の教員の行に付ける「チーム」の名前 */
+export const VIEWER_TEAM = '閲覧';
 export const accessLogId = (date: string, sid: string) => `${date}_${sid}`;
 
 export const SCREEN_LABEL: Record<string, string> = {
@@ -25,8 +31,11 @@ export const SCREEN_LABEL: Record<string, string> = {
 
 /** パスから画面の種類。'/' → home、'/wbs' → wbs。知らない画面は other。 */
 export function screenOf(pathname: string): string {
-  const seg = pathname.split('/').filter(Boolean)[0] ?? '';
+  const segs = pathname.split('/').filter(Boolean);
+  const seg = segs[0] ?? '';
   if (seg === '') return 'home';
+  // 教員の画面 (閲覧専用の教員): チーム一覧・チーム詳細は「チーム」、PJ分析・使い方はそのまま
+  if (seg === 'teacher') { const sub = segs[1] ?? ''; return sub === '' || sub === 'team' ? 'team' : sub === 'report' || sub === 'help' ? sub : 'other'; }
   return seg in SCREEN_LABEL && seg !== 'home' && seg !== 'other' ? seg : 'other';
 }
 

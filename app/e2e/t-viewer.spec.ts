@@ -50,6 +50,16 @@ test.describe.serial('閲覧専用の教員', () => {
     await expect(page.getByRole('button', { name: '今すぐ保存' })).toHaveCount(0);
   });
 
+  test('閲覧専用の教員のアクセスが記録され、教員の「利用状況 → アクセス」に出る', async ({ page }) => {
+    await login(page, 'teacher@trident.ac.jp');
+    await page.goto('/teacher/usage?tab=access');
+    await expect(page.getByRole('heading', { name: 'アクセス履歴' })).toBeVisible();
+    const row = page.locator('table.access tbody tr', { hasText: '閲覧(閲覧専用)' }).first();
+    await expect(row).toContainText('今日');
+    await row.getByRole('button').click();
+    await expect(page.locator('tr.access-detail')).toContainText('チーム');
+  });
+
   test('閲覧専用の教員が、設定などの変更の画面を直接開いても、チーム一覧に戻される', async ({ page }) => {
     await login(page, 'viewer@trident.ac.jp');
     for (const path of ['/teacher/settings', '/teacher/attendance', '/teacher/kickoff/A', '/teacher/preview', '/teacher/usage', '/teacher/logs', '/teacher/access']) {

@@ -13,7 +13,7 @@ export function useAccessLogs(from: string) {
  * 学生が、自分の今日の記録に書き足す。まだなければ作る。
  * 書き込みは、新しいルールで検査される (自分の・今日の記録だけ、数は増える方向にだけ)。
  */
-export async function recordAccess(sid: string, teamId: string | null, p: Pending, now = Date.now()): Promise<void> {
+export async function recordAccess(sid: string, teamId: string | null, p: Pending, now = Date.now(), name?: string): Promise<void> {
   const date = jstDate(new Date(now));
   const ref = doc(db, 'accessLogs', accessLogId(date, sid));
   const bump = () => {
@@ -26,6 +26,6 @@ export async function recordAccess(sid: string, teamId: string | null, p: Pendin
   try {
     await bump();
   } catch {
-    await setDoc(ref, { sid, teamId, date, firstAt: now, lastAt: now, visits: p.visits, views: p.views, screens: p.screens });
+    await setDoc(ref, { sid, teamId, date, firstAt: now, lastAt: now, visits: p.visits, views: p.views, screens: p.screens, ...(name ? { name } : {}) });
   }
 }

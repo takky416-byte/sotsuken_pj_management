@@ -22,17 +22,16 @@ test('教員編の画面写真', async ({ browser }) => {
   // 1. ダッシュボード (チーム一覧)
   await go(page, '/teacher', 1800);
   await S('t01-dashboard', [
-    { loc: page.getByLabel('要確認のチームを上に並べる').locator('..'), n: 1 },
-    { loc: page.getByRole('button', { name: '最新にする' }), n: 2 },
-    { loc: page.getByRole('row', { name: /^B / }).locator('td').nth(3), n: 3 },
-    { loc: page.getByRole('row', { name: /^B / }).locator('td').nth(5), n: 4 },
+    { loc: page.getByRole('button', { name: '最新にする' }), n: 1 },
+    { loc: page.getByRole('row', { name: /^B / }).locator('td').nth(3), n: 2 },
+    { loc: page.getByRole('row', { name: /^B / }).locator('td').nth(5), n: 3 },
   ], { maxH: 1000 });
   await page.getByText('成果物の提出先の一覧').click().catch(() => undefined);
-  await page.getByText('全チームにメッセージを送る').click().catch(() => undefined);
+  await page.getByText('全チームに連絡事項を送る').click().catch(() => undefined);
   await page.waitForTimeout(500);
   await S('t01b-dashboard-bottom', [
     { loc: page.getByText('成果物の提出先の一覧'), n: 1 },
-    { loc: page.getByText('全チームにメッセージを送る'), n: 2 },
+    { loc: page.getByText('全チームに連絡事項を送る'), n: 2 },
   ], { maxH: 1300 });
 
   // 2. チーム詳細

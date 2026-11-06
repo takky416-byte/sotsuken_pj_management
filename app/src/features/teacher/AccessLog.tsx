@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { useAccessLogs } from '../../data/access';
 import { useClassDays } from '../../data/calendar';
 import { useTeams } from '../../data/teams';
-import { SCREEN_LABEL, accessSummary, timeLabel } from '../../lib/access';
+import { SCREEN_LABEL, VIEWER_TEAM, accessSummary, isViewerSid, timeLabel } from '../../lib/access';
 import { addDays, formatDate, jstDate } from '../../lib/dates';
 
 const DAYS = 14;
@@ -20,6 +20,10 @@ export function AccessLogPage() {
   if (!logs || !teams || !classDays) return <p>読み込み中…</p>;
 
   const students = teams.flatMap((t) => t.members.map((m) => ({ sid: m.sid, name: m.name, teamId: t.id })));
+  // 閲覧専用の教員: 記録がある人だけ、行を出す (名前は、記録に入っている)
+  const viewerNames = new Map<string, string>();
+  for (const l of [...logs].sort((a, b) => a.date.localeCompare(b.date))) if (isViewerSid(l.sid)) viewerNames.set(l.sid, l.name ?? l.sid.slice('viewer:'.length));
+  for (const [sid, name] of viewerNames) students.push({ sid, name: `${name}(閲覧専用)`, teamId: VIEWER_TEAM });
   const rows = accessSummary(logs, students, today, DAYS).filter((r) => !team || r.teamId === team);
   const isClass = new Set(classDays.map((d) => d.date));
   const accessedToday = rows.filter((r) => r.daysSince === 0).length;
@@ -38,6 +42,7 @@ export function AccessLogPage() {
           <select aria-label="チームで絞り込む" value={team} onChange={(e) => setTeam(e.target.value)}>
             <option value="">すべて</option>
             {[...teams].sort((a, b) => a.id.localeCompare(b.id)).map((t) => <option key={t.id} value={t.id}>{t.id}チーム</option>)}
+            {viewerNames.size > 0 && <option value={VIEWER_TEAM}>閲覧専用の先生</option>}
           </select>
         </label>
         <span className="pill">今日アクセス: <strong>{accessedToday}</strong>/{rows.length}人</span>

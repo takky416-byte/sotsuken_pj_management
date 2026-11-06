@@ -10,6 +10,7 @@ import { Notice } from './components/Notice';
 import { MeetingIndex, MeetingPage } from './features/meeting/MeetingPage';
 import { StudentApp, StudentNav } from './features/student/StudentApp';
 import { AccessTracker } from './components/AccessTracker';
+import { VIEWER_PREFIX } from './lib/access';
 import { GuideAutoOpen, GuideButton, GuideProvider } from './components/Guide';
 import { Usage } from './features/teacher/Usage';
 import { Attendance } from './features/teacher/Attendance';
@@ -64,6 +65,7 @@ function Shell() {
       <main>
         {teacher ? (
           <ReadOnlyContext.Provider value={viewer}>
+          {viewer && <AccessTracker sid={`${VIEWER_PREFIX}${profile.email}`} teamId={null} name={profile.name} />}
           {viewer && <p className="card readonly-banner" role="note">閲覧専用のアカウントです。全チームの状況を見られますが、データの変更はできません。</p>}
           <Routes>
             <Route path="/teacher" element={<TeacherHome />} />

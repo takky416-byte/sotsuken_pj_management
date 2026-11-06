@@ -4,6 +4,17 @@ import { accessSummary, addView, emptyPending, hasPending, screenOf, type Access
 const T = '2026-11-10';
 const log = (o: Partial<AccessLog>): AccessLog => ({ id: 'x', sid: 's1', teamId: 'A', date: T, firstAt: 1, lastAt: 2, visits: 1, views: 3, screens: { home: 2, wbs: 1 }, ...o });
 
+describe('screenOf: 閲覧専用の教員の画面', () => {
+  it('チーム一覧・チーム詳細は team、PJ分析・使い方はそのまま、ミーティングは meeting', () => {
+    expect(screenOf('/teacher')).toBe('team');
+    expect(screenOf('/teacher/team/A')).toBe('team');
+    expect(screenOf('/teacher/report/A')).toBe('report');
+    expect(screenOf('/teacher/help')).toBe('help');
+    expect(screenOf('/meeting/A')).toBe('meeting');
+    expect(screenOf('/teacher/settings')).toBe('other');
+  });
+});
+
 describe('screenOf', () => {
   it('パスから画面の種類', () => {
     expect(screenOf('/')).toBe('home');
