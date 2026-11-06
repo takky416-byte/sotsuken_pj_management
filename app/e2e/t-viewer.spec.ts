@@ -19,13 +19,13 @@ test.describe.serial('閲覧専用の教員', () => {
     await expect(page.getByText('見学さんを外しました。')).toBeVisible();
   });
 
-  test('閲覧専用の教員は、チーム一覧・チーム詳細・ミーティング・利用状況を見られるが、編集の操作は出ない', async ({ page }) => {
+  test('閲覧専用の教員は、チーム一覧・チーム詳細・ミーティング・PJ分析を見られるが、編集の操作は出ない', async ({ page }) => {
     await login(page, 'viewer@trident.ac.jp');
     await expect(page.getByText('閲覧専用のアカウントです')).toBeVisible();
     // メニューには、変更の画面がない
     const nav = page.getByRole('navigation').first();
     await expect(nav.getByRole('link', { name: 'チーム', exact: true })).toBeVisible();
-    for (const n of ['設定', '欠席', '学生の画面']) await expect(nav.getByRole('link', { name: n })).toHaveCount(0);
+    for (const n of ['設定', '欠席', '学生の画面', '利用状況']) await expect(nav.getByRole('link', { name: n })).toHaveCount(0);
     // チーム一覧: 全チームが見える。一括の連絡・最新にするは出ない
     await expect(page.getByRole('heading', { name: 'チーム一覧' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'A', exact: true })).toBeVisible();
@@ -45,8 +45,6 @@ test.describe.serial('閲覧専用の教員', () => {
     // ミーティング画面・利用状況・PJ分析は開ける
     await page.goto('/meeting/A');
     await expect(page.getByRole('heading', { name: '進捗確認会議の進め方' })).toBeVisible();
-    await page.goto('/teacher/usage');
-    await expect(page.getByRole('heading', { name: /利用状況/ })).toBeVisible();
     await page.goto('/teacher/report/A');
     await expect(page.getByText('報告書に載せる文章')).toBeVisible();
     await expect(page.getByRole('button', { name: '今すぐ保存' })).toHaveCount(0);
@@ -54,7 +52,7 @@ test.describe.serial('閲覧専用の教員', () => {
 
   test('閲覧専用の教員が、設定などの変更の画面を直接開いても、チーム一覧に戻される', async ({ page }) => {
     await login(page, 'viewer@trident.ac.jp');
-    for (const path of ['/teacher/settings', '/teacher/attendance', '/teacher/kickoff/A', '/teacher/preview']) {
+    for (const path of ['/teacher/settings', '/teacher/attendance', '/teacher/kickoff/A', '/teacher/preview', '/teacher/usage', '/teacher/logs', '/teacher/access']) {
       await page.goto(path);
       await expect(page.getByRole('heading', { name: 'チーム一覧' })).toBeVisible();
     }

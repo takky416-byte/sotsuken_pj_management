@@ -597,7 +597,7 @@ describe('報告書に載せる文章 (reportNotes。チームの学生と教員
 });
 
 describe('閲覧専用の教員 (role: viewer)', () => {
-  test('全チームの、チーム・タスク・作業ログ・ミーティング・マイルストーン・アクセス履歴を読める', async () => {
+  test('全チームの、チーム・タスク・作業ログ・ミーティング・マイルストーンを読める', async () => {
     const db = as(VIEWER);
     await assertSucceeds(getDoc(doc(db, 'teams/A')));
     await assertSucceeds(getDoc(doc(db, 'teams/B')));
@@ -607,15 +607,15 @@ describe('閲覧専用の教員 (role: viewer)', () => {
     await assertSucceeds(getDocs(collection(db, 'teams/A/meetings')));
     await assertSucceeds(getDocs(collection(db, 'teams/A/taskLogs')));
     await assertSucceeds(getDocs(collection(db, 'milestones')));
-    await assertSucceeds(getDocs(collection(db, 'accessLogs')));
     await assertSucceeds(getDoc(doc(db, 'config/settings')));
     await assertSucceeds(getDoc(doc(db, `roster/${VIEWER}`))); // 自分の名簿 (ログインに必要)
   });
-  test('教員メモ・評価・フォローアップ・名簿の一覧・キックオフの叩き台は、読めない', async () => {
+  test('教員メモ・評価・フォローアップ・アクセス履歴・名簿の一覧・キックオフの叩き台は、読めない', async () => {
     const db = as(VIEWER);
     await assertFails(getDoc(doc(db, 'teacherNotes/n1')));
     await assertFails(getDocs(collection(db, 'teacherNotes')));
     await assertFails(getDocs(collection(db, 'followups')));
+    await assertFails(getDocs(collection(db, 'accessLogs'))); // 利用状況の分析 (全チームの比較) は、読み取りが多いので、できない
     await assertFails(getDocs(collection(db, 'evaluationsRaw')));
     await assertFails(getDocs(collection(db, 'roster')));
     await assertFails(getDoc(doc(db, `roster/${A1}`)));

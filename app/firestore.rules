@@ -16,7 +16,7 @@ service cloud.firestore {
     function me() { return get(/databases/$(database)/documents/roster/$(myEmail())).data; }
     function isTeacher() { return inRoster() && me().role == 'teacher'; }
     function isStudent() { return inRoster() && me().role == 'student'; }
-    // 閲覧専用の教員: 学生・チームのデータを読めるだけ (書けない。教員メモ・評価・名簿の一覧・叩き台は読めない)
+    // 閲覧専用の教員: 学生・チームのデータを読めるだけ (書けない。教員メモ・評価・名簿の一覧・叩き台・アクセス履歴は読めない)
     function isViewer() { return inRoster() && me().role == 'viewer'; }
     function isStaff() { return isTeacher() || isViewer(); }
     function inTeam(t) { return isStudent() && me().teamId == t; }
@@ -250,7 +250,7 @@ service cloud.firestore {
         && d.screens is map && d.screens.size() <= 20;
     }
     match /accessLogs/{logId} {
-      allow read: if isStaff();
+      allow read: if isTeacher(); // 閲覧専用の教員は読めない (利用状況の分析は、全チームを読むので、読み取りが多い)
       // 教員は、バックアップの復元で書ける (学生が使っている最中に復元すると、記録の数が食い違うため)
       allow create, update: if isTeacher() && validAccess(request.resource.data);
       allow create: if isStudent() && validAccess(request.resource.data)

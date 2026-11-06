@@ -110,7 +110,7 @@ evaluationsPublished/{teamId}  学生に公開する匿名集計 (運用開始�
 | teacherNotes / followups / evaluationsRaw | **不可** | 読み書き |
 | 他チームのデータ | **不可** | 可 |
 
-- **閲覧専用の教員 (`role: viewer`)**: 教員と同じ画面を、読むだけ。読めるのは、teams・tasks・dailyReports・meetings・meetingMinutes・taskLogs・thanks・comments・digest・milestones・accessLogs・config。**書込はすべて不可**。教員メモ (teacherNotes)・followups・evaluationsRaw・名簿の一覧・キックオフの叩き台 (kickoffDrafts)・設定の変更も不可。ルールは、読み取り用の `canReadTeam`/`isStaff` と、書き込み用の `canSeeTeam`/`isTeacher` を分けて判定する (書き込み側に閲覧専用を入れない)。画面は、`ReadOnlyContext` で編集の操作を隠す (権限の境界はルール)。登録は、設定の名簿の下の「閲覧専用の教員」(教員だけ)。
+- **閲覧専用の教員 (`role: viewer`)**: 教員と同じ画面を、読むだけ。読めるのは、teams・tasks・dailyReports・meetings・meetingMinutes・taskLogs・thanks・comments・digest・milestones・config。**書込はすべて不可**。accessLogs (アクセス履歴)・教員メモ (teacherNotes)・followups・evaluationsRaw・名簿の一覧・キックオフの叩き台 (kickoffDrafts)・設定の変更も不可。ルールは、読み取り用の `canReadTeam`/`isStaff` と、書き込み用の `canSeeTeam`/`isTeacher` を分けて判定する (書き込み側に閲覧専用を入れない)。画面は、`ReadOnlyContext` で編集の操作を隠す (権限の境界はルール)。登録は、設定の名簿の下の「閲覧専用の教員」(教員だけ)。
 - 書込時は、フィールドの型・長さ・列挙値 (`status` など)・`depth` の範囲を検証する。更新できるフィールドは `diff().affectedKeys()` で制限する。
 - 学生には、他の人のメールアドレス・教員専用データ・他チームのデータが、クエリでも取得できないことをテストで確認する。
 

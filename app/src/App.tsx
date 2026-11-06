@@ -46,7 +46,7 @@ function Shell() {
             <NavLink to="/teacher/report">PJ分析</NavLink>
             <NavLink to="/meeting">ミーティング</NavLink>
             {!viewer && <NavLink to="/teacher/attendance">欠席</NavLink>}
-            <NavLink to="/teacher/usage">利用状況</NavLink>
+            {!viewer && <NavLink to="/teacher/usage">利用状況</NavLink>}
             {!viewer && <NavLink to="/teacher/preview">学生の画面</NavLink>}
             {!viewer && <NavLink to="/teacher/settings">設定</NavLink>}
             <NavLink to="/teacher/help">使い方</NavLink>
@@ -75,7 +75,7 @@ function Shell() {
             <Route path="/teacher/kickoff/:id" element={only(<Kickoff />)} />
             <Route path="/teacher/preview" element={only(<Preview />)} />
             <Route path="/teacher/preview/:sid/*" element={only(<Preview />)} />
-            <Route path="/teacher/usage" element={<Usage />} />
+            <Route path="/teacher/usage" element={only(<Usage />)} />
             <Route path="/teacher/logs" element={<Navigate to="/teacher/usage?tab=logs" replace />} />
             <Route path="/teacher/attendance" element={only(<Attendance />)} />
             <Route path="/teacher/access" element={<Navigate to="/teacher/usage?tab=access" replace />} />

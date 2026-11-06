@@ -155,7 +155,7 @@ function Viewers({ viewers, existing }: { viewers: RosterDoc[]; existing: Map<st
   return (
     <>
       <h3>閲覧専用の教員 ({viewers.length}名)</h3>
-      <p className="hint">全チームの状況(チーム一覧・WBS・作業ログ・ミーティング・PJ分析・利用状況)を、見るだけのアカウントです。データの変更はできません。教員メモ・名簿の一覧・キックオフの叩き台も見えません。外すと、ログインできなくなります。</p>
+      <p className="hint">全チームの状況(チーム一覧・WBS・作業ログ・ミーティング・PJ分析)を、見るだけのアカウントです。データの変更はできません。読み取りの回数を抑えるため、利用状況(チーム同士の比較・アクセスの分析)は使えません。教員メモ・名簿の一覧・キックオフの叩き台も見えません。外すと、ログインできなくなります。</p>
       <div className="card form">
         <div className="row">
           <input aria-label="閲覧専用の教員の名前" placeholder="名前" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} />
