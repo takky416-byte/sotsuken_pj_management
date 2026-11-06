@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useReadOnly } from '../../auth/ReadOnly';
 import { Link, useParams } from 'react-router-dom';
 import { MeetingRecords } from './MeetingRecords';
 import { MeetingMinutesEditor } from './MeetingMinutesEditor';
@@ -55,17 +56,19 @@ function ReviewStatus({ team }: { team: Team }) {
  * (2人が同時に書いてずれたときや、バックアップの復元・手作業の変更のあとに、数が合うようにする)。
  */
 function DigestHeal({ teamId }: { teamId: string }) {
+  const ro = useReadOnly(); // 閲覧専用の教員は、書けない (直すのは、教員の画面)
   const { data: tasks } = useTasks(teamId);
   const { data: digestDocs } = useDigest(teamId);
   useEffect(() => {
-    if (!tasks || !digestDocs) return;
+    if (ro || !tasks || !digestDocs) return;
     const t = setTimeout(() => { void healDigest(teamId, tasks, digestDocs[0] ?? null).catch(() => undefined); }, 1500); // 続けて変わっているあいだは、待つ
     return () => clearTimeout(t);
-  }, [teamId, tasks, digestDocs]);
+  }, [ro, teamId, tasks, digestDocs]);
   return null;
 }
 
 function TeamDetail({ team }: { team: Team }) {
+  const ro = useReadOnly(); // 閲覧専用の教員: 編集・お知らせ・教員メモは出さない
   const [tab, setTab] = useState<'wbs' | 'board' | 'daily' | 'meetings' | 'notes' | 'report'>('wbs');
   return (
     <>
@@ -80,20 +83,20 @@ function TeamDetail({ team }: { team: Team }) {
         <ReviewStatus team={team} />
         <div className="row">
           <Link to={`/meeting/${team.id}`} className="btn ghost-btn">ミーティング画面</Link>
-          <Link to={`/teacher/kickoff/${team.id}`} className="btn">{team.status === 'active' ? 'キックオフの内容を編集' : 'キックオフ'}</Link>
+          {!ro && <Link to={`/teacher/kickoff/${team.id}`} className="btn">{team.status === 'active' ? 'キックオフの内容を編集' : 'キックオフ'}</Link>}
           {team.driveUrl && isHttpUrl(team.driveUrl) && (
             <a className="btn ghost-btn" href={team.driveUrl} target="_blank" rel="noreferrer noopener">共有フォルダを開く</a>
           )}
         </div>
       </div>
-      <TeamNotice team={team} />
+      {!ro && <TeamNotice team={team} />}
       <div className="tabs">
         <button className={tab === 'wbs' ? 'active' : ''} onClick={() => setTab('wbs')}>WBS・ガントチャート</button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>PJ分析</button>
         <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>関与</button>
         <button className={tab === 'daily' ? 'active' : ''} onClick={() => setTab('daily')}>作業ログ</button>
         <button className={tab === 'meetings' ? 'active' : ''} onClick={() => setTab('meetings')}>ミーティング記録</button>
-        <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>
+        {!ro && <button className={tab === 'notes' ? 'active' : ''} onClick={() => setTab('notes')}>教員メモ(専用)</button>}
       </div>
       {tab === 'wbs' && <WbsGantt teamId={team.id} actor="teacher" members={team.members} />}
       {tab === 'report' && <ReportView team={team} actor="teacher" />}
@@ -101,11 +104,11 @@ function TeamDetail({ team }: { team: Team }) {
       {tab === 'daily' && <TeamDaily team={team} />}
       {tab === 'meetings' && (
         <>
-          <MeetingMinutesEditor teamId={team.id} />
+          {!ro && <MeetingMinutesEditor teamId={team.id} />}
           <MeetingRecords teamId={team.id} members={team.members} />
         </>
       )}
-      {tab === 'notes' && <TeacherNotes teamId={team.id} />}
+      {tab === 'notes' && !ro && <TeacherNotes teamId={team.id} />}
     </>
   );
 }

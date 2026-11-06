@@ -1,4 +1,5 @@
 import { StackTable } from './StackTable';
+import { useReadOnly } from '../auth/ReadOnly';
 import { useEffect, useRef, useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { createTasks, newTaskId, updateTask, updateTaskArray, useTasks } from '../data/tasks';
@@ -19,6 +20,7 @@ const ROW_PX = 30; // ガントチャートの1行の高さ (稲妻線の位置�
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
 export function GanttChart({ teamId, actor, members, report = false }: { teamId: string; actor: string; members: Member[]; report?: boolean }) {
+  const ro = useReadOnly(); // 閲覧専用の教員は、見るだけ (棒のドラッグ・タスクの追加はしない)
   const { data: tasks, error } = useTasks(teamId);
   const milestones = useMilestones(teamId);
   const [deep, setDeep] = useState(report); // PJ分析では、小項目まで出す
@@ -139,8 +141,8 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
       <div className="row no-print" hidden={report}>
         <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
         <label className="check"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する</label>
-        <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントチャートで編集する</label>
-        <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>
+        {!ro && <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントチャートで編集する</label>}
+        {!ro && <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>}
       </div>
       {direct && !report && <p className="hint">バーを<strong>ドラッグ</strong>で移動、両端で期間を変更。<strong>空の行をなぞる</strong>と期間が入ります。バーや行を<strong>タップ</strong>すると、状態の変更ができます。各行の<strong>＋</strong>で、その行の中にタスクを追加できます。</p>}
       {err && <p className="error">{err}</p>}
@@ -180,7 +182,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
                   {r.task.title}
                   {r.task.assignees.length > 0 && <small> {r.task.assignees.map(name).join('・')}</small>}
                 </span>
-                {!report && (
+                {!report && !ro && (
                   <button
                     type="button" className="ghost gantt-plus no-print" aria-label={`「${r.task.title}」に${r.depth >= 3 ? '同じ階層のタスクを' : 'タスクを中に'}追加`}
                     title={r.depth >= 3 ? 'この下に、同じ階層のタスクを追加' : 'この中に、タスクを追加'}

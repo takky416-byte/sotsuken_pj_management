@@ -13,7 +13,8 @@ export const SCHOOL_DOMAIN = '@trident.ac.jp';
 export type Profile = {
   email: string;
   name: string;
-  role: 'student' | 'teacher';
+  /** viewer: 閲覧専用の教員 (読めるだけ。書けない) */
+  role: 'student' | 'teacher' | 'viewer';
   teamId: string | null;
   sid: string | null;
 };
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
           const d = snap.data() as Omit<Profile, 'email'>;
-          setTeacherMode(d.role === 'teacher');
+          setTeacherMode(d.role === 'teacher' || d.role === 'viewer');
           setState({ status: 'ready', profile: { email, name: d.name, role: d.role, teamId: d.teamId, sid: d.sid } });
         },
         // 名簿にない場合は、ルールで読み取りが拒否されることもある

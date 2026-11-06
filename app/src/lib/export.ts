@@ -110,8 +110,8 @@ export function meetingsCsv(b: Backup): string {
 
 export function rosterCsv(b: Backup): string {
   const rows: unknown[][] = [['学生ID', '苗字', 'チーム', 'メールアドレス', '役割']];
-  for (const r of sortBy(col(b, 'roster'), (x) => (x.role === 'teacher' ? 0 : 1), (x) => str(x.teamId), (x) => Number(/\d+$/.exec(str(x.sid))?.[0] ?? 0))) {
-    rows.push([str(r.sid), str(r.name), str(r.teamId), r.id, r.role === 'teacher' ? '教員' : '学生']);
+  for (const r of sortBy(col(b, 'roster'), (x) => (x.role === 'student' ? 1 : 0), (x) => str(x.teamId), (x) => Number(/\d+$/.exec(str(x.sid))?.[0] ?? 0))) {
+    rows.push([str(r.sid), str(r.name), str(r.teamId), r.id, r.role === 'teacher' ? '教員' : r.role === 'viewer' ? '閲覧専用の教員' : '学生']);
   }
   return toCsv(rows);
 }

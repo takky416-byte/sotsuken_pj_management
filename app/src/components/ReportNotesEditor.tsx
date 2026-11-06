@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { saveReportNotes } from '../data/teams';
+import { useReadOnly } from '../auth/ReadOnly';
 import { jstDate } from '../lib/dates';
 import type { Team } from '../types';
 
@@ -12,6 +13,7 @@ const FIELDS = [
 
 /** 企業に提出する報告書に載せる、チームの文章。チームの学生と教員が書ける。 */
 export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }) {
+  const ro = useReadOnly(); // 閲覧専用の教員は、読むだけ
   const n = team.reportNotes;
   // 以前の保存にある「今後の方針」(next) は、「課題と今後の予定」(issues) に統合して見せる
   const base = { summary: n?.summary ?? '', issues: [n?.issues, n?.next].filter((x) => x && x.trim()).join('\n'), next: '' };
@@ -29,13 +31,13 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
   const latest = useRef({ v, n, dirty, teamId: team.id, actor });
   latest.current = { v, n, dirty, teamId: team.id, actor };
   useEffect(() => {
-    if (!dirty) return undefined;
+    if (!dirty || ro) return undefined;
     const t = setTimeout(() => { void save(); }, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v.summary, v.issues, dirty]);
   useEffect(() => {
-    const flush = () => { const c = latest.current; if (c.dirty) void saveReportNotes(c.teamId, c.actor, c.v, c.n).catch(() => undefined); };
+    const flush = () => { const c = latest.current; if (c.dirty && !ro) void saveReportNotes(c.teamId, c.actor, c.v, c.n).catch(() => undefined); };
     window.addEventListener('beforeunload', flush);
     return () => { window.removeEventListener('beforeunload', flush); flush(); };
   }, []);
@@ -46,16 +48,17 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
       {FIELDS.map((f) => (
         <label key={f.key}>{f.label} <span className="hint">{f.hint}</span>
           {n?.[`${f.key}At`] && n[f.key] === v[f.key] && <span className="hint"> 記入日: {fmtDate(n[`${f.key}At`] as number)}(報告書に出ます)</span>}
-          <textarea rows={3} maxLength={MAX} value={v[f.key]} aria-label={f.label}
+          <textarea rows={3} maxLength={MAX} value={v[f.key]} aria-label={f.label} readOnly={ro}
             onChange={(e) => { setV({ ...v, [f.key]: e.target.value }); setState('idle'); }} />
         </label>
       ))}
-      <div className="row">
+      {!ro && <div className="row">
         <button type="button" disabled={!dirty || state === 'saving'} onClick={save}>{state === 'saving' ? '保存中…' : '今すぐ保存'}</button>
         {dirty && state !== 'saving' && <span className="hint">書いたあと、少しすると自動で保存します</span>}
         {state === 'saved' && !dirty && <span className="ok" role="status">保存しました</span>}
         {n && <span className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</span>}
-      </div>
+      </div>}
+      {ro && n && <p className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</p>}
       {err && <p className="error">{err}</p>}
     </details>
   );

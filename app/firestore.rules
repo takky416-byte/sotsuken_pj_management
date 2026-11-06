@@ -16,8 +16,14 @@ service cloud.firestore {
     function me() { return get(/databases/$(database)/documents/roster/$(myEmail())).data; }
     function isTeacher() { return inRoster() && me().role == 'teacher'; }
     function isStudent() { return inRoster() && me().role == 'student'; }
+    // 閲覧専用の教員: 学生・チームのデータを読めるだけ (書けない。教員メモ・評価・名簿の一覧・叩き台は読めない)
+    function isViewer() { return inRoster() && me().role == 'viewer'; }
+    function isStaff() { return isTeacher() || isViewer(); }
     function inTeam(t) { return isStudent() && me().teamId == t; }
+    // 書き込み側の判定 (閲覧専用の教員は含まない)
     function canSeeTeam(t) { return isTeacher() || inTeam(t); }
+    // 読み取り側の判定 (閲覧専用の教員も読める)
+    function canReadTeam(t) { return isStaff() || inTeam(t); }
     function actor() { return isTeacher() ? 'teacher' : me().sid; }
 
     // 日本時間 (UTC+9) の今日を 20261028 の形で返す
@@ -89,7 +95,7 @@ service cloud.firestore {
 
     // ---- チーム ----
     match /teams/{teamId} {
-      allow read: if canSeeTeam(teamId);
+      allow read: if canReadTeam(teamId);
       allow write: if isTeacher();
       // 初期WBSの見直しの確認だけは、チームの学生も書ける (ほかの項目は触れない)
       allow update: if inTeam(teamId)
@@ -113,7 +119,7 @@ service cloud.firestore {
         && (!('nextAt' in request.resource.data.reportNotes) || request.resource.data.reportNotes.nextAt is number);
 
       match /tasks/{taskId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow create: if canSeeTeam(teamId) && validTask(request.resource.data)
           && (isTeacher() || request.resource.data.createdBy == actor());
         allow update: if canSeeTeam(teamId) && validTask(request.resource.data)
@@ -123,7 +129,7 @@ service cloud.firestore {
       }
 
       match /dailyReports/{reportId} {
-        allow read: if isTeacher()
+        allow read: if isStaff()
           || (inTeam(teamId) && (resource.data.sid == me().sid
               || get(/databases/$(database)/documents/config/settings).data.peerDailyView == true));
         allow create: if isTeacher() && validDaily(request.resource.data)
@@ -145,7 +151,7 @@ service cloud.firestore {
       }
 
       match /meetings/{date} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow write: if isTeacher()
           || (inTeam(teamId) && get(/databases/$(database)/documents/teams/$(teamId)).data.teamMeetingInput == true);
       }
@@ -165,7 +171,7 @@ service cloud.firestore {
 
       // ミーティングの議事録。先生がアップロードして公開する。チームの学生は読める (書けるのは先生だけ)
       match /meetingMinutes/{date} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow write: if isTeacher()
           && (request.method == 'delete' || (
             request.resource.data.keys().hasOnly(['date', 'text', 'publishedAt'])
@@ -177,14 +183,14 @@ service cloud.firestore {
       // 教員のダッシュボード用の「集計メモ」(タスクの完了数・期限など。チームごとに1件)。タスクを変える人が、同じ書き込みの中で更新する
       // (これが拒否されると、タスクの変更も失敗するので、形の検査は、タスクの書き込みで必ず通る範囲にする)
       match /digest/{docId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow create, update: if canSeeTeam(teamId) && docId == 'tasks' && validDigest(request.resource.data);
         allow delete: if isTeacher();
       }
 
       // タスクの変更履歴。誰が・いつ・何を変えたかを残す。追加だけできる (学生は、書き換え・削除はできない。教員は、バックアップの復元で書け、「最初からやり直す」で消せる)
       match /taskLogs/{logId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow create: if canSeeTeam(teamId) && validTaskLog(request.resource.data);
         allow update: if isTeacher() && validTaskLog(request.resource.data);
         allow delete: if isTeacher(); // 教員だけ (キックオフの「最初からやり直す」)
@@ -192,7 +198,7 @@ service cloud.firestore {
 
       // ありがとう (感謝スタンプ)。送った人だけが取り消せる。内容は変えられない
       match /thanks/{thankId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow create: if canSeeTeam(teamId)
           && request.resource.data.keys().hasOnly(['from', 'to', 'note', 'date', 'createdAt'])
           && (isTeacher() || request.resource.data.from == actor())
@@ -207,12 +213,12 @@ service cloud.firestore {
       }
 
       match /comments/{commentId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow write: if isTeacher();
       }
 
       match /evaluationsPublished/{docId} {
-        allow read: if canSeeTeam(teamId);
+        allow read: if canReadTeam(teamId);
         allow write: if isTeacher();
       }
     }
@@ -224,7 +230,7 @@ service cloud.firestore {
     }
 
     match /milestones/{id} {
-      allow read: if isTeacher()
+      allow read: if isStaff()
         || (inRoster() && (resource.data.teamId == null || inTeam(resource.data.teamId)));
       allow write: if isTeacher();
     }
@@ -244,7 +250,7 @@ service cloud.firestore {
         && d.screens is map && d.screens.size() <= 20;
     }
     match /accessLogs/{logId} {
-      allow read: if isTeacher();
+      allow read: if isStaff();
       // 教員は、バックアップの復元で書ける (学生が使っている最中に復元すると、記録の数が食い違うため)
       allow create, update: if isTeacher() && validAccess(request.resource.data);
       allow create: if isStudent() && validAccess(request.resource.data)

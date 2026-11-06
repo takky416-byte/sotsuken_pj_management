@@ -63,7 +63,8 @@ export function MeetingPage() {
 function MeetingScreen({ team }: { team: Team }) {
   const me = useProfile();
   const base = useBase();
-  const teacher = me.role === 'teacher';
+  const staff = me.role !== 'student'; // 教員 (閲覧専用を含む)
+  const teacher = me.role === 'teacher'; // 書ける教員
   const today = jstDate();
   const settings = useSettings();
   const classDays = useClassDays();
@@ -77,7 +78,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const show = (i: number) => showAll || step === i;
 
   // 作業ログ: 教員と、設定で閲覧が許可されているときはチーム全員分。それ以外は自分の分だけ。
-  const peer = teacher || (settings?.peerDailyView ?? false);
+  const peer = staff || (settings?.peerDailyView ?? false);
   const from = dailyWindowFrom(today);
   const all = useTeamDailies(peer ? team.id : null, from);
   const mine = useMyDailies(peer ? null : team.id, me.sid, from);
@@ -95,7 +96,7 @@ function MeetingScreen({ team }: { team: Team }) {
 
   if (!settings || !classDays || !tasks || !meetings || !milestones || !dailies || !comments || !thanks) return <p>読み込み中…</p>;
 
-  const canEdit = teacher || team.teamMeetingInput;
+  const canEdit = teacher || (!staff && team.teamMeetingInput);
   const prev = previousMeeting(meetings, today);
   const since = prev ? addDays(prev.date, 1) : addDays(today, -7);
   const submitDates = recentClassDates(fromDailyStart(classDays, settings.dailyStartDate), from, today, 3);
@@ -127,7 +128,7 @@ function MeetingScreen({ team }: { team: Team }) {
         <h2>{team.id}チーム {team.status === 'active' ? `「${team.projectName}」` : '(企画検討中)'}</h2>
         <span className="hint">{formatDate(today)}{isMeetingDay ? ' ミーティング' : ''}</span>
         <span className="spacer" />
-        {teacher && (
+        {staff && (
           <div className="switcher">
             {before ? <Link className="btn ghost-btn" to={`/meeting/${before}`}>← {before}</Link> : <span />}
             {order.map((id) => (
@@ -227,7 +228,7 @@ function MeetingScreen({ team }: { team: Team }) {
 
         <section className="card">
           <h3>手待ちの人と、タスクの振り分け</h3>
-          <IdleHelper teamId={team.id} actor={actor} tasks={tasks} members={members} today={today} canEdit />
+          <IdleHelper teamId={team.id} actor={actor} tasks={tasks} members={members} today={today} canEdit={teacher || !staff} />
         </section>
         </>)}
       </div>

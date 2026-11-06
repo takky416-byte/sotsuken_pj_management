@@ -13,6 +13,7 @@ const TEACHER = 'teacher@trident.ac.jp';
 const A1 = 'a1@trident.ac.jp';
 const A2 = 'a2@trident.ac.jp';
 const B1 = 'b1@trident.ac.jp';
+const VIEWER = 'viewer@trident.ac.jp';
 
 const jstDayKey = () => {
   const t = new Date(Date.now() + 9 * 3600 * 1000);
@@ -56,6 +57,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'roster', A1), { name: '岩田', role: 'student', teamId: 'A', sid: 'A1' });
     await setDoc(doc(db, 'roster', A2), { name: '近内', role: 'student', teamId: 'A', sid: 'A2' });
     await setDoc(doc(db, 'roster', B1), { name: '長田', role: 'student', teamId: 'B', sid: 'B1' });
+    await setDoc(doc(db, 'roster', VIEWER), { name: '閲覧の先生', role: 'viewer', teamId: null, sid: null });
     await setDoc(doc(db, 'teams', 'A'), { status: 'active', teamMeetingInput: false, members: [] });
     await setDoc(doc(db, 'teams', 'B'), { status: 'active', teamMeetingInput: false, members: [] });
     await setDoc(doc(db, 'config', 'settings'), { peerDailyView: true });
@@ -591,5 +593,55 @@ describe('報告書に載せる文章 (reportNotes。チームの学生と教員
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 1 }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes(), projectName: '書き換え' }));
     await assertFails(updateDoc(doc(as(B1), 'teams/A'), { reportNotes: notes({ by: 'B1' }) }));
+  });
+});
+
+describe('閲覧専用の教員 (role: viewer)', () => {
+  test('全チームの、チーム・タスク・作業ログ・ミーティング・マイルストーン・アクセス履歴を読める', async () => {
+    const db = as(VIEWER);
+    await assertSucceeds(getDoc(doc(db, 'teams/A')));
+    await assertSucceeds(getDoc(doc(db, 'teams/B')));
+    await assertSucceeds(getDocs(collection(db, 'teams/A/tasks')));
+    await assertSucceeds(getDocs(collection(db, 'teams/B/tasks')));
+    await assertSucceeds(getDocs(query(collection(db, 'teams/A/dailyReports'), where('date', '>=', '2026-10-01'))));
+    await assertSucceeds(getDocs(collection(db, 'teams/A/meetings')));
+    await assertSucceeds(getDocs(collection(db, 'teams/A/taskLogs')));
+    await assertSucceeds(getDocs(collection(db, 'milestones')));
+    await assertSucceeds(getDocs(collection(db, 'accessLogs')));
+    await assertSucceeds(getDoc(doc(db, 'config/settings')));
+    await assertSucceeds(getDoc(doc(db, `roster/${VIEWER}`))); // 自分の名簿 (ログインに必要)
+  });
+  test('教員メモ・評価・フォローアップ・名簿の一覧・キックオフの叩き台は、読めない', async () => {
+    const db = as(VIEWER);
+    await assertFails(getDoc(doc(db, 'teacherNotes/n1')));
+    await assertFails(getDocs(collection(db, 'teacherNotes')));
+    await assertFails(getDocs(collection(db, 'followups')));
+    await assertFails(getDocs(collection(db, 'evaluationsRaw')));
+    await assertFails(getDocs(collection(db, 'roster')));
+    await assertFails(getDoc(doc(db, `roster/${A1}`)));
+    await assertFails(getDocs(collection(db, 'teams/A/kickoffDrafts')));
+  });
+  test('何も書けない (タスク・作業ログ・集計メモ・変更履歴・ありがとう・ミーティング・チーム・設定・名簿)', async () => {
+    const db = as(VIEWER);
+    await assertFails(setDoc(doc(db, 'teams/A/tasks/new'), task('teacher')));
+    await assertFails(updateDoc(doc(db, 'teams/A/tasks/t1'), { title: '書き換え', updatedBy: 'teacher' }));
+    await assertFails(deleteDoc(doc(db, 'teams/A/tasks/t1')));
+    await assertFails(setDoc(doc(db, `teams/A/dailyReports/${jstDate()}_A1`), daily('A1')));
+    await assertFails(setDoc(doc(db, 'teams/A/digest/tasks'), { done: 0, total: 1, due: [], n: 1, at: 1 }));
+    await assertFails(addDoc(collection(db, 'teams/A/taskLogs'), { taskId: 't1', title: 'x', by: 'teacher', at: 1, kind: 'update', changes: [] }));
+    await assertFails(addDoc(collection(db, 'teams/A/thanks'), { from: 'A1', to: 'A2', note: '', date: jstDate(), createdAt: 1 }));
+    await assertFails(setDoc(doc(db, 'teams/A/meetings/2026-11-05'), { date: '2026-11-05', decided: 'x', actions: [], note: '', createdBy: 'teacher', updatedAt: 1 }));
+    await assertFails(addDoc(collection(db, 'teams/A/comments'), { body: 'x', target: { type: 'meeting', id: '2026-11-05' }, createdAt: 1 }));
+    await assertFails(updateDoc(doc(db, 'teams/A'), { projectName: '書き換え' }));
+    await assertFails(setDoc(doc(db, 'config/settings'), { peerDailyView: false }));
+    await assertFails(setDoc(doc(db, 'milestones/x'), { title: 'x', date: '2026-11-05', teamId: null }));
+    await assertFails(setDoc(doc(db, 'roster/new@trident.ac.jp'), { name: 'x', role: 'teacher', teamId: null, sid: null }));
+    await assertFails(setDoc(doc(db, `roster/${VIEWER}`), { name: '閲覧の先生', role: 'teacher', teamId: null, sid: null })); // 自分を教員にもできない
+    await assertFails(addDoc(collection(db, 'teacherNotes'), { teamId: 'A', body: 'x', createdAt: 1 }));
+  });
+  test('学生や教員の権限は変わらない (教員は書ける。学生は他チームを読めない)', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'teams/A/tasks/new'), task('teacher')));
+    await assertSucceeds(getDocs(collection(as(TEACHER), 'teacherNotes')));
+    await assertFails(getDocs(collection(as(A1), 'teams/B/tasks')));
   });
 });

@@ -1,4 +1,5 @@
 import { MessageField } from '../../components/MessageField';
+import { useReadOnly } from '../../auth/ReadOnly';
 import { MESSAGE_MAX } from '../../lib/teamMessage';
 import { WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
 import { useEffect, useState } from 'react';
@@ -21,12 +22,14 @@ import type { ClassDay, Milestone, Team } from '../../types';
 function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team: Team; milestones: Milestone[]; classDays: ClassDay[]; dailyStart: string; onSeverity: (id: string, n: number) => void }) {
   const today = jstDate();
   // タスク全件の代わりに、チームごとの「集計メモ」(1件) を読む。メモがまだないチームだけ、タスクから作って書く (最初の1回)
+  const ro = useReadOnly(); // 閲覧専用の教員は、集計メモを書けない
   const { data: digestDocs } = useDigest(team.id);
   const digest = digestDocs?.[0] ?? null;
-  const missingDigest = digestDocs !== null && !digest;
+  const missingDigest = digestDocs !== null && !digest && !ro;
   const { data: tasksForDigest } = useTasks(missingDigest ? team.id : null);
   useEffect(() => { if (missingDigest && tasksForDigest && tasksForDigest.length > 0) void saveDigest(team.id, tasksForDigest); }, [missingDigest, tasksForDigest, team.id]);
   const ready = !!digest || (missingDigest && !!tasksForDigest && tasksForDigest.length === 0);
+  // (閲覧専用で、メモがまだないチームは、進捗を「…」と出す。先生がダッシュボードを開くと、作られる)
   const { data: dailies } = useTeamDailies(team.id, dailyWindowFrom(today));
   const { data: meetings } = useMeetings(team.id);
   const lastMeeting = (meetings ?? []).map((m) => m.date).sort().at(-1);
@@ -79,6 +82,7 @@ function TeamRow({ team, milestones, classDays, dailyStart, onSeverity }: { team
 }
 
 export function TeacherHome() {
+  const ro = useReadOnly();
   const { data: teams, error } = useTeams();
   const milestones = useMilestones('all');
   const classDays = useClassDays();
@@ -96,10 +100,10 @@ export function TeacherHome() {
       <h2>チーム一覧</h2>
       <div className="row">
         <label className="check"><input type="checkbox" checked={flagFirst} onChange={(e) => setFlagFirst(e.target.checked)} />要確認のチームを上に並べる</label>
-        <button type="button" className="ghost" disabled={rebuilding} title="全チームのタスクを読み直して、WBS進捗・期限超過の数を作り直します(読み取りが約500回増えます)"
+        {!ro && <button type="button" className="ghost" disabled={rebuilding} title="全チームのタスクを読み直して、WBS進捗・期限超過の数を作り直します(読み取りが約500回増えます)"
           onClick={() => { setRebuilding(true); rebuildAllDigests(teams.map((t) => t.id)).catch((e) => setRebuildErr((e as Error).message)).finally(() => setRebuilding(false)); }}>
           {rebuilding ? '更新中…' : '最新にする'}
-        </button>
+        </button>}
         {rebuildErr && <span className="error">{rebuildErr}</span>}
       </div>
       <div className="table-wrap">
@@ -114,7 +118,7 @@ export function TeacherHome() {
         </StackTable>
       </div>
       <SubmitList teams={sorted} />
-      <Broadcast teams={sorted} />
+      {!ro && <Broadcast teams={sorted} />}
       <p className="hint">
         WBS進捗・期限超過は、タスクを変えるたびに更新される集計から出しています(ダッシュボードを開く読み取りを減らすため)。数が合わないと感じたら、「最新にする」を押してください。
         「要確認」は目安です。授業日に2回続けて作業ログが未提出(欠席は除く)、担当者がいなくて期限を過ぎたタスク、を表示します。

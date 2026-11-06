@@ -1,4 +1,5 @@
 import { StackTable } from './StackTable';
+import { useReadOnly } from '../auth/ReadOnly';
 import { useState } from 'react';
 import { useClassDays } from '../data/calendar';
 import { useMyDailies, useSettings, useTeamDailies } from '../data/daily';
@@ -20,6 +21,7 @@ import { Em } from './Em';
  */
 export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
   useTone();
+  const ro = useReadOnly(); // 閲覧専用の教員は、ありがとうを送れない
   const teacher = viewer === 'teacher';
   const today = jstDate();
   const from = dailyWindowFrom(today);
@@ -88,7 +90,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
                   <td>{s.promises.total === 0 ? '—' : `${s.promises.done}/${s.promises.total}`}</td>
                   <td>受 {s.thanks.received} / 送 {s.thanks.sent}</td>
                   <td>
-                    {s.sid !== viewer && (
+                    {s.sid !== viewer && !ro && (
                       <button className="ghost" disabled={!teacher && left <= 0} onClick={() => { setTo(to === s.sid ? null : s.sid); setNote(''); }}
                         aria-label={`${s.name}にありがとう`}><Em e="👏" />ありがとう</button>
                     )}
@@ -123,7 +125,7 @@ export function TeamBoard({ team, viewer }: { team: Team; viewer: string }) {
           <li key={t.id}>
             <span className="hint">{formatDate(t.date)}</span> {nameOf(t.from)} → <strong>{nameOf(t.to)}</strong>
             {t.note && <>「{t.note}」</>}
-            {(teacher || t.from === viewer) && <button className="ghost icon" aria-label="取り消す" onClick={() => deleteThanks(team.id, t.id).catch(() => undefined)}>×</button>}
+            {!ro && (teacher || t.from === viewer) && <button className="ghost icon" aria-label="取り消す" onClick={() => deleteThanks(team.id, t.id).catch(() => undefined)}>×</button>}
           </li>
         ))}
       </ul>

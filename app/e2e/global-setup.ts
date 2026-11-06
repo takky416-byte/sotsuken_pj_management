@@ -8,11 +8,12 @@ export default async function globalSetup() {
   const app = getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' });
   const db = getFirestore(app);
 
-  const roster: [string, string, 'teacher' | 'student', string | null, string | null][] = [
+  const roster: [string, string, 'teacher' | 'student' | 'viewer', string | null, string | null][] = [
     ['teacher@trident.ac.jp', '先生', 'teacher', null, null],
     ['a1@trident.ac.jp', '岩田', 'student', 'A', 'A1'],
     ['a2@trident.ac.jp', '近内', 'student', 'A', 'A2'],
     ['b1@trident.ac.jp', '長田', 'student', 'B', 'B1'],
+    ['viewer@trident.ac.jp', '閲覧', 'viewer', null, null],
   ];
   for (const [email, name, role, teamId, sid] of roster) await db.doc(`roster/${email}`).set({ name, role, teamId, sid });
 

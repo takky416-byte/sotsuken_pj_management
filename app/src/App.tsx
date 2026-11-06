@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
+import { ReadOnlyContext } from './auth/ReadOnly';
 import { LoginPage, NotAllowedPage } from './auth/LoginPage';
 import { Help } from './features/Help';
 import { Celebration } from './components/Celebration';
@@ -32,7 +33,9 @@ function Shell() {
   if (state.status === 'notAllowed') return <NotAllowedPage state={state} />;
 
   const { profile } = state;
-  const teacher = profile.role === 'teacher';
+  const viewer = profile.role === 'viewer'; // 閲覧専用の教員: 教員の画面を、見るだけ
+  const teacher = profile.role === 'teacher' || viewer; // 学生ではない (教員の画面を使う)
+  const only = (el: ReactElement) => (viewer ? <Navigate to="/teacher" replace /> : el); // 閲覧専用では開けない画面
   const shell = (
     <div className="app">
       <header>
@@ -42,17 +45,17 @@ function Shell() {
             <NavLink to="/teacher" end>チーム</NavLink>
             <NavLink to="/teacher/report">PJ分析</NavLink>
             <NavLink to="/meeting">ミーティング</NavLink>
-            <NavLink to="/teacher/attendance">欠席</NavLink>
+            {!viewer && <NavLink to="/teacher/attendance">欠席</NavLink>}
             <NavLink to="/teacher/usage">利用状況</NavLink>
-            <NavLink to="/teacher/preview">学生の画面</NavLink>
-            <NavLink to="/teacher/settings">設定</NavLink>
+            {!viewer && <NavLink to="/teacher/preview">学生の画面</NavLink>}
+            {!viewer && <NavLink to="/teacher/settings">設定</NavLink>}
             <NavLink to="/teacher/help">使い方</NavLink>
           </nav>
         ) : (
           <StudentNav teamId={profile.teamId} bottom />
         )}
         <span className="spacer" />
-        <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : '(教員)'}</span>
+        <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : viewer ? '(教員・閲覧のみ)' : '(教員)'}</span>
         <GuideButton />
         <ThemePicker />
         <button className="ghost" onClick={logout}>ログアウト</button>
@@ -60,6 +63,8 @@ function Shell() {
       <Celebration />
       <main>
         {teacher ? (
+          <ReadOnlyContext.Provider value={viewer}>
+          {viewer && <p className="card readonly-banner" role="note">閲覧専用のアカウントです。全チームの状況を見られますが、データの変更はできません。</p>}
           <Routes>
             <Route path="/teacher" element={<TeacherHome />} />
             <Route path="/meeting" element={<MeetingIndex />} />
@@ -67,20 +72,21 @@ function Shell() {
             <Route path="/teacher/team/:id" element={<TeacherTeam />} />
             <Route path="/teacher/report" element={<TeacherReport />} />
             <Route path="/teacher/report/:id" element={<TeacherReport />} />
-            <Route path="/teacher/kickoff/:id" element={<Kickoff />} />
-            <Route path="/teacher/preview" element={<Preview />} />
-            <Route path="/teacher/preview/:sid/*" element={<Preview />} />
+            <Route path="/teacher/kickoff/:id" element={only(<Kickoff />)} />
+            <Route path="/teacher/preview" element={only(<Preview />)} />
+            <Route path="/teacher/preview/:sid/*" element={only(<Preview />)} />
             <Route path="/teacher/usage" element={<Usage />} />
             <Route path="/teacher/logs" element={<Navigate to="/teacher/usage?tab=logs" replace />} />
-            <Route path="/teacher/attendance" element={<Attendance />} />
+            <Route path="/teacher/attendance" element={only(<Attendance />)} />
             <Route path="/teacher/access" element={<Navigate to="/teacher/usage?tab=access" replace />} />
             <Route path="/teacher/roster" element={<Navigate to="/teacher/settings?tab=roster" replace />} />
             <Route path="/teacher/export" element={<Navigate to="/teacher/settings?tab=export" replace />} />
-            <Route path="/teacher/settings" element={<Settings />} />
+            <Route path="/teacher/settings" element={only(<Settings />)} />
  <Route path="/teacher/help" element={<Help role="teacher" />} />
             <Route path="/teacher/calendar" element={<Navigate to="/teacher/settings?tab=calendar" replace />} />
             <Route path="*" element={<Navigate to="/teacher" replace />} />
           </Routes>
+          </ReadOnlyContext.Provider>
         ) : (
           <Notice email={profile.email}>
             {profile.sid && <AccessTracker sid={profile.sid} teamId={profile.teamId} />}

@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { useReadOnly } from '../auth/ReadOnly';
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 import {
@@ -116,7 +117,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   };
   const trash = tasks.filter((t) => t.deleted && !(t.parentId && byId.get(t.parentId)?.deleted));
   const orphans = orphansOf(tasks);
-  const canEdit = actor === 'teacher' || editMode;
+  const ro = useReadOnly(); // 閲覧専用の教員は、編集できない
+  const canEdit = !ro && (actor === 'teacher' || editMode);
 
   return (
     <div className={`wbs${g ? ' with-timeline' : ''}`}>

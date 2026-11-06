@@ -1,6 +1,6 @@
 import { StackTable } from '../../components/StackTable';
 import { useMemo, useState } from 'react';
-import { collection, doc, query, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useTeams } from '../../data/teams';
 import { useQuery } from '../../data/util';
@@ -8,7 +8,7 @@ import { assignSids, parseRoster } from '../../lib/csv';
 import { planMove, sortMembers, withMember, withoutMember } from '../../lib/rosterEdit';
 import { TEAM_IDS, type Member, type Team } from '../../types';
 
-type RosterDoc = { id: string; name: string; role: 'student' | 'teacher'; teamId: string | null; sid: string | null };
+type RosterDoc = { id: string; name: string; role: 'student' | 'teacher' | 'viewer'; teamId: string | null; sid: string | null };
 
 export function Roster() {
   const { data: rosterDocs, error } = useQuery<RosterDoc>(query(collection(db, 'roster')), 'roster');
@@ -132,6 +132,50 @@ export function Roster() {
           </tbody>
         </StackTable>
       </div>
+      <Viewers viewers={rosterDocs.filter((d) => d.role === 'viewer')} existing={existing} />
+    </>
+  );
+}
+
+const SCHOOL = /^[^\s@]+@trident\.ac\.jp$/i;
+
+/** 閲覧専用の教員の登録。全チームの状況を見られるだけで、変更はできない (教員メモ・評価・名簿の一覧も見えない) */
+function Viewers({ viewers, existing }: { viewers: RosterDoc[]; existing: Map<string, RosterDoc> }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const mail = email.trim().toLowerCase();
+  const problem = !name.trim() ? '名前を入れてください' : !SCHOOL.test(mail) ? '学校のメールアドレス(@trident.ac.jp)を入れてください' : existing.has(mail) ? 'このメールアドレスは、すでに名簿にあります' : '';
+  const run = async (fn: () => Promise<unknown>, done: string) => {
+    setBusy(true); setErr(''); setMsg('');
+    try { await fn(); setMsg(done); } catch (e) { setErr(`できませんでした: ${(e as Error).message}`); } finally { setBusy(false); }
+  };
+  return (
+    <>
+      <h3>閲覧専用の教員 ({viewers.length}名)</h3>
+      <p className="hint">全チームの状況(チーム一覧・WBS・作業ログ・ミーティング・PJ分析・利用状況)を、見るだけのアカウントです。データの変更はできません。教員メモ・名簿の一覧・キックオフの叩き台も見えません。外すと、ログインできなくなります。</p>
+      <div className="card form">
+        <div className="row">
+          <input aria-label="閲覧専用の教員の名前" placeholder="名前" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} />
+          <input aria-label="閲覧専用の教員のメールアドレス" className="grow" placeholder="xxxx@trident.ac.jp" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button disabled={busy || problem !== ''} onClick={() => run(async () => { await setDoc(doc(db, 'roster', mail), { name: name.trim(), role: 'viewer', teamId: null, sid: null }); setName(''); setEmail(''); }, `${name.trim()}さんを、閲覧専用で登録しました。`)}>登録する</button>
+        </div>
+        {(name || email) && problem && <p className="hint">{problem}</p>}
+      </div>
+      {err && <p className="error">{err}</p>}
+      {msg && <p className="ok">{msg}</p>}
+      {viewers.length > 0 && (
+        <ul className="plain viewer-list">
+          {viewers.map((v) => (
+            <li key={v.id} className="row">
+              <strong>{v.name}</strong> <span className="hint">{v.id}</span>
+              <button className="ghost danger" disabled={busy} onClick={() => { if (window.confirm(`${v.name}さんを、閲覧専用から外しますか(ログインできなくなります)。`)) void run(() => deleteDoc(doc(db, 'roster', v.id)), `${v.name}さんを外しました。`); }}>外す</button>
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

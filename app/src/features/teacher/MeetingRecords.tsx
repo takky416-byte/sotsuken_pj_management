@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useReadOnly } from '../../auth/ReadOnly';
 import { deleteMeeting, saveMeeting, useAllMeetings } from '../../data/meetings';
 import { formatDate, isDateString, jstDate } from '../../lib/dates';
 import type { Meeting, MeetingAction } from '../../lib/meeting';
 
 /** 教員用: そのチームのミーティング記録の一覧。過去の記録の編集・削除と、日付を指定しての追加。 */
 export function MeetingRecords({ teamId, members }: { teamId: string; members: { sid: string; name: string }[] }) {
+  const ro = useReadOnly();
   const { data: meetings, error } = useAllMeetings(teamId);
   const [date, setDate] = useState(jstDate());
   const [err, setErr] = useState('');
@@ -14,6 +16,31 @@ export function MeetingRecords({ teamId, members }: { teamId: string; members: {
   const run = async (fn: () => Promise<unknown>) => { setErr(''); try { await fn(); } catch (e) { setErr(`できませんでした: ${(e as Error).message}`); } };
   const exists = meetings.some((m) => m.id === date);
 
+  if (ro) {
+    // 閲覧専用の教員: 記録を読むだけ
+    return (
+      <>
+        {meetings.length === 0 && <p className="hint">記録はまだありません。</p>}
+        {meetings.map((m) => (
+          <div key={m.id} className="card">
+            <strong>{formatDate(m.id)}</strong>
+            <div className="label">決まったこと</div>
+            <p className="pre">{m.decided || '—'}</p>
+            <div className="label">次の1週間でやること</div>
+            <ul className="plain">
+              {m.actions.length === 0 && <li className="hint">—</li>}
+              {m.actions.map((a, i) => (
+                <li key={i}>
+                  {a.owner && <span className="badge">{members.find((x) => x.sid === a.owner)?.name ?? a.owner}</span>}{' '}
+                  <span className={a.done ? 'done-text' : ''}>{a.done ? '✓ ' : ''}{a.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </>
+    );
+  }
   return (
     <>
       <p className="hint">過去の記録の修正や、記録し忘れた回の追加ができます。当日の記録は、ミーティング画面からも入力できます。</p>
