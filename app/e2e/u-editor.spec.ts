@@ -11,6 +11,7 @@ test.describe.serial('Markdown の入力欄', () => {
     const note = page.getByLabel('調査・勉強の説明');
     await note.fill('');
     await expect(page.getByRole('toolbar', { name: '書式' }).first()).toBeVisible(); // 書いている間は、道具の列が出る
+    await page.screenshot({ path: 'e2e-shots/editor-toolbar.png' });
     // 太字: 選んで Ctrl+B。もう一度で外れる
     await note.fill('参考にした');
     await note.selectText();
