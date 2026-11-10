@@ -111,6 +111,39 @@ export function orderAfter(tasks: Task[], afterId: string): number {
 const maxDepthBelow = (tasks: Task[], id: string): number =>
   Math.max(0, ...descendantsOf(tasks, id).map((d) => d.depth - (tasks.find((t) => t.id === id)?.depth ?? 0)));
 
+/** 親を選び直すときの候補。自分と自分の子孫は選べない。移したあとの深さが3を超える場所も選べない (id は null=大項目にする) */
+export function parentChoices(tasks: Task[], id: string): { id: string | null; label: string; current: boolean }[] {
+  const t = tasks.find((x) => x.id === id);
+  if (!t) return [];
+  const live = tasks.filter(isLive);
+  const below = new Set(descendantsOf(tasks, id).map((d) => d.id));
+  const byId = new Map(live.map((x) => [x.id, x]));
+  const pathOf = (x: Task): string => { const names: string[] = []; for (let p: Task | undefined = x; p; p = p.parentId ? byId.get(p.parentId) : undefined) names.unshift(p.title); return names.join(' › '); };
+  const h = maxDepthBelow(tasks, id);
+  const out: { id: string | null; label: string; current: boolean }[] = [{ id: null, label: '(なし・大項目にする)', current: t.parentId === null }];
+  for (const r of flatten(live)) {
+    const p = r.task;
+    if (p.id === id || below.has(p.id) || p.depth + 1 + h > 3) continue;
+    out.push({ id: p.id, label: pathOf(p), current: t.parentId === p.id });
+  }
+  return out;
+}
+
+/** 親を選び直す (大項目にするときは null)。子タスクも、深さを合わせて一緒に移る。移し先の最後に入る。できないとき (自分・子孫が親、3階層を超える) は null。 */
+export function planReparent(tasks: Task[], id: string, newParentId: string | null): Patch[] | null {
+  const t = tasks.find((x) => x.id === id && isLive(x));
+  if (!t || (t.parentId ?? null) === newParentId) return null;
+  const parent = newParentId === null ? null : tasks.find((x) => x.id === newParentId && isLive(x)) ?? null;
+  if (newParentId !== null && !parent) return null;
+  if (parent && (parent.id === id || descendantsOf(tasks, id).some((d) => d.id === parent.id))) return null;
+  const depth = parent ? parent.depth + 1 : 1;
+  if (depth + maxDepthBelow(tasks, id) > 3) return null;
+  const delta = depth - t.depth;
+  const patches: Patch[] = [{ id, changes: { parentId: newParentId, depth: depth as 1 | 2 | 3, order: appendOrder(tasks.filter((x) => x.id !== id), newParentId) } }];
+  if (delta !== 0) for (const d of descendantsOf(tasks, id)) patches.push({ id: d.id, changes: { depth: (d.depth + delta) as 1 | 2 | 3 } });
+  return patches;
+}
+
 /** 直前の兄弟の子にする (Tab)。できないときは null。 */
 export function planIndent(tasks: Task[], id: string): Patch[] | null {
   const t = tasks.find((x) => x.id === id);

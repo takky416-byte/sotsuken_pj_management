@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf, rollupStatus, periodLabel, periodOf, ownedWithAncestors,
+  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf, rollupStatus, periodLabel, periodOf, ownedWithAncestors,
 } from './wbs';
 
 let seq = 0;
@@ -173,5 +173,51 @@ describe('自分の担当だけ', () => {
     tasks.push(T('gone', { parentId: 'b', depth: 2, order: 1, assignees: ['A1'], deleted: true }));
     expect([...ownedWithAncestors(tasks, 'A1')].sort()).toEqual(['a', 'a2', 'a2x']);
     expect(ownedWithAncestors(tasks, 'A2').size).toBe(0);
+  });
+});
+
+describe('親タスクを選び直す', () => {
+  test('大項目を、ほかの大項目の下に移すと、子も深さを合わせて一緒に移る。移し先の最後に入る', () => {
+    const tasks = sample();
+    // a (a1, a2 > a2x) を b の下へ: a は2階層、a1・a2 は3階層、a2x は4階層になるので、移せない
+    expect(planReparent(tasks, 'a', 'b')).toBeNull();
+    // c (子なし) を b の下へ
+    const p = planReparent(tasks, 'c', 'b')!;
+    expect(p).toEqual([{ id: 'c', changes: { parentId: 'b', depth: 2, order: expect.any(Number) } }]);
+  });
+  test('小項目を、別の中項目の下へ。子がいれば、深さも一緒に変わる', () => {
+    const tasks = [...sample(), T('b1', { parentId: 'b', depth: 2, order: 1 })];
+    expect(planReparent(tasks, 'a2x', 'b1')).toEqual([{ id: 'a2x', changes: { parentId: 'b1', depth: 3, order: expect.any(Number) } }]);
+    // a2 (a2x つき・2階層) を b の下へ → a2 は2階層のまま、a2x は3階層のまま (深さが変わらないので、a2 だけ)
+    const q = planReparent(tasks, 'a2', 'b')!;
+    expect(q.map((x) => x.id)).toEqual(['a2']);
+    expect(q[0].changes).toMatchObject({ parentId: 'b', depth: 2 });
+  });
+  test('大項目にする (null)。子の深さが1つ上がる', () => {
+    const tasks = sample();
+    const p = planReparent(tasks, 'a2', null)!;
+    expect(p.find((x) => x.id === 'a2')!.changes).toMatchObject({ parentId: null, depth: 1 });
+    expect(p.find((x) => x.id === 'a2x')!.changes).toEqual({ depth: 2 });
+  });
+  test('自分・自分の子孫は、親にできない。同じ親や、3階層を超える場所へは、移せない', () => {
+    const tasks = sample();
+    expect(planReparent(tasks, 'a', 'a')).toBeNull();
+    expect(planReparent(tasks, 'a', 'a2x')).toBeNull();
+    expect(planReparent(tasks, 'a1', 'a')).toBeNull(); // いまと同じ
+    expect(planReparent(tasks, 'a', 'a1')).toBeNull(); // 3階層を超える
+    expect(planReparent(tasks, 'zzz', 'a')).toBeNull();
+  });
+  test('削除済みのタスクは、親に選べない。候補は、自分・子孫・深すぎる場所を除く', () => {
+    const tasks = [...sample(), T('gone', { order: 9, deleted: true })];
+    expect(planReparent(tasks, 'c', 'gone')).toBeNull();
+    const ids = parentChoices(tasks, 'a2').map((o) => o.id);
+    expect(ids).toContain(null);
+    expect(ids).toContain('b');
+    expect(ids).not.toContain('a2');
+    expect(ids).not.toContain('a2x');
+    expect(ids).not.toContain('gone');
+    expect(ids).not.toContain('a2'); // 3階層を超える: a2 の子 (a2x) を持つので、小項目 (depth 3) の下には移せない
+    expect(parentChoices(tasks, 'a2x').find((o) => o.id === 'a2')!.current).toBe(true);
+    expect(parentChoices(tasks, 'c').find((o) => o.id === 'a2x')).toBeUndefined(); // 小項目の下は、4階層になる
   });
 });

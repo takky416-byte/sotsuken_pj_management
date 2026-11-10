@@ -9,7 +9,7 @@ import {
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, unassignedWithAncestors, shortDate, overallProgress, planIndent, planMove, planOutdent, planRescue, progressOf,
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, unassignedWithAncestors, shortDate, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf,
 } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
@@ -334,6 +334,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               onIndent={() => indent(t)}
               onOutdent={() => patch(planOutdent(tasks, t.id))}
               onMove={(d) => patch(planMove(tasks, t.id, d))}
+              parentOptions={parentChoices(tasks, t.id)}
+              onReparent={(pid) => { const plan = planReparent(tasks, t.id, pid); if (plan) patch(plan); else setErr('その場所には移せません(階層は3つまでです)'); }}
               onDelete={() => remove(t)}
             />
             </fieldset>
@@ -478,7 +480,7 @@ function TitleInput({ task, by, autoFocus, onFocused, onSave, onEnter, onIndent,
   );
 }
 
-function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIndent, onOutdent, onMove, onDelete }: {
+function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIndent, onOutdent, onMove, onDelete, parentOptions, onReparent }: {
   task: Task;
   members: Member[];
   nameOf: (sid: string) => string;
@@ -489,6 +491,8 @@ function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIn
   onOutdent: () => void;
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
+  parentOptions: { id: string | null; label: string; current: boolean }[];
+  onReparent: (parentId: string | null) => void;
 }) {
   const ed = useEditableText(t.detail, (detail) => onChange({ detail }), { trim: false, allowEmpty: true });
 
@@ -528,6 +532,12 @@ function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIn
         </div>
       </div>
       )}
+      <label className="detail-parent">親タスク
+        <select aria-label={`${t.title}の親タスク`} value={t.parentId ?? ''} onChange={(e) => onReparent(e.target.value || null)}>
+          {parentOptions.map((o) => <option key={o.id ?? 'root'} value={o.id ?? ''}>{o.label}</option>)}
+        </select>
+        <span className="hint">選ぶと、このタスクと、その下のタスクが移ります。移し先の最後に入ります(階層は3つまで)</span>
+      </label>
       <div className="row actions">
         <button className="ghost" onClick={() => onMove(-1)}>↑</button>
         <button className="ghost" onClick={() => onMove(1)}>↓</button>
