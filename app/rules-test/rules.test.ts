@@ -186,11 +186,11 @@ describe('作業ログ', () => {
     await assertFails(setDoc(doc(as(A1), 'teams/A/dailyReports/2026-01-01_A1'),
       daily('A1', { date: '2026-01-01', dayKey: jstDayKey() })));
   });
-  test('結果つきの項目と、次にやることを保存できる。次にやることは1000字まで', async () => {
+  test('結果つきの項目と、次にやることを保存できる。次にやることは3000字まで', async () => {
     const ref = doc(as(A1), `teams/A/dailyReports/${jstDate()}_A1`);
     const entries = [{ kind: 'task', taskId: 't1', note: '画面を作った', result: 'done' }];
     await assertSucceeds(setDoc(ref, daily('A1', { entries, next: '管理者画面のワイヤーフレームを描く' })));
-    await assertFails(setDoc(ref, daily('A1', { entries, next: 'あ'.repeat(1001) })));
+    await assertFails(setDoc(ref, daily('A1', { entries, next: 'あ'.repeat(3001) })));
     await assertFails(setDoc(ref, daily('A1', { entries, next: 123 })));
   });
   test('他人の分は作成・編集できない', async () => {
@@ -389,6 +389,12 @@ describe('作業ログ: アプリの書き込みの形', () => {
     await assertFails(setDoc(ref, { ...base, nextUndecided: 1 }));
     await assertFails(setDoc(ref, { ...base, noWorkReason: 'x'.repeat(30) }));
     await assertFails(setDoc(ref, { ...base, mystery: true }));
+  });
+  test('学生: 取り組みの説明と「次にやること」は、3000字まで書ける (それを超える「次にやること」は通らない)', async () => {
+    const ref = doc(as(A1), `teams/A/dailyReports/${dailyId(d, 'A1')}`);
+    const long = 'あ'.repeat(3000);
+    await assertSucceeds(setDoc(ref, dailyDoc({ sid: 'A1', date: d, entries: [{ kind: 'task', taskId: 't1', note: long, result: 'progress' }], blocker: '', absent: false, next: long }, undefined)));
+    await assertFails(setDoc(ref, dailyDoc({ sid: 'A1', date: d, entries: [{ kind: 'task', taskId: 't1', note: long, result: 'progress' }], blocker: '', absent: false, next: `${long}あ` }, { submittedAt: 1 })));
   });
   test('学生: 自分の作業ログを読むクエリと、設定ONのときのチーム全体のクエリ', async () => {
     const db = as(A1);

@@ -71,4 +71,18 @@ test.describe.serial('作業なしの提出と、次にやることの未定', (
     await page.reload();
     await expect(page.getByRole('note', { name: 'タスクの確認のお知らせ' })).toHaveCount(0);
   });
+
+  test('説明と「次にやること」は、長く(3000字まで)書ける', async ({ page }) => {
+    await login(page, 'a1@trident.ac.jp');
+    await page.getByRole('link', { name: '作業ログ', exact: true }).click();
+    await page.getByRole('button', { name: '＋ 調査・勉強' }).click().catch(() => undefined); // すでに選ばれていれば、押さない
+    const note = page.getByLabel('調査・勉強の説明');
+    await note.fill('あ'.repeat(2500));
+    await expect(note).toHaveValue('あ'.repeat(2500)); // 500字で切られない
+    await note.fill('い'.repeat(3100));
+    expect((await note.inputValue()).length).toBe(3000); // 3000字で止まる
+    const next = page.getByLabel('次にやること');
+    await next.fill('う'.repeat(2800));
+    await expect(next).toHaveValue('う'.repeat(2800)); // 1000字で切られない
+  });
 });
