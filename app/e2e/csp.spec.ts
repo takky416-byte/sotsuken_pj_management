@@ -23,13 +23,20 @@ test('CSP: 方針が付いていて、主な画面と書き出しがブロック
   expect(policy?.match(/script-src[^;]*/)?.[0]).not.toContain("'unsafe-eval'");
 
   // 悪意のある文章を、チームへの連絡事項に入れておく (チームを運用中にする)
-  const evil = '<img src=x onerror="window.__xss=1"> <script>window.__xss=2</script> [罠](javascript:window.__xss=3) <a href="javascript:window.__xss=4">x</a> **太字** https://example.com/ok';
+  const evil = '<img src=x onerror="window.__xss=1"> <script>window.__xss=2</script> [罠](javascript:window.__xss=3) <a href="javascript:window.__xss=4">x</a> **太字** https://example.com/ok <u>下線</u> <mark>印</mark> <span style="color:red;background:url(javascript:window.__xss=8)">赤</span> <span onclick="window.__xss=9">z</span>';
   await getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' })).doc('teams/A').update({ status: 'active', projectName: 'CSPの確認', message: { text: evil, at: Date.now() } });
 
   // 学生: ログイン → 主な画面。ホームの連絡事項は、文字として出る
   await login(page, 'a1@trident.ac.jp');
   await expect(page.locator('.teacher-msg')).toContainText('<script>window.__xss=2</script>');
   expect(await page.locator('.teacher-msg script, .teacher-msg img[src="x"], .teacher-msg a[href^="javascript:"]').count()).toBe(0);
+  // 使えるタグは、要素になる。許可していない属性・style は、捨てられる
+  await expect(page.locator('.teacher-msg u')).toHaveText('下線');
+  await expect(page.locator('.teacher-msg mark')).toHaveText('印');
+  const red = page.locator('.teacher-msg span[style]');
+  await expect(red).toHaveCount(1);
+  expect(await red.getAttribute('style')).toBe('color: red;');
+  expect(await page.locator('.teacher-msg [onclick]').count()).toBe(0);
   for (const name of ['作業ログ', 'WBS・ガントチャート', 'PJ分析', '使い方', 'ホーム']) {
     await page.getByRole('link', { name, exact: true }).first().click();
     await expect(page.locator('main')).toBeVisible();

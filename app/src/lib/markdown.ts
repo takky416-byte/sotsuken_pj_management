@@ -3,11 +3,15 @@
 // URLだけの行は、リンクのカード (Googleドライブなどの種類と、サムネイル) として出す。
 // 1回の改行は、そのまま改行として出す (作業ログは、改行しながら書くことが多いため)。
 
+import { findHtml, isColor, type HtmlStyle, type HtmlTag } from './mdHtml';
+export { isColor };
+
 export type Inline =
   | { t: 'text'; s: string }
   | { t: 'b' | 'i' | 's' | 'u'; c: Inline[] }
   | { t: 'code'; s: string }
   | { t: 'color'; s: string }
+  | { t: 'html'; tag: HtmlTag; style?: HtmlStyle; href?: string; c: Inline[] }
   | { t: 'a'; href: string; c: Inline[] }
   | { t: 'br' };
 
@@ -21,17 +25,14 @@ export type Block =
   | { t: 'quote'; c: Inline[] }
   | { t: 'code'; s: string }
   | { t: 'table'; head: Inline[][]; rows: Inline[][][]; align: ('left' | 'center' | 'right' | null)[] }
-  | { t: 'card'; href: string };
+  | { t: 'card'; href: string }
+  | { t: 'details'; summary: Inline[]; body: Block[]; open: boolean };
 
 const BARE_URL = /^https?:\/\/[^\s<>()]+$/;
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_SEP = /^\s*\|(\s*:?-{1,}:?\s*\|)+\s*$/;
 const cells = (line: string): string[] => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
 const alignOf = (c: string): 'left' | 'center' | 'right' | null => (/^:-+:$/.test(c) ? 'center' : /^-+:$/.test(c) ? 'right' : /^:-+$/.test(c) ? 'left' : null);
-
-/** 色の指定 (#ff8800・#f80・rgb(255, 136, 0)・hsl(30, 100%, 50%))。画面に出すときは、この形に合うものだけを使う (任意のCSSは通さない) */
-const COLOR_FULL = /^(#[0-9a-fA-F]{3,4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)|hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(,\s*(0|1|0?\.\d+)\s*)?\))$/;
-export const isColor = (s: string): boolean => COLOR_FULL.test(s);
 
 const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)|(\+\+[^+\n]+?\+\+)|(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?(?![0-9a-zA-Z_]))|((?:rgba?|hsla?)\([^()\n]{5,40}\))/;
 
@@ -53,6 +54,14 @@ export function parseInline(text: string): Inline[] {
   let rest = text;
   while (rest.length > 0) {
     const m = TOKEN.exec(rest);
+    const h = findHtml(rest);
+    // HTML タグ (使えるものだけ) のほうが先にあれば、そちらを先に処理する
+    if (h && (!m || h.index <= m.index)) {
+      if (h.index > 0) out.push({ t: 'text', s: rest.slice(0, h.index) });
+      out.push(h.br ? { t: 'br' } : { t: 'html', tag: h.tag, ...(h.style ? { style: h.style } : {}), ...(h.href ? { href: h.href } : {}), c: parseInline(h.inner) });
+      rest = rest.slice(h.index + h.length);
+      continue;
+    }
     if (!m) { out.push({ t: 'text', s: rest }); break; }
     if (m.index > 0) out.push({ t: 'text', s: rest.slice(0, m.index) });
     const tok = m[0];
@@ -86,6 +95,25 @@ export function parseMarkdown(src: string): Block[] {
   const flush = () => { if (para.length) { blocks.push({ t: 'p', c: withBreaks(para) }); para = []; } };
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    // <details> ... </details> (折りたたみ)。<summary>…</summary> が、見出し
+    const dm = /^\s*<details(\s+open)?\s*>\s*$/i.exec(line);
+    if (dm) {
+      let depth = 1; let j = i + 1;
+      for (; j < lines.length; j++) {
+        if (/^\s*<details(\s+open)?\s*>\s*$/i.test(lines[j])) depth++;
+        else if (/^\s*<\/details>\s*$/i.test(lines[j]) && --depth === 0) break;
+      }
+      if (j < lines.length) {
+        flush();
+        const inner = lines.slice(i + 1, j);
+        const k = inner.findIndex((l) => l.trim() !== '');
+        const sm = k >= 0 ? /^\s*<summary>(.*)<\/summary>\s*$/i.exec(inner[k]) : null;
+        if (sm) inner.splice(k, 1);
+        blocks.push({ t: 'details', summary: parseInline(sm ? sm[1] : '詳細'), body: parseMarkdown(inner.join('\n')), open: !!dm[1] });
+        i = j;
+        continue;
+      }
+    }
     if (/^```/.test(line)) {
       flush();
       const code: string[] = [];

@@ -11,6 +11,25 @@ const inline = (xs: Inline[]): ReactNode[] => xs.map((x, i) => {
     case 's': return <s key={i}>{inline(x.c)}</s>;
     case 'u': return <u key={i}>{inline(x.c)}</u>;
     case 'code': return <code key={i}>{x.s}</code>;
+    case 'html': {
+      const c = inline(x.c);
+      const st = x.style ? { color: x.style.color, background: x.style.background, fontSize: x.style.fontSize, fontWeight: x.style.fontWeight, textDecoration: x.style.textDecoration } : undefined;
+      switch (x.tag) {
+        case 'a': return <a key={i} href={x.href} target="_blank" rel="noopener noreferrer">{c}</a>;
+        case 'span': return <span key={i} style={st}>{c}</span>;
+        case 'u': return <u key={i}>{c}</u>;
+        case 'mark': return <mark key={i}>{c}</mark>;
+        case 'kbd': return <kbd key={i}>{c}</kbd>;
+        case 'sub': return <sub key={i}>{c}</sub>;
+        case 'sup': return <sup key={i}>{c}</sup>;
+        case 'small': return <small key={i}>{c}</small>;
+        case 'b': case 'strong': return <strong key={i}>{c}</strong>;
+        case 'i': case 'em': return <em key={i}>{c}</em>;
+        case 's': case 'del': return <s key={i}>{c}</s>;
+        case 'ins': return <ins key={i}>{c}</ins>;
+      }
+      return null;
+    }
     case 'color': return <span key={i} className="color-chip"><i className="swatch" style={{ background: x.s }} role="img" aria-label={`色見本 ${x.s}`} /><code>{x.s}</code></span>;
     case 'a': return <a key={i} href={x.href} target="_blank" rel="noopener noreferrer">{inline(x.c)}</a>;
   }
@@ -38,6 +57,7 @@ const block = (b: Block, i: number): ReactNode => {
       </div>
     );
     case 'card': return <LinkCard key={i} href={b.href} />;
+    case 'details': return <details key={i} className="md-details" open={b.open || undefined}><summary>{inline(b.summary)}</summary>{b.body.map(block)}</details>;
     case 'quote': return <blockquote key={i}>{inline(b.c)}</blockquote>;
     case 'code': return <pre key={i}><code>{b.s}</code></pre>;
   }

@@ -340,3 +340,10 @@
 - 確認: (1) `npm run test:csp` — e2e 用にビルドしたものを、CSP つきで配信し、ログイン・主な画面・Excel の書き出しが、ブロックされずに動くこと、文章に書いた `<script>`・`onerror`・`javascript:` が動かないことを確かめる。(2) 本番のビルドを `localhost` で配信して、実際の Google のログイン (ポップアップ・`apis.google.com`・認証のフレーム・`identitytoolkit`) の開始までが、ブロックされないことを確かめた (ログインの完了そのものは、Google のアカウントが要るので、確かめていない)。
 - 色の指定 (`#ff8800`・`rgb()`・`hsl()`) は、決まった形に合うものだけを `style` に使う (任意のCSSは通さない)。
 - 注意: 画像 (`img-src`) は `https:` を広く許している (リンクのカードのサムネイル・ファビコン用)。ここを狭めると、サムネイルが出なくなる。
+
+## 文章の中の HTML タグ (2026-11-10, 先生の依頼)
+
+- Obsidian のように、HTML タグを使えるようにした。ただし、HTML 文字列を画面に入れるのではなく、**使えるタグだけを読み取って、React の要素に直す** (`lib/mdHtml.ts`・`lib/markdown.ts`)。
+- 使えるもの: `<u> <mark> <kbd> <sub> <sup> <small> <b> <strong> <i> <em> <s> <del> <ins> <br>`、`<span style="…">` (style は color・background・font-size・font-weight・text-decoration だけ。色は #16進・rgb()・hsl()・よく使う色の名前、font-size は 50〜300% / 0.5〜3em)、`<a href="https://…">` (http(s) だけ)、`<details>`〜`</details>` (折りたたみ。`<summary>` が見出し、`open` で開いたまま)。
+- 通さないもの: 上にないタグすべて (`<script> <img> <iframe> <svg> <style> <object> <form>` など)・タグの属性 (`onclick` `class` `id` など)・許可していない style・`javascript:` `data:` のリンク。通さないものは、文字のまま出る。閉じていないタグも、文字のまま。
+- 確認: `Markdown.security.test.tsx` — 攻撃用の文章 (55通り) と、ランダムな組み合わせ (2000通り) を、実際の HTML にして、危険な要素・イベントの属性・`javascript:` のリンク・危険な style が出ないこと、`<img>` はリンクのカードの Google の決まった場所のものだけであることを確かめる。`csp.spec.ts` — 実際のブラウザで、使えるタグは要素になり、スクリプトは動かないこと。CSP (インラインのスクリプト・eval 不可) との二重の備え。

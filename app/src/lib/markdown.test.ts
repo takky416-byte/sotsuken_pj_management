@@ -92,3 +92,51 @@ describe('色見本', () => {
     expect(colorsIn('#ff0000 と #00ff00 と #ff0000\n```\n#0000ff\n```\n`#f80`')).toEqual(['#ff0000', '#00ff00', '#f80']);
   });
 });
+
+describe('HTML タグ (使えるものだけ)', () => {
+  const html = (s: string) => parseInline(s);
+  test('<u> <mark> <kbd> <sub> <sup> など。入れ子と、中の Markdown も効く', () => {
+    expect(html('a <u>下線</u> b')).toEqual([{ t: 'text', s: 'a ' }, { t: 'html', tag: 'u', c: [{ t: 'text', s: '下線' }] }, { t: 'text', s: ' b' }]);
+    expect(html('<mark>**大事**</mark>')).toEqual([{ t: 'html', tag: 'mark', c: [{ t: 'b', c: [{ t: 'text', s: '大事' }] }] }]);
+    expect(html('H<sub>2</sub>O')).toMatchObject([{ t: 'text', s: 'H' }, { t: 'html', tag: 'sub' }, { t: 'text', s: 'O' }]);
+    expect(html('<u><u>x</u></u>')).toEqual([{ t: 'html', tag: 'u', c: [{ t: 'html', tag: 'u', c: [{ t: 'text', s: 'x' }] }] }]);
+  });
+  test('<br> は改行。閉じていないタグは、文字のまま', () => {
+    expect(html('a<br>b<br/>c').filter((x) => x.t === 'br')).toHaveLength(2);
+    expect(html('<u>閉じていない')).toEqual([{ t: 'text', s: '<u>閉じていない' }]);
+  });
+  test('<span style> は、color・background・font-size・font-weight・text-decoration だけ。値も決まった形だけ', () => {
+    expect(html('<span style="color:red; background:#ff0; font-size:120%">赤</span>')).toEqual([
+      { t: 'html', tag: 'span', style: { color: 'red', background: '#ff0', fontSize: '120%' }, c: [{ t: 'text', s: '赤' }] },
+    ]);
+    expect(html('<span style="color: rgb(255, 0, 0)">x</span>')[0]).toMatchObject({ style: { color: 'rgb(255, 0, 0)' } });
+    // 許可していない項目・値は、捨てる
+    const bad = html('<span style="position:fixed; top:0; background:url(javascript:alert(1)); color:expression(alert(1)); font-size:9999%">x</span>')[0];
+    expect(bad).toMatchObject({ t: 'html', tag: 'span' });
+    expect((bad as { style?: unknown }).style).toBeUndefined();
+  });
+  test('<a href> は、http(s) だけ。javascript: などは、リンクにならず、文字のまま', () => {
+    expect(html('<a href="https://example.com/x">資料</a>')).toEqual([{ t: 'html', tag: 'a', href: 'https://example.com/x', c: [{ t: 'text', s: '資料' }] }]);
+    expect(JSON.stringify(html('<a href="javascript:alert(1)">x</a>'))).not.toContain('"href"');
+    expect(html('<a href="javascript:alert(1)">x</a>').some((x) => x.t === 'html')).toBe(false);
+    expect(html('<a href="data:text/html,<script>alert(1)</script>">x</a>').some((x) => x.t === 'html' && x.tag === 'a')).toBe(false);
+  });
+  test('使えないタグ・属性は、通さない (script・img・iframe・svg・style・onclick など)', () => {
+    for (const s of ['<script>alert(1)</script>', '<img src=x onerror=alert(1)>', '<iframe src=x></iframe>', '<svg onload=alert(1)>', '<style>*{}</style>', '<object data=x></object>']) {
+      expect(html(s).every((x) => x.t === 'text'), s).toBe(true);
+    }
+    // URL が入っていると、ふつうのURLと同じに、リンクにはなる (<iframe> という要素にはならない)
+    expect(html('<iframe src="https://evil.example/x"></iframe>').some((x) => x.t === 'html')).toBe(false);
+    // 使えるタグに付いた onclick などの属性は、捨てる (要素にも、属性にもならない)
+    const u = html('<u onclick="alert(1)" class="x">z</u>');
+    expect(u).toEqual([{ t: 'html', tag: 'u', c: [{ t: 'text', s: 'z' }] }]);
+  });
+  test('<details> は、折りたたみ。<summary> が見出し。open で開いたまま。中にも Markdown が書ける', () => {
+    const b = parseMarkdown('<details>\n<summary>詳しく</summary>\n\n- a\n- b\n\n</details>\n\n後の文');
+    expect(b.map((x) => x.t)).toEqual(['details', 'p']);
+    expect(b[0]).toMatchObject({ t: 'details', open: false, summary: [{ t: 'text', s: '詳しく' }] });
+    expect((b[0] as { body: { t: string }[] }).body.map((x) => x.t)).toEqual(['ul']);
+    expect(parseMarkdown('<details open>\n中身\n</details>')[0]).toMatchObject({ t: 'details', open: true });
+    expect(parseMarkdown('<details>\n閉じていない').some((x) => x.t === 'details')).toBe(false);
+  });
+});
