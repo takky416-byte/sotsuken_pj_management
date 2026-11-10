@@ -11,6 +11,7 @@ const inline = (xs: Inline[]): ReactNode[] => xs.map((x, i) => {
     case 's': return <s key={i}>{inline(x.c)}</s>;
     case 'u': return <u key={i}>{inline(x.c)}</u>;
     case 'code': return <code key={i}>{x.s}</code>;
+    case 'color': return <span key={i} className="color-chip"><i className="swatch" style={{ background: x.s }} role="img" aria-label={`色見本 ${x.s}`} /><code>{x.s}</code></span>;
     case 'a': return <a key={i} href={x.href} target="_blank" rel="noopener noreferrer">{inline(x.c)}</a>;
   }
 });

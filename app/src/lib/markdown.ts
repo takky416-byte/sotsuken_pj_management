@@ -7,6 +7,7 @@ export type Inline =
   | { t: 'text'; s: string }
   | { t: 'b' | 'i' | 's' | 'u'; c: Inline[] }
   | { t: 'code'; s: string }
+  | { t: 'color'; s: string }
   | { t: 'a'; href: string; c: Inline[] }
   | { t: 'br' };
 
@@ -28,7 +29,23 @@ const TABLE_SEP = /^\s*\|(\s*:?-{1,}:?\s*\|)+\s*$/;
 const cells = (line: string): string[] => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
 const alignOf = (c: string): 'left' | 'center' | 'right' | null => (/^:-+:$/.test(c) ? 'center' : /^-+:$/.test(c) ? 'right' : /^:-+$/.test(c) ? 'left' : null);
 
-const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)|(\+\+[^+\n]+?\+\+)/;
+/** 色の指定 (#ff8800・#f80・rgb(255, 136, 0)・hsl(30, 100%, 50%))。画面に出すときは、この形に合うものだけを使う (任意のCSSは通さない) */
+const COLOR_FULL = /^(#[0-9a-fA-F]{3,4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)|hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(,\s*(0|1|0?\.\d+)\s*)?\))$/;
+export const isColor = (s: string): boolean => COLOR_FULL.test(s);
+
+const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)|(\+\+[^+\n]+?\+\+)|(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?(?![0-9a-zA-Z_]))|((?:rgba?|hsla?)\([^()\n]{5,40}\))/;
+
+/** 文章の中の、色の指定を、出てくる順に (重複なし・最大 n 個)。入力欄の「色見本」に使う */
+export function colorsIn(text: string, n = 8): string[] {
+  const found: string[] = [];
+  const walk = (xs: Inline[]) => xs.forEach((x) => { if (x.t === 'color' && !found.includes(x.s)) found.push(x.s); else if ('c' in x) walk(x.c); });
+  let fence = false;
+  for (const line of text.split('\n')) {
+    if (/^```/.test(line)) { fence = !fence; continue; }
+    if (!fence) walk(parseInline(line));
+  }
+  return found.slice(0, n);
+}
 
 /** 1行の中の、太字・コード・リンクなど */
 export function parseInline(text: string): Inline[] {
@@ -39,7 +56,8 @@ export function parseInline(text: string): Inline[] {
     if (!m) { out.push({ t: 'text', s: rest }); break; }
     if (m.index > 0) out.push({ t: 'text', s: rest.slice(0, m.index) });
     const tok = m[0];
-    if (m[1]) out.push({ t: 'code', s: tok.slice(1, -1) });
+    if (m[1]) out.push(isColor(tok.slice(1, -1)) ? { t: 'color', s: tok.slice(1, -1) } : { t: 'code', s: tok.slice(1, -1) }); // `#f80` のように、コードの記号で囲めば、3桁の色も色見本になる
+    else if (m[8] || m[9]) out.push(isColor(tok) ? { t: 'color', s: tok } : { t: 'text', s: tok });
     else if (m[2]) out.push({ t: 'b', c: parseInline(tok.slice(2, -2)) });
     else if (m[3]) out.push({ t: 's', c: parseInline(tok.slice(2, -2)) });
     else if (m[4]) out.push({ t: 'i', c: parseInline(tok.slice(1, -1)) });

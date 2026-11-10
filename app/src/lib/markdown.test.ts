@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseInline, parseMarkdown } from './markdown';
+import { colorsIn, isColor, parseInline, parseMarkdown } from './markdown';
 
 describe('parseInline', () => {
   test('太字・斜体・取り消し線・コード', () => {
@@ -69,5 +69,26 @@ describe('チェックリスト・入れ子・表・リンクのカード', () =
   test('URLだけの行は、カード。文の中のURLは、ふつうのリンク', () => {
     expect(parseMarkdown('資料です\nhttps://drive.google.com/drive/folders/abc\n\n見て https://example.com/x').map((x) => x.t)).toEqual(['p', 'card', 'p']);
     expect(parseMarkdown('https://example.com/a。')).toEqual([{ t: 'card', href: 'https://example.com/a' }]);
+  });
+});
+
+describe('色見本', () => {
+  test('#ff8800・rgb()・hsl() は色。`#f80` のようにコードの記号で囲めば、3桁も色。#123 などの数字は、ただの文字', () => {
+    expect(parseInline('赤は #ff0000 です')).toEqual([{ t: 'text', s: '赤は ' }, { t: 'color', s: '#ff0000' }, { t: 'text', s: ' です' }]);
+    expect(parseInline('rgb(255, 136, 0)')).toEqual([{ t: 'color', s: 'rgb(255, 136, 0)' }]);
+    expect(parseInline('hsl(30, 100%, 50%)')).toEqual([{ t: 'color', s: 'hsl(30, 100%, 50%)' }]);
+    expect(parseInline('`#f80`')).toEqual([{ t: 'color', s: '#f80' }]);
+    expect(parseInline('#f80')).toEqual([{ t: 'text', s: '#f80' }]);
+    expect(parseInline('課題 #123 を直した')).toEqual([{ t: 'text', s: '課題 #123 を直した' }]);
+    expect(parseInline('#ff00ffzz')).toEqual([{ t: 'text', s: '#ff00ffzz' }]);
+  });
+  test('色にならない書き方は、そのまま (任意のCSSは通さない)', () => {
+    expect(parseInline('rgb(1,2,expression(alert(1)))').some((x) => x.t === 'color')).toBe(false);
+    expect(isColor('red')).toBe(false);
+    expect(isColor('#ff00')).toBe(true);
+    expect(isColor('url(x)')).toBe(false);
+  });
+  test('colorsIn: 出てくる順・重複なし・コードのかたまりの中は除く', () => {
+    expect(colorsIn('#ff0000 と #00ff00 と #ff0000\n```\n#0000ff\n```\n`#f80`')).toEqual(['#ff0000', '#00ff00', '#f80']);
   });
 });

@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, type TextareaHTMLAttributes } from 'react';
+import { colorsIn } from '../lib/markdown';
 import { codeBlock, continueList, indent, insertTable, linkOf, pasteLink, toggleLines, wrap, type Edit, type LineKind } from '../lib/mdEdit';
 
 /**
@@ -12,6 +13,7 @@ export const MdTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes
     const ta = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(fwd, () => ta.current as HTMLTextAreaElement);
     const editable = !rest.disabled && !rest.readOnly;
+    const colors = colorsIn(String(rest.value ?? '')); // 色の指定 (#ff8800 など) があれば、入力欄の下に、色見本を出す
 
     /** 新しい内容を、変更した部分だけ差し替えて入れる (execCommand を使うので、元に戻せる)。使えなければ、値を直接書き換える */
     const apply = (e: Edit) => {
@@ -78,6 +80,11 @@ export const MdTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes
       <div className="md-editor">
         {/* 道具の列は、入力欄の後ろに置く (<label> の中に入れても、ラベルが入力欄に付くように)。見た目は CSS で上に出す */}
         <textarea ref={ta} className={className} onKeyDown={keys} onPaste={paste} {...rest} />
+        {colors.length > 0 && (
+          <div className="md-colors" aria-label="色見本">
+            {colors.map((c) => <span key={c} className="color-chip"><i className="swatch" style={{ background: c }} aria-hidden="true" /><code>{c}</code></span>)}
+          </div>
+        )}
         {toolbar && editable && (
           <div className="md-toolbar" role="toolbar" aria-label="書式">
             {btn('太字', 'B', bold, '太字 (Ctrl+B)')}

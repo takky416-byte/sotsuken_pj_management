@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test';
 // 実行: npm run test:e2e   (Java が必要。ブラウザの場所を変えるときは PW_CHROMIUM)
 export default defineConfig({
   testDir: 'e2e',
+  testIgnore: 'csp.spec.ts', // CSP つきのビルドで確かめる (npm run test:csp)
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,

@@ -54,6 +54,10 @@ test.describe.serial('Markdown の入力欄', () => {
     // 元に戻せる
     await note.press('Control+z');
     await expect(note).not.toHaveValue('[参考サイト](https://example.com/ref)');
+    // 色の指定を書くと、入力欄の下に色見本が出る
+    await note.fill('主な色は #ff8800 と rgb(0, 128, 255)');
+    await expect(page.locator('.md-colors .swatch')).toHaveCount(2);
+    await expect(page.locator('.md-colors')).toContainText('#ff8800');
   });
 
   test('教員の連絡事項: 表・チェックリスト・リンクのカードが、プレビューに出る', async ({ page }) => {
@@ -73,6 +77,8 @@ test.describe.serial('Markdown の入力欄', () => {
       '| 項目 | 期限 |',
       '| --- | ---: |',
       '| 機材 | 11/5 |',
+      '',
+      '色は #ff0000 と `#0af`',
     ].join('\n'));
     await page.getByText('学生の画面での見え方').click();
     const prev = page.locator('.msg-preview');
@@ -83,5 +89,6 @@ test.describe.serial('Markdown の入力欄', () => {
     await expect(prev.locator('.md-box')).toHaveCount(2);
     await expect(prev.locator('.md-table th')).toHaveText(['項目', '期限']);
     await expect(prev.locator('.md-table td')).toHaveText(['機材', '11/5']);
+    await expect(prev.locator('.msg-text .swatch')).toHaveCount(2); // 色の指定は、色見本つきで出る
   });
 });
