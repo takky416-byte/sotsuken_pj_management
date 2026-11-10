@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MdTextarea } from '../../components/MdTextarea';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Markdown } from '../../components/Markdown';
 import { useProfile } from '../../auth/AuthProvider';
@@ -165,7 +166,7 @@ function MeetingScreen({ team }: { team: Team }) {
                 ))}
               </ul>
             )}
-          {prev?.decided && <p className="note">前回決めたこと: {prev.decided}</p>}
+          {prev?.decided && <div className="note"><span>前回決めたこと:</span> <Markdown text={prev.decided} /></div>}
         </section>
 
         </>)}
@@ -306,7 +307,7 @@ function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
   return (
     <div className="form">
       <label>決まったこと
-        <textarea rows={3} maxLength={3000} value={decided} disabled={!canEdit} onChange={(e) => setDecided(e.target.value)}
+        <MdTextarea rows={3} maxLength={3000} value={decided} disabled={!canEdit} onChange={(e) => setDecided(e.target.value)}
           onBlur={() => decided !== (m?.decided ?? '') && onSave({ decided })} />
       </label>
       <div className="label">次の1週間でやること(次回、結果を確認します)</div>

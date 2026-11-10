@@ -234,7 +234,8 @@ test.describe.serial('運用の流れ', () => {
     await expect(t.getByRole('heading', { name: '進捗確認会議の進め方' })).toBeVisible();
     await expect(t.getByRole('heading', { name: /前回のアクション/ })).toBeVisible();
     await expect(t.getByText('設計を進める')).toBeVisible();
-    await expect(t.getByText('前回決めたこと: 前回の決定')).toBeVisible();
+    await expect(t.getByText('前回決めたこと:')).toBeVisible();
+    await expect(t.getByText('前回の決定')).toBeVisible();
     await goStep(t, 1);
     await expect(t.getByRole('heading', { name: /事実の確認/ })).toBeVisible();
     await expect(t.locator('table.facts')).toContainText('岩田');

@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { MdTextarea } from './MdTextarea';
 import { useReadOnly } from '../auth/ReadOnly';
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
@@ -496,7 +497,7 @@ function Detail({ task: t, members, nameOf, isParent, onChange, onAssignee, onIn
   return (
     <div className={`detail depth-${t.depth}`}>
       <label>詳細
-        <textarea
+        <MdTextarea
           rows={4} maxLength={5000} value={ed.value} placeholder="やること・できあがりの目安・メモ"
           onChange={(e) => ed.setValue(e.target.value)} onFocus={ed.onFocus} onBlur={ed.commit}
         />

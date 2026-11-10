@@ -1,5 +1,6 @@
 // 作業ログの説明を、画面に出すときの Markdown の読み取り。HTML は通さない (React の要素に直して出す)。
-// 使えるのは、見出し (# ## ###)・箇条書き (- * 1.)・引用 (>)・コードのかたまり (```)・太字 (**)・下線 (++)・斜体 (*)・取り消し線 (~~)・コード (`)・リンク ([文字](https://…) と、そのままのURL)。
+// 使えるのは、見出し (# ## ###)・箇条書き (- * 1.。字下げで入れ子、- [ ] / - [x] でチェックリスト)・引用 (>)・コードのかたまり (```)・表 (| a | b |)・太字 (**)・下線 (++)・斜体 (*)・取り消し線 (~~)・コード (`)・リンク ([文字](https://…) と、そのままのURL)。
+// URLだけの行は、リンクのカード (Googleドライブなどの種類と、サムネイル) として出す。
 // 1回の改行は、そのまま改行として出す (作業ログは、改行しながら書くことが多いため)。
 
 export type Inline =
@@ -9,12 +10,23 @@ export type Inline =
   | { t: 'a'; href: string; c: Inline[] }
   | { t: 'br' };
 
+/** 箇条書きの1項目。level は字下げの深さ (0〜3)。check は、チェックリストのとき (true=済み) */
+export type ListItem = { c: Inline[]; level: number; check?: boolean };
+
 export type Block =
   | { t: 'p'; c: Inline[] }
   | { t: 'h'; level: 1 | 2 | 3; c: Inline[] }
-  | { t: 'ul' | 'ol'; items: Inline[][] }
+  | { t: 'ul' | 'ol'; items: ListItem[] }
   | { t: 'quote'; c: Inline[] }
-  | { t: 'code'; s: string };
+  | { t: 'code'; s: string }
+  | { t: 'table'; head: Inline[][]; rows: Inline[][][]; align: ('left' | 'center' | 'right' | null)[] }
+  | { t: 'card'; href: string };
+
+const BARE_URL = /^https?:\/\/[^\s<>()]+$/;
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+const TABLE_SEP = /^\s*\|(\s*:?-{1,}:?\s*\|)+\s*$/;
+const cells = (line: string): string[] => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+const alignOf = (c: string): 'left' | 'center' | 'right' | null => (/^:-+:$/.test(c) ? 'center' : /^-+:$/.test(c) ? 'right' : /^:-+$/.test(c) ? 'left' : null);
 
 const TOKEN = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+?~~)|(\*[^*\s][^*\n]*?\*)|(\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>()]+)|(\+\+[^+\n]+?\+\+)/;
 
@@ -67,16 +79,32 @@ export function parseMarkdown(src: string): Block[] {
     if (h) { flush(); blocks.push({ t: 'h', level: h[1].length as 1 | 2 | 3, c: parseInline(h[2]) }); continue; }
     const q = /^>\s?(.*)$/.exec(line);
     if (q) { flush(); const last = blocks.at(-1); if (last?.t === 'quote') last.c.push({ t: 'br' }, ...parseInline(q[1])); else blocks.push({ t: 'quote', c: parseInline(q[1]) }); continue; }
-    const ul = /^\s*[-*+]\s+(.*)$/.exec(line);
-    const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    // 表: 見出しの行と、その下の区切りの行 (|---|---|) が続くとき
+    if (TABLE_ROW.test(line) && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1])) {
+      flush();
+      const head = cells(line);
+      const align = cells(lines[i + 1]).map(alignOf);
+      const rows: Inline[][][] = [];
+      for (i += 2; i < lines.length && TABLE_ROW.test(lines[i]); i++) rows.push(cells(lines[i]).map((c) => parseInline(c)));
+      i--;
+      blocks.push({ t: 'table', head: head.map((c) => parseInline(c)), rows, align });
+      continue;
+    }
+    const ul = /^(\s*)[-*+]\s+(.*)$/.exec(line);
+    const ol = /^(\s*)\d+[.)]\s+(.*)$/.exec(line);
     if (ul || ol) {
       flush();
       const kind = ul ? 'ul' : 'ol';
+      const m = (ul ?? ol)!;
+      const level = Math.min(3, Math.floor(m[1].replace(/\t/g, '  ').length / 2));
+      const task = /^\[( |x|X)\]\s+(.*)$/.exec(m[2]);
+      const item: ListItem = task ? { c: parseInline(task[2]), level, check: task[1] !== ' ' } : { c: parseInline(m[2]), level };
       const last = blocks.at(-1);
-      const item = parseInline((ul ?? ol)![1]);
       if (last && last.t === kind) last.items.push(item); else blocks.push({ t: kind, items: [item] });
       continue;
     }
+    // URLだけの行は、リンクのカード
+    if (BARE_URL.test(line.trim())) { flush(); blocks.push({ t: 'card', href: line.trim().replace(/[、。,.!?]+$/, '') }); continue; }
     if (line.trim() === '') { flush(); continue; }
     para.push(line);
   }

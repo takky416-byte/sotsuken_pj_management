@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { MdTextarea } from './MdTextarea';
 import { MESSAGE_MAX } from '../lib/teamMessage';
 import { Markdown } from './Markdown';
 
@@ -8,7 +9,7 @@ export function MessageField({ value, onChange, label, id }: { value: string; on
   const fid = id ?? auto;
   return (
     <div className="msg-field">
-      <textarea id={fid} rows={10} maxLength={MESSAGE_MAX} value={value} aria-label={label}
+      <MdTextarea id={fid} rows={10} maxLength={MESSAGE_MAX} value={value} aria-label={label}
         placeholder={'例:\n【連絡事項】11月4日(水)\n\n◎ **機材購入申請リスト** (11月5日(木)2限終了〆切)\n・必要な機材がある場合は、リストを作って提出してください。\n\n◎ 進捗確認MTG\n・11月5日(木)の1限に、1チーム10分程度で実施します。'}
         onChange={(e) => onChange(e.target.value)} />
       <div className="row msg-field-meta">

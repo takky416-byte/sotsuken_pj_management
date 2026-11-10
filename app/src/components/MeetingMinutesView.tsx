@@ -1,4 +1,5 @@
 import { Em } from './Em';
+import { Markdown } from './Markdown';
 import { formatDate } from '../lib/dates';
 import { splitLatest, type MeetingMinutes } from '../lib/meetingMinutes';
 
@@ -9,14 +10,14 @@ export function MeetingMinutesCard({ minutes }: { minutes: MeetingMinutes[] }) {
   return (
     <section className="card meeting-summary" aria-label="前回のミーティングの議事録">
       <h3><Em e="📝" />前回のミーティングの議事録 <span className="hint">{formatDate(latest.date)}</span></h3>
-      <div className="minutes-text">{latest.text}</div>
+      <div className="minutes-text"><Markdown text={latest.text} /></div>
       {older.length > 0 && (
         <details className="ms-older">
           <summary>これまでの議事録({older.length})</summary>
           {older.map((m) => (
             <div key={m.id} className="ms-old">
               <div className="label">{formatDate(m.date)}</div>
-              <div className="minutes-text">{m.text}</div>
+              <div className="minutes-text"><Markdown text={m.text} /></div>
             </div>
           ))}
         </details>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Markdown } from '../../components/Markdown';
+import { MdTextarea } from '../../components/MdTextarea';
 import { deleteMinutes, publishMinutes, useAllMinutes } from '../../data/meetingMinutes';
 import { formatDate, isDateString, jstDate } from '../../lib/dates';
 import { checkMinutes, decodeTextFile } from '../../lib/meetingMinutes';
@@ -44,7 +46,7 @@ export function MeetingMinutesEditor({ teamId }: { teamId: string }) {
           <input aria-label="議事録のファイル" type="file" accept=".txt,.md,.text,text/plain,text/markdown" onChange={(e) => { void readFile(e.target.files?.[0]); e.target.value = ''; }} hidden />
         </label>
       </div>
-      <textarea aria-label="議事録の本文" rows={8} value={text} onChange={(e) => { setText(e.target.value); setMsg(''); }} placeholder="ここに議事録を貼ります (10,000字まで)" />
+      <MdTextarea aria-label="議事録の本文" rows={8} value={text} onChange={(e) => { setText(e.target.value); setMsg(''); }} placeholder="ここに議事録を貼ります (10,000字まで)" />
       <div className="row">
         <button type="button" disabled={!isDateString(date) || !text.trim()} onClick={publish}>{exists ? '置き換えて公開' : '公開'}</button>
         <span className="hint">{text.length > 0 && `${text.length}字`}</span>
@@ -55,7 +57,7 @@ export function MeetingMinutesEditor({ teamId }: { teamId: string }) {
       {minutes.map((m) => (
         <details key={m.id} className="card">
           <summary><strong>{formatDate(m.id)}</strong> <span className="hint">{m.text.split('\n')[0].slice(0, 40)}</span></summary>
-          <div className="minutes-text">{m.text}</div>
+          <div className="minutes-text"><Markdown text={m.text} /></div>
           <div className="row">
             <button type="button" className="ghost" onClick={() => { setDate(m.id); setText(m.text); }}>直す(上の欄に出す)</button>
             <button type="button" className="ghost" onClick={() => { if (window.confirm('この議事録を、学生から見えなくします。よろしいですか?')) void run(() => deleteMinutes(teamId, m.id), '削除しました'); }}>公開をやめる(削除)</button>

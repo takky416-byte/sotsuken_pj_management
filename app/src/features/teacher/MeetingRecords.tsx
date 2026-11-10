@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Markdown } from '../../components/Markdown';
+import { MdTextarea } from '../../components/MdTextarea';
 import { useReadOnly } from '../../auth/ReadOnly';
 import { deleteMeeting, saveMeeting, useAllMeetings } from '../../data/meetings';
 import { formatDate, isDateString, jstDate } from '../../lib/dates';
@@ -25,7 +27,7 @@ export function MeetingRecords({ teamId, members }: { teamId: string; members: {
           <div key={m.id} className="card">
             <strong>{formatDate(m.id)}</strong>
             <div className="label">決まったこと</div>
-            <p className="pre">{m.decided || '—'}</p>
+            {m.decided ? <Markdown text={m.decided} /> : <p>—</p>}
             <div className="label">次の1週間でやること</div>
             <ul className="plain">
               {m.actions.length === 0 && <li className="hint">—</li>}
@@ -71,7 +73,7 @@ function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: 
     <div className="card form">
       <strong>{formatDate(m.id)}</strong>
       <label>決まったこと
-        <textarea aria-label={`決まったこと ${m.id}`} rows={2} maxLength={3000} value={decided} onChange={(e) => setDecided(e.target.value)} />
+        <MdTextarea aria-label={`決まったこと ${m.id}`} rows={2} maxLength={3000} value={decided} onChange={(e) => setDecided(e.target.value)} />
       </label>
       <div className="label">次の1週間でやること</div>
       <ul className="plain">

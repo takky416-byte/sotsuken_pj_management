@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Markdown } from '../../components/Markdown';
+import { MdTextarea } from '../../components/MdTextarea';
 import { Link } from 'react-router-dom';
 import { useBase } from '../../components/Base';
 import { saveDaily } from '../../data/daily';
@@ -205,7 +207,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
               </div>
               {t && open.has(i.id) && (
                 <div className="dcard-detail" aria-label={`${title(i)}の詳細の内容`}>
-                  {t.detail.trim() ? t.detail : '詳細は書かれていません。'}
+                  {t.detail.trim() ? <Markdown text={t.detail} /> : '詳細は書かれていません。'}
                 </div>
               )}
               <div className="seg" role="group" aria-label={`${title(i)}の結果`}>
@@ -216,7 +218,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                 ))}
               </div>
               <>
-                <textarea
+                <MdTextarea
                   ref={focusOn(i.id)} className={`note-area ${shown && i.result && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={3000} aria-label={`${title(i)}の説明`}
                   placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note}
                   onChange={(e) => patch(i.id, { note: e.target.value, ...(i.result === null && e.target.value.trim() ? { result: 'progress' as const } : {}) })} onBlur={() => touch(i.id)}
@@ -256,7 +258,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
                   <button key={r} type="button" className={`seg-btn r-${r} ${i.result === r ? 'on' : ''}`} aria-pressed={i.result === r} onClick={() => patch(i.id, { result: r })}>{RESULT_LABEL[r]}</button>
                 ))}
               </div>
-              <textarea
+              <MdTextarea
                 className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={3000} aria-label="WBSにない作業の説明"
                 placeholder={PLACEHOLDER[i.result ?? 'progress']} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
               />
@@ -272,7 +274,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
           return (
             <div key={i.id} className="dcard on r-kind">
               <div className="dcard-head"><strong>{title(i)}</strong><button type="button" className="ghost icon" aria-label={`${title(i)}をやめる`} onClick={() => removeKind(i.id)}>×</button></div>
-              <textarea
+              <MdTextarea
                 className={`note-area ${shown && n < MIN_NOTE_CHARS ? 'need' : ''}`} rows={3} maxLength={3000} aria-label={`${title(i)}の説明`}
                 placeholder={KIND_PLACEHOLDER[i.kind as Exclude<DailyKind, 'task'>]} value={i.note} onChange={(e) => patch(i.id, { note: e.target.value })} onBlur={() => touch(i.id)}
               />
@@ -303,7 +305,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
             ))}
           </div>
         )}
-        {!undecided && <textarea
+        {!undecided && <MdTextarea
           className={`note-area ${shown && charCount(next) < MIN_NEXT_CHARS ? 'need' : ''}`} rows={3} maxLength={3000} aria-label="次にやること"
           placeholder={'次の授業日までに、何をどこまでやる?\n例: 管理者画面のワイヤーフレームを描き終える。ログイン機能の画面を作り始める。'}
           value={next} onChange={(e) => setNext(e.target.value)} onBlur={() => touch('next')}
