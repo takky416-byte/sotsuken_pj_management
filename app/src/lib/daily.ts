@@ -20,7 +20,7 @@ export type Daily = {
   dayKey: number;
   entries: DailyEntry[];
   blocker: string;
-  /** 次にやること (次の授業日までに何をやるか) */
+  /** 次にやること (次の授業で何に取り組むか) */
   next?: string;
   /** 今日は何も作業していない (正直に出せる。提出として数える) */
   noWork?: boolean;

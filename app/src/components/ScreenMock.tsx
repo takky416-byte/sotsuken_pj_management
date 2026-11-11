@@ -58,7 +58,7 @@ function Art({ art }: { art: ArtId }) {
             </div>
             <div className="mk-input">何を・どこまでやったか、一言 <N n={2} /></div>
             <strong>2. つぎにやること</strong>
-            <div className="mk-input">次の授業日までにやること <N n={3} /></div>
+            <div className="mk-input">次の授業でやること <N n={3} /></div>
           </div>
           <div className="mk-submit"><span className="mk-btn hot">作業ログを送信 <N n={4} /></span></div>
         </>

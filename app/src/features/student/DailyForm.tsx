@@ -293,7 +293,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
 
       <section className="card">
         <h3>2. つぎにやること</h3>
-        <p className="hint">次の授業日までに、何をやるかを書きます。まだ決まっていないときは、「まだ決まっていない」でも出せます。</p>
+        <p className="hint">次の授業で、何に取り組むかを書きます(授業時間外にやる必要はありません)。まだ決まっていないときは、「まだ決まっていない」でも出せます。</p>
         <div className="chips">
           <button type="button" className={`chip-btn ${undecided ? 'on' : ''}`} aria-pressed={undecided} onClick={() => setUndecided((u) => !u)}>まだ決まっていない</button>
         </div>
@@ -307,7 +307,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
         )}
         {!undecided && <MdTextarea
           className={`note-area ${shown && charCount(next) < MIN_NEXT_CHARS ? 'need' : ''}`} rows={3} maxLength={3000} aria-label="次にやること"
-          placeholder={'次の授業日までに、何をどこまでやる?\n例: 管理者画面のワイヤーフレームを描き終える。ログイン機能の画面を作り始める。'}
+          placeholder={'次の授業で、何をどこまでやる?\n例: 管理者画面のワイヤーフレームを描き終える。ログイン機能の画面を作り始める。'}
           value={next} onChange={(e) => setNext(e.target.value)} onBlur={() => touch('next')}
         />}
         {!undecided && <div className="counter-row">{counter('next', charCount(next), MIN_NEXT_CHARS, 'いつまでに、何をやるか')}</div>}

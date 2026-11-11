@@ -10,7 +10,7 @@ test.describe.serial('Markdown の入力欄', () => {
     await page.getByRole('button', { name: '＋ 調査・勉強' }).click().catch(() => undefined);
     const note = page.getByLabel('調査・勉強の説明');
     await note.fill('');
-    await expect(page.getByRole('toolbar', { name: '書式' }).first()).toBeVisible(); // 書いている間は、道具の列が出る
+    await expect(page.getByRole('toolbar', { name: '書式' }).first()).toBeVisible(); // 道具の列は、いつも出る
     await page.screenshot({ path: 'e2e-shots/editor-toolbar.png' });
     // 太字: 選んで Ctrl+B。もう一度で外れる
     await note.fill('参考にした');
@@ -21,7 +21,7 @@ test.describe.serial('Markdown の入力欄', () => {
     await expect(note).toHaveValue('参考にした');
     // 道具の列: 箇条書き → Enter で続き → 空の項目で Enter すると終わる
     await note.fill('');
-    await page.getByRole('button', { name: '箇条書き' }).first().click();
+    await note.locator('..').getByRole('button', { name: '箇条書き' }).click();
     await expect(note).toHaveValue('- ');
     await note.pressSequentially('一つ目');
     await note.press('Enter');
@@ -34,16 +34,16 @@ test.describe.serial('Markdown の入力欄', () => {
     await expect(note).toHaveValue('- 一つ目\n  - 二つ目\n  ');
     // チェックリスト・Enter で次のチェックボックス
     await note.fill('');
-    await page.getByRole('button', { name: 'チェックリスト' }).first().click();
+    await note.locator('..').getByRole('button', { name: 'チェックリスト' }).click();
     await note.pressSequentially('調べる');
     await note.press('Enter');
     await expect(note).toHaveValue('- [ ] 調べる\n- [ ] ');
     // 表・コード
     await note.fill('');
-    await page.getByRole('button', { name: '表', exact: true }).first().click();
+    await note.locator('..').getByRole('button', { name: '表', exact: true }).click();
     await expect(note).toHaveValue(/^\| 項目 \| 内容 \|\n\| --- \| --- \|\n/);
     await note.fill('');
-    await page.getByRole('button', { name: 'コード' }).first().click();
+    await note.locator('..').getByRole('button', { name: 'コード' }).click();
     await expect(note).toHaveValue('```\nコード\n```\n');
     // URL を貼り付けると、選んだ文字のリンクになる
     await note.fill('参考サイト');
