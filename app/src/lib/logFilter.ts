@@ -1,6 +1,7 @@
 import type { Daily } from './daily';
 
-export type LogQuery = { sid?: string; from?: string; to?: string; q?: string };
+/** result: 結果 (進んだ / 完了した / 詰まった) のどれかを含むもの。'nowork' は、何も作業していない日 */
+export type LogQuery = { sid?: string; from?: string; to?: string; q?: string; result?: 'progress' | 'done' | 'stuck' | 'nowork' | '' };
 
 const norm = (s: string) => s.normalize('NFKC').toLowerCase();
 
@@ -14,6 +15,8 @@ export function filterDailies(dailies: Daily[], titleOf: (taskId: string) => str
     if (query.sid && d.sid !== query.sid) return false;
     if (query.from && d.date < query.from) return false;
     if (query.to && d.date > query.to) return false;
+    if (query.result === 'nowork' && d.noWork !== true) return false;
+    if (query.result && query.result !== 'nowork' && !d.entries.some((e) => e.result === query.result)) return false;
     if (words.length === 0) return true;
     const text = norm([d.next ?? '', d.blocker ?? '', ...d.entries.flatMap((e) => [e.note ?? '', e.taskId ? titleOf(e.taskId) : ''])].join('\n'));
     return words.every((w) => text.includes(w));

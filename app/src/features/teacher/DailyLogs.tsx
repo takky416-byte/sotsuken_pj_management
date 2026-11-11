@@ -25,14 +25,14 @@ function TeamLogs({ team, f }: { team: Team; f: Filter }) {
     <section className="card log-section">
       <h3>{team.id}チーム{team.projectName ? <span className="hint">　{team.projectName}</span> : null} <span className="pill">{mine.length}件</span></h3>
       {f.view === 'team' ? (
-        <DailyFeed dailies={mine} members={team.members} tasks={tasks} emptyText="条件に合う作業ログはありません。" />
+        <DailyFeed dailies={mine} members={team.members} tasks={tasks} pageSize={10} emptyText="条件に合う作業ログはありません。" />
       ) : (
         members.map((m) => {
           const own = mine.filter((d) => d.sid === m.sid);
           return (
             <div key={m.sid} className="log-person">
               <h4>{m.name} <span className="pill">{own.length}件</span></h4>
-              <DailyFeed dailies={own} members={team.members} tasks={tasks} emptyText="条件に合う作業ログはありません。" />
+              <DailyFeed dailies={own} members={team.members} tasks={tasks} pageSize={5} emptyText="条件に合う作業ログはありません。" />
             </div>
           );
         })

@@ -1,5 +1,8 @@
 import { useProfile } from '../../auth/AuthProvider';
+import { useState } from 'react';
 import { DailyFeed } from '../../components/DailyViews';
+import { FeedFilters, NO_FILTER, isFiltered, type FeedFilter } from '../../components/FeedFilters';
+import { filterDailies } from '../../lib/logFilter';
 import { DailyForm } from './DailyForm';
 import { useClassDays } from '../../data/calendar';
 import { useMyDailies, useSettings, useTeamDailies } from '../../data/daily';
@@ -18,6 +21,7 @@ import { undecidedNudge } from '../../lib/undecided';
 
 
 export function StudentDaily() {
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>(NO_FILTER);
   const me = useProfile();
   const team = useTeam(me.teamId);
   const today = jstDate();
@@ -59,11 +63,14 @@ export function StudentDaily() {
         </div>
         <div className="col">
       <h3>{peer ? 'チームの作業ログ' : '自分の作業ログ'}</h3>
+      <FeedFilters value={feedFilter} onChange={setFeedFilter} members={team.members} meSid={me.sid} showWho={peer} />
       <DailyFeed
-        dailies={dailies.filter((d) => d.date <= today)}
+        key={JSON.stringify(feedFilter)}
+        dailies={filterDailies(dailies.filter((d) => d.date <= today), (id) => tasks.find((t) => t.id === id)?.title ?? '', feedFilter)}
         members={team.members}
         tasks={tasks}
-        emptyText="まだ作業ログがありません。"
+        pageSize={10}
+        emptyText={isFiltered(feedFilter) ? '条件に合う作業ログはありません。' : 'まだ作業ログがありません。'}
       />
         </div>
       </div>

@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Pager } from './Pager';
+import { pageOf } from '../lib/paging';
 import { FIXED_KINDS, NO_WORK_REASON_LABEL, RESULT_LABEL, statusOf, type Daily, type DayStatus } from '../lib/daily';
 import { formatDate } from '../lib/dates';
 import { Markdown } from './Markdown';
@@ -34,21 +37,27 @@ export function DailyMatrix({ members, dates, dailies }: { members: Member[]; da
 }
 
 /** 作業ログの内容を、新しい日付順に並べる。 */
-export function DailyFeed({ dailies, members, tasks, emptyText }: {
+export function DailyFeed({ dailies, members, tasks, emptyText, pageSize }: {
   dailies: Daily[];
   members: Member[];
   tasks: Task[];
   emptyText?: string;
+  /** 1ページの件数。なければ、すべてを並べる */
+  pageSize?: number;
 }) {
+  const [page, setPage] = useState(1);
   const name = new Map(members.map((m) => [m.sid, m.name]));
   const title = new Map(tasks.map((t) => [t.id, t.title]));
   const shown = dailies.filter((d) => statusOf(d) === 'submitted')
     .sort((a, b) => b.date.localeCompare(a.date) || a.sid.localeCompare(b.sid, 'en', { numeric: true }));
   if (shown.length === 0) return <p className="hint">{emptyText ?? 'まだ作業ログがありません。'}</p>;
+  const pg = pageSize ? pageOf(shown.length, page, pageSize) : null;
+  const visible = pg ? shown.slice(pg.start, pg.end) : shown;
   const kindLabel = new Map<string, string>(FIXED_KINDS.map((k) => [k.kind, k.label]));
   return (
     <div className="feed">
-      {shown.map((d) => (
+      {pageSize && <Pager total={shown.length} page={page} size={pageSize} onPage={setPage} />}
+      {visible.map((d) => (
         <div className="card" key={d.id}>
           <strong>{formatDate(d.date)}</strong> {name.get(d.sid) ?? d.sid}
           {d.noWork && <p className="hint nowork-note"><span className="badge">作業なし</span> 今日は何も作業していない{d.noWorkReason ? `(${NO_WORK_REASON_LABEL[d.noWorkReason]})` : ''}</p>}
@@ -66,6 +75,7 @@ export function DailyFeed({ dailies, members, tasks, emptyText }: {
           {d.nextUndecided && <div className="next-plan"><strong>次にやること</strong> <span className="hint">まだ決まっていない</span></div>}
         </div>
       ))}
+      {pageSize && <Pager total={shown.length} page={page} size={pageSize} onPage={(n) => { setPage(n); }} />}
     </div>
   );
 }
