@@ -61,7 +61,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const points = lightning(g, today, deep ? 3 : 2, (id) => parents.has(id));
   const todayX = pct(g, today);
   const H = g.rows.length * ROW_PX;
-  const msH = Math.max(ROW_PX, ms.lanes * LANE_PX + 2); // マイルストーンの行 (ガントチャートの一番上、目盛りの下)
+  const msH = report ? 0 : Math.max(ROW_PX, ms.lanes * LANE_PX + 2); // マイルストーンの行 (ガントチャートの一番上、目盛りの下)。報告書では、この行を出さないので 0
   const behind = points.filter((p) => p.days < -1).length;
 
   const live = tasks.filter((t) => !t.deleted);
