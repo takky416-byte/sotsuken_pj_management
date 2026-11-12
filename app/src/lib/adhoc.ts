@@ -24,8 +24,14 @@ export type AdhocPlan = {
 /** 結果から決まるタスクの状態 (完了した → 完了、それ以外 → 進行中)。 */
 export const adhocStatus = (r: DailyResult): TaskStatus => (r === 'done' ? 'done' : 'doing');
 
-/** 親にできるタスク (大項目・中項目)。3階層までなので、小項目の下には作れない。 */
-export const adhocParents = (tasks: Task[]): Task[] => tasks.filter((t) => !t.deleted && t.depth <= 2 && t.id !== ADHOC_ROOT_ID);
+/**
+ * 親にできるタスク (大項目、すでに子がいる中項目)。3階層までなので、小項目の下には作れない。
+ * 子のない中項目は除く (子を足すと、そのタスクが親になって、作業ログの対象から外れてしまうため)。
+ */
+export const adhocParents = (tasks: Task[]): Task[] => {
+  const live = tasks.filter((t) => !t.deleted);
+  return live.filter((t) => t.id !== ADHOC_ROOT_ID && (t.depth === 1 || (t.depth === 2 && live.some((c) => c.parentId === t.id))));
+};
 
 /** 親が決まっていない作業は、「WBS外の作業」の下に作る。 */
 export function planAdhoc(

@@ -1,6 +1,6 @@
 import type { Milestone, Task, TaskStatus } from '../types';
 import { addDays } from './dates';
-import { childrenOf, effectiveStatuses } from './wbs';
+import { childSpan, childrenOf, effectiveStatuses } from './wbs';
 
 export type GanttRow = {
   task: Task;
@@ -35,16 +35,10 @@ export function buildGantt(tasks: Task[], milestones: Milestone[], today: string
   const live = tasks.filter((t) => !t.deleted);
   const eff = effectiveStatuses(live); // 親タスクは、子の状態から自動で決まる
   const span = (t: Task): { start: string | null; end: string | null; derived: boolean } => {
-    const kids = childrenOf(live, t.id);
+    const k = childSpan(live, t); // 子に日付があれば、子の期間 (親に日付が入っていても。3階層でも同じ)
+    if (k) return { ...k, derived: true };
     const own = { start: t.startDate ?? t.endDate, end: t.endDate ?? t.startDate };
-    if (own.start && own.end) return { ...own, derived: false };
-    const ks = kids.map(span).filter((s) => s.start && s.end);
-    if (ks.length === 0) return { start: null, end: null, derived: false };
-    return {
-      start: ks.map((s) => s.start as string).sort()[0],
-      end: ks.map((s) => s.end as string).sort().reverse()[0],
-      derived: true,
-    };
+    return own.start && own.end ? { ...own, derived: false } : { start: null, end: null, derived: false };
   };
 
   const rows: GanttRow[] = [];

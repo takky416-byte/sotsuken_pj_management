@@ -33,17 +33,6 @@ var ReportCore = (() => {
   function childrenOf(tasks, parentId) {
     return tasks.filter((t) => isLive(t) && t.parentId === parentId).sort((a, b) => a.order - b.order);
   }
-  function descendantsOf(tasks, id) {
-    const out = [];
-    const walk = (pid) => {
-      for (const c of tasks.filter((t) => t.parentId === pid)) {
-        out.push(c);
-        walk(c.id);
-      }
-    };
-    walk(id);
-    return out;
-  }
   function rollupStatus(children) {
     const active = children.filter((s) => s !== "hold");
     if (active.length === 0) return "hold";
@@ -64,19 +53,22 @@ var ReportCore = (() => {
     for (const t of tasks) if (isLive(t)) visit(t);
     return out;
   }
-  function periodOf(tasks, t) {
+  function childSpan(live, t) {
     var _a, _b;
-    if (t.startDate || t.endDate) return { start: t.startDate, end: t.endDate, derived: false };
-    const ds = descendantsOf(tasks.filter((x) => !x.deleted), t.id);
-    const starts = ds.map((d) => {
-      var _a2;
-      return (_a2 = d.startDate) != null ? _a2 : d.endDate;
-    }).filter((d) => !!d).sort();
-    const ends = ds.map((d) => {
-      var _a2;
-      return (_a2 = d.endDate) != null ? _a2 : d.startDate;
-    }).filter((d) => !!d).sort();
-    return { start: (_a = starts[0]) != null ? _a : null, end: (_b = ends.at(-1)) != null ? _b : null, derived: starts.length > 0 };
+    const spans = [];
+    for (const c of live) {
+      if (c.parentId !== t.id || c.deleted) continue;
+      const s = childSpan(live, c);
+      if (s) spans.push(s);
+      else if (c.startDate || c.endDate) spans.push({ start: (_a = c.startDate) != null ? _a : c.endDate, end: (_b = c.endDate) != null ? _b : c.startDate });
+    }
+    if (spans.length === 0) return null;
+    return { start: spans.map((x) => x.start).sort()[0], end: spans.map((x) => x.end).sort().reverse()[0] };
+  }
+  function periodOf(tasks, t) {
+    const s = childSpan(tasks.filter((x) => !x.deleted), t);
+    if (s) return { ...s, derived: true };
+    return { start: t.startDate, end: t.endDate, derived: false };
   }
 
   // src/lib/adhoc.ts

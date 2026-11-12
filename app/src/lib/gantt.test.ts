@@ -19,9 +19,11 @@ describe('buildGantt', () => {
   ];
   const g = buildGantt(tasks, [], '2026-11-15');
 
-  test('親の日付は子の最小・最大から求める', () => {
+  test('親の日付は子の最小・最大から求める。親に日付が入っていても、子(3階層目まで)が優先', () => {
     const p = g.rows.find((r) => r.task.id === 'P')!;
-    expect([p.start, p.end, p.derived]).toEqual(['2026-11-02', '2026-11-20', true]);
+    expect([p.start, p.end, p.derived]).toEqual(['2026-11-03', '2026-11-20', true]); // a は、自分の日付 11/2〜11/10 ではなく、子 x の 11/3〜11/4
+    const a = g.rows.find((r) => r.task.id === 'a')!;
+    expect([a.start, a.end, a.derived]).toEqual(['2026-11-03', '2026-11-04', true]);
   });
   test('削除済みは含めない。深さ3は既定では出さない', () => {
     expect(g.rows.map((r) => r.task.id)).toEqual(['P', 'a', 'b', 'c']);

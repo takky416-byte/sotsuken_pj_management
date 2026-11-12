@@ -249,13 +249,27 @@ export function newlyCompletedParents(tasks: Task[], id: string, status: TaskSta
     && tasks.some((c) => isLive(c) && c.parentId === t.id));
 }
 
-/** タスクの期間。自分に日付がなければ、子孫の日付の最小・最大から求める (derived)。 */
+/**
+ * 子 (子孫) がいて、日付のある子がいる親の期間: 子の期間の最小の開始〜最大の終了。子の期間も、さらにその子から求める (3階層でも同じ)。
+ * 親に日付が入っていても、子から求めた期間を使う (親の期間は、子に依存する)。日付のある子がいなければ null。
+ */
+export function childSpan(live: Task[], t: Task): { start: string; end: string } | null {
+  const spans: { start: string; end: string }[] = [];
+  for (const c of live) {
+    if (c.parentId !== t.id || c.deleted) continue;
+    const s = childSpan(live, c);
+    if (s) spans.push(s);
+    else if (c.startDate || c.endDate) spans.push({ start: (c.startDate ?? c.endDate) as string, end: (c.endDate ?? c.startDate) as string });
+  }
+  if (spans.length === 0) return null;
+  return { start: spans.map((x) => x.start).sort()[0], end: spans.map((x) => x.end).sort().reverse()[0] };
+}
+
+/** タスクの期間。子に日付があれば、子の期間の最小・最大から求める (derived)。なければ、自分の日付。 */
 export function periodOf(tasks: Task[], t: Task): { start: string | null; end: string | null; derived: boolean } {
-  if (t.startDate || t.endDate) return { start: t.startDate, end: t.endDate, derived: false };
-  const ds = descendantsOf(tasks.filter((x) => !x.deleted), t.id);
-  const starts = ds.map((d) => d.startDate ?? d.endDate).filter((d): d is string => !!d).sort();
-  const ends = ds.map((d) => d.endDate ?? d.startDate).filter((d): d is string => !!d).sort();
-  return { start: starts[0] ?? null, end: ends.at(-1) ?? null, derived: starts.length > 0 };
+  const s = childSpan(tasks.filter((x) => !x.deleted), t);
+  if (s) return { ...s, derived: true };
+  return { start: t.startDate, end: t.endDate, derived: false };
 }
 
 /** '2026-10-05' → '10/5' */

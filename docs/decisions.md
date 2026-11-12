@@ -347,3 +347,5 @@
 - 使えるもの: `<u> <mark> <kbd> <sub> <sup> <small> <b> <strong> <i> <em> <s> <del> <ins> <br>`、`<span style="…">` (style は color・background・font-size・font-weight・text-decoration だけ。色は #16進・rgb()・hsl()・よく使う色の名前、font-size は 50〜300% / 0.5〜3em)、`<a href="https://…">` (http(s) だけ)、`<details>`〜`</details>` (折りたたみ。`<summary>` が見出し、`open` で開いたまま)。
 - 通さないもの: 上にないタグすべて (`<script> <img> <iframe> <svg> <style> <object> <form>` など)・タグの属性 (`onclick` `class` `id` など)・許可していない style・`javascript:` `data:` のリンク。通さないものは、文字のまま出る。閉じていないタグも、文字のまま。
 - 確認: `Markdown.security.test.tsx` — 攻撃用の文章 (55通り) と、ランダムな組み合わせ (2000通り) を、実際の HTML にして、危険な要素・イベントの属性・`javascript:` のリンク・危険な style が出ないこと、`<img>` はリンクのカードの Google の決まった場所のものだけであることを確かめる。`csp.spec.ts` — 実際のブラウザで、使えるタグは要素になり、スクリプトは動かないこと。CSP (インラインのスクリプト・eval 不可) との二重の備え。
+- 2026-11-12 親タスクの期間は、子 (3階層目まで) の期間の最小・最大から求める。親に日付が入っていても、子があれば子を優先する (`wbs.ts childSpan`。WBS一覧・ガントチャート・報告書・分析で共通)。以前は、WBS一覧は全子孫から、ガントチャートは子の「自分の日付」を先に使うため、中項目に日付が入っていると食い違った。Apps Script の `report-core.js` も作り直し (貼り直しが必要)。
+- 2026-11-12 「WBSにない作業」の入れる場所は、大項目と、すでに子がいる中項目だけ (子のない中項目に足すと、そのタスクが親になり、作業ログの対象から外れるため)。作業ログの対象は、子のないタスクだけ (カード・「ほかのタスクを選ぶ」とも)。

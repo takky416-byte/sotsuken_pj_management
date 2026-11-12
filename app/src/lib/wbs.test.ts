@@ -164,6 +164,16 @@ describe('期間の表示', () => {
     expect(periodOf(ts, ts[1])).toEqual({ start: '2026-10-03', end: '2026-10-08', derived: false });
     expect(periodOf(ts, T('x'))).toEqual({ start: null, end: null, derived: false });
   });
+  test('periodOf: 3階層でも、親は子の期間に従う (親に日付があっても、子が優先)。ガントチャートと同じ', () => {
+    const ts = [
+      T('P', { startDate: '2026-09-01', endDate: '2026-09-30' }),
+      T('m', { parentId: 'P', depth: 2, startDate: '2026-10-01', endDate: '2026-10-05' }),
+      T('s1', { parentId: 'm', depth: 3, startDate: '2026-10-03', endDate: '2026-10-12' }),
+      T('s2', { parentId: 'm', depth: 3 }),
+    ];
+    expect(periodOf(ts, ts[1])).toEqual({ start: '2026-10-03', end: '2026-10-12', derived: true });
+    expect(periodOf(ts, ts[0])).toEqual({ start: '2026-10-03', end: '2026-10-12', derived: true });
+  });
 });
 
 describe('自分の担当だけ', () => {
