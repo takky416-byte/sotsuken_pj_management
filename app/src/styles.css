@@ -99,7 +99,6 @@ select.status.st-doing { border-color:var(--accent); } select.status.st-done { b
 .tabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
 .matrix th, .matrix td { text-align:center; }
 .matrix tbody th { text-align:left; font-weight:600; }
-.mk-nowork { color:var(--warn); font-weight:600; }
 .mk-submitted { color:var(--ok); font-weight:600; } .mk-missing { color:var(--danger); } .mk-absent { color:var(--muted); }
 .pick { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .note-input { flex:1; min-width:160px; }

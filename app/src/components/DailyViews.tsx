@@ -25,8 +25,8 @@ export function DailyMatrix({ members, dates, dailies }: { members: Member[]; da
               {dates.map((d) => {
                 const doc = by.get(`${d}_${m.sid}`);
                 const s = statusOf(doc);
-                if (s === 'submitted' && doc?.noWork) return <td key={d} className="mk-nowork" title="作業なしで提出">無</td>;
-                return <td key={d} className={`mk-${s}`} title={s === 'submitted' ? '提出済み' : s === 'absent' ? '欠席' : '未提出'}>{MARK[s]}</td>;
+                // 「作業なし」で出したときも、提出なので ○ (印は分けない)
+                return <td key={d} className={`mk-${s}`} title={s === 'submitted' ? (doc?.noWork ? '提出済み(作業なし)' : '提出済み') : s === 'absent' ? '欠席' : '未提出'}>{MARK[s]}</td>;
               })}
             </tr>
           ))}

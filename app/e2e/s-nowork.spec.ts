@@ -35,7 +35,7 @@ test.describe.serial('作業なしの提出と、次にやることの未定', (
     await expect(page.getByRole('button', { name: '今日は何も作業していない' })).toBeVisible();
   });
 
-  test('教員: ミーティングの提出状況に「無」(作業なしで提出)と出る', async ({ page }) => {
+  test('教員: ミーティングの提出状況は、作業なしで提出しても ○ と出る (「無」は使わない)', async ({ page }) => {
     // 運用開始日は、前のテストで動かされていることがあるので、昨日に戻す
     await db().doc('config/settings').set({ peerDailyView: true, rotateOrder: true, dailyStartDate: yesterday() });
     await db().doc(`teams/A/dailyReports/${yesterday()}_A2`).set({
@@ -46,7 +46,10 @@ test.describe.serial('作業なしの提出と、次にやることの未定', (
     await page.goto('/meeting/A');
     await page.locator('.step').nth(1).click(); // 「事実の確認」の段階
     await expect(page.getByRole('heading', { name: /作業ログの提出状況/ })).toBeVisible();
-    await expect(page.locator('.matrix .mk-nowork')).toHaveText('無');
+    const cell = page.locator('.matrix td[title="提出済み(作業なし)"]');
+    await expect(cell).toHaveCount(1);
+    await expect(cell).toHaveText('○');
+    await expect(page.locator('.matrix .mk-nowork')).toHaveCount(0);
   });
 
   test('前回が未定で、担当のタスクがなければ、次の授業のはじめに、確認を促す。担当が決まれば出ない', async ({ page }) => {
