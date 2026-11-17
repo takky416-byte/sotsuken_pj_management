@@ -153,3 +153,22 @@ export function lightning(
   });
   return out;
 }
+
+/**
+ * 「一覧とガントチャート」の一覧の稲妻線: 見えている行ごとの位置 (%)。
+ * 点のある行 (葉のタスク) は、その位置。点のない行 (子のいる親など) は、前後の点のある行を、まっすぐつないだ位置にする
+ * (隣の行の振れを、そのまま引きつがない。親の行が、左右に振れて見えるのを防ぐ)。端は、今日の線に合わせる。
+ */
+export function boltXsFor(ids: string[], at: Map<string, number>, todayX: number): number[] {
+  const xs = ids.map((id) => at.get(id));
+  return xs.map((x, i) => {
+    if (x !== undefined) return x;
+    let p = i - 1; while (p >= 0 && xs[p] === undefined) p--;
+    let n = i + 1; while (n < xs.length && xs[n] === undefined) n++;
+    const px = p >= 0 ? (xs[p] as number) : todayX;
+    const nx = n < xs.length ? (xs[n] as number) : todayX;
+    const pi = p; // 端は、一覧のすぐ外 (-1 と 行数) に、今日の線があるものとする
+    const ni = n;
+    return px + ((nx - px) * (i - pi)) / (ni - pi);
+  });
+}

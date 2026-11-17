@@ -14,7 +14,7 @@ import {
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
 import { formatDate, jstDate } from '../lib/dates';
-import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
+import { boltXsFor, buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { useMilestones } from '../data/calendar';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { addDays } from '../lib/dates';
@@ -65,13 +65,12 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
   const rows = flatten(tasks, collapsed).filter((r) => (!mineIds || mineIds.has(r.task.id)) && (!freeIds || freeIds.has(r.task.id)));
   const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);
-  // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行は、直前の位置を引きつぐ)
+  // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行〔親など〕は、前後の点を、まっすぐつなぐ)
   const boltXs: number[] = (() => {
     if (!g) return [];
     const parentIds = new Set(tasks.filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string));
     const at = new Map(lightning(g, today, 3, (id) => parentIds.has(id)).map((p) => [g.rows[p.row].task.id, p.x]));
-    let last = pct(g, today);
-    return rows.map(({ task }) => { last = at.get(task.id) ?? last; return last; });
+    return boltXsFor(rows.map(({ task }) => task.id), at, pct(g, today));
   })();
   const byId = new Map(tasks.map((t) => [t.id, t]));
 

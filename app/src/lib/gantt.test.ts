@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, weekTicks } from './gantt';
+import { boltXsFor, buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, weekTicks } from './gantt';
 
 const t = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [],
@@ -132,5 +132,19 @@ describe('buildGantt', () => {
       expect(pts.some((p) => p.row === g.rows.findIndex((r) => r.task.id === 'P'))).toBe(false);
       expect(lightning(g, today, 1, parents).some((p) => p.row === 0)).toBe(true);
     });
+  });
+});
+
+describe('boltXsFor (一覧の稲妻線)', () => {
+  test('点のない行 (親) は、隣の行の振れを引きつがず、前後の点をまっすぐつなぐ', () => {
+    const at = new Map([['a', 80], ['c', 40]]);
+    expect(boltXsFor(['a', 'P', 'c'], at, 50)).toEqual([80, 60, 40]);
+  });
+  test('点のない行が続くときは、等間隔。先頭・末尾は、今日の線 (todayX) から', () => {
+    const at = new Map([['a', 30]]);
+    expect(boltXsFor(['P', 'a', 'Q', 'R'], at, 60)).toEqual([45, 30, 40, 50]);
+  });
+  test('点が1つもなければ、すべて今日の線', () => {
+    expect(boltXsFor(['P', 'Q'], new Map(), 50)).toEqual([50, 50]);
   });
 });
