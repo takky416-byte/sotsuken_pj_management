@@ -6,7 +6,7 @@ import { createTasks, newTaskId, updateTask, updateTaskArray, useTasks } from '.
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
 import { addDays, formatDate, jstDate } from '../lib/dates';
-import { buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
+import { boltPolyline, buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { dayAt, dragDates, type DragKind } from '../lib/ganttDrag';
 import { parseQuickAdd } from '../lib/quickAdd';
 import { appendOrder, newlyCompletedParents, overallProgress } from '../lib/wbs';
@@ -236,7 +236,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
         {bolt && (
           <svg className="gantt-lightning" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ height: H, top: ROW_PX + msH }} aria-label="稲妻線" role="img">
             <polyline
-              points={[`${todayX},0`, ...points.map((p) => `${p.x},${p.row * ROW_PX + ROW_PX / 2}`), `${todayX},${H}`].join(' ')}
+              points={boltPolyline(g.rows.length, points, todayX, ROW_PX)}
               fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
             />
           </svg>

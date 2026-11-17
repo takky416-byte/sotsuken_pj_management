@@ -65,9 +65,9 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
   const rows = flatten(tasks, collapsed).filter((r) => (!mineIds || mineIds.has(r.task.id)) && (!freeIds || freeIds.has(r.task.id)));
   const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);
-  // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行〔親など〕は、前後の点を、まっすぐつなぐ)
-  const boltXs: number[] = (() => {
-    if (!g) return [];
+  // 稲妻線: 見えている行ごとに、今日の線からの位置を決める (点のない行〔親など〕は、今日の線の上を縦に通す)
+  const boltRows: { xs: number[]; flat: boolean[] } = (() => {
+    if (!g) return { xs: [], flat: [] };
     const parentIds = new Set(tasks.filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string));
     const at = new Map(lightning(g, today, 3, (id) => parentIds.has(id)).map((p) => [g.rows[p.row].task.id, p.x]));
     return boltXsFor(rows.map(({ task }) => task.id), at, pct(g, today));
@@ -300,10 +300,14 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                   {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
                   <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
                   {bolt && (() => {
-                    const x = boltXs[ri], prev = ri > 0 ? boltXs[ri - 1] : pct(g, today), next = ri < boltXs.length - 1 ? boltXs[ri + 1] : pct(g, today);
+                    const { xs, flat } = boltRows, tx = pct(g, today);
+                    const x = xs[ri];
+                    // 親の行 (flat) は、今日の線の上を縦に通す。葉の行は、隣が親なら、今日の線から折れ始める
+                    const prev = ri > 0 && !flat[ri - 1] ? (xs[ri - 1] + x) / 2 : tx;
+                    const next = ri < xs.length - 1 && !flat[ri + 1] ? (x + xs[ri + 1]) / 2 : tx;
                     return (
                       <svg className="wbs-bolt" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <polyline points={`${(prev + x) / 2},0 ${x},50 ${(x + next) / 2},100`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                        <polyline points={flat[ri] ? `${tx},0 ${tx},100` : `${prev},0 ${x},50 ${next},100`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
                       </svg>
                     );
                   })()}

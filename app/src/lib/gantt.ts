@@ -155,20 +155,23 @@ export function lightning(
 }
 
 /**
- * 「一覧とガントチャート」の一覧の稲妻線: 見えている行ごとの位置 (%)。
- * 点のある行 (葉のタスク) は、その位置。点のない行 (子のいる親など) は、前後の点のある行を、まっすぐつないだ位置にする
- * (隣の行の振れを、そのまま引きつがない。親の行が、左右に振れて見えるのを防ぐ)。端は、今日の線に合わせる。
+ * 「一覧とガントチャート」の一覧の稲妻線: 見えている行ごとの位置 (%) と、点のない行か (flat)。
+ * 点のある行 (葉のタスク) は、その位置。点のない行 (子のいる親など) は、今日の線の上に、まっすぐ縦に通す
+ * (親の行の棒を、斜めに突き抜けない。左右の折れは、葉のタスクの行の中だけで済ませる)。
  */
-export function boltXsFor(ids: string[], at: Map<string, number>, todayX: number): number[] {
-  const xs = ids.map((id) => at.get(id));
-  return xs.map((x, i) => {
-    if (x !== undefined) return x;
-    let p = i - 1; while (p >= 0 && xs[p] === undefined) p--;
-    let n = i + 1; while (n < xs.length && xs[n] === undefined) n++;
-    const px = p >= 0 ? (xs[p] as number) : todayX;
-    const nx = n < xs.length ? (xs[n] as number) : todayX;
-    const pi = p; // 端は、一覧のすぐ外 (-1 と 行数) に、今日の線があるものとする
-    const ni = n;
-    return px + ((nx - px) * (i - pi)) / (ni - pi);
-  });
+export function boltXsFor(ids: string[], at: Map<string, number>, todayX: number): { xs: number[]; flat: boolean[] } {
+  return { xs: ids.map((id) => at.get(id) ?? todayX), flat: ids.map((id) => !at.has(id)) };
+}
+
+/** 稲妻線の折れ線の点 (行の番号 → x(%)、y は行の上端・中央・下端)。点のない行 (親) は、今日の線の上を縦に通る。 */
+export function boltPolyline(rowCount: number, points: { row: number; x: number }[], todayX: number, rowPx: number): string {
+  const at = new Map(points.map((p) => [p.row, p.x]));
+  const out = [`${todayX},0`];
+  for (let r = 0; r < rowCount; r++) {
+    const x = at.get(r);
+    if (x === undefined) out.push(`${todayX},${r * rowPx}`, `${todayX},${(r + 1) * rowPx}`);
+    else out.push(`${x},${r * rowPx + rowPx / 2}`);
+  }
+  out.push(`${todayX},${rowCount * rowPx}`);
+  return out.join(' ');
 }

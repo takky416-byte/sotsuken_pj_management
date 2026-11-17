@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
-import { boltXsFor, buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, weekTicks } from './gantt';
+import { boltPolyline, boltXsFor, buildGantt, daysBetween, lightning, nextDates, pct, placeMilestones, weekTicks } from './gantt';
 
 const t = (id: string, o: Partial<Task> = {}): Task => ({
   id, title: id, detail: '', parentId: null, depth: 1, order: 1, status: 'todo', assignees: [],
@@ -135,16 +135,14 @@ describe('buildGantt', () => {
   });
 });
 
-describe('boltXsFor (一覧の稲妻線)', () => {
-  test('点のない行 (親) は、隣の行の振れを引きつがず、前後の点をまっすぐつなぐ', () => {
-    const at = new Map([['a', 80], ['c', 40]]);
-    expect(boltXsFor(['a', 'P', 'c'], at, 50)).toEqual([80, 60, 40]);
+describe('boltXsFor・boltPolyline (稲妻線が、親の行を斜めに突き抜けない)', () => {
+  test('一覧: 点のない行 (親) は、今日の線の上で、縦に通す (flat)', () => {
+    const r = boltXsFor(['a', 'P', 'c'], new Map([['a', 80], ['c', 40]]), 50);
+    expect(r.xs).toEqual([80, 50, 40]);
+    expect(r.flat).toEqual([false, true, false]);
   });
-  test('点のない行が続くときは、等間隔。先頭・末尾は、今日の線 (todayX) から', () => {
-    const at = new Map([['a', 30]]);
-    expect(boltXsFor(['P', 'a', 'Q', 'R'], at, 60)).toEqual([45, 30, 40, 50]);
-  });
-  test('点が1つもなければ、すべて今日の線', () => {
-    expect(boltXsFor(['P', 'Q'], new Map(), 50)).toEqual([50, 50]);
+  test('ガントチャート: 親の行は、行の上端から下端まで、今日の線の上を縦に通る。斜めの折れは、葉の行の中だけ', () => {
+    const pts = boltPolyline(3, [{ row: 0, x: 80 }, { row: 2, x: 40 }], 50, 30);
+    expect(pts).toBe('50,0 80,15 50,30 50,60 40,75 50,90');
   });
 });
