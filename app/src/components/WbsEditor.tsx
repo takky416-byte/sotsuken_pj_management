@@ -133,7 +133,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
         </div>
       )}
       {g && rows.length > 0 && (
-        <label className="check wbs-bolt-toggle"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する<span className="hint">(今日の線より左は、予定の期間に入っているのに未着手、右は、予定より早く着手・完了したタスク)</span></label>
+        <label className="check wbs-bolt-toggle"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する<span className="hint">(今日の線より左は、予定の期間に入っているのに未着手、または終了予定日を過ぎても完了していない、右は、予定より早く着手・完了したタスク)</span></label>
       )}
       {tasks.some((t) => !t.deleted) && (
         <div className="row wbs-tools">

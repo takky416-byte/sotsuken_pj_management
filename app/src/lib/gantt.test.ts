@@ -88,7 +88,7 @@ describe('buildGantt', () => {
       t('earlystart', { parentId: 'P', depth: 2, startDate: '2026-11-16', endDate: '2026-11-25', status: 'doing' }), // 予定の開始より早く着手
       t('doing', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-20', status: 'doing' }),
       t('late', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-10', status: 'todo' }), // 始まっているはずが未着手
-      t('overdue', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'doing' }), // 期限超過でも、進行中は今日の線の上
+      t('overdue', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'doing' }), // 終了予定日を過ぎても進行中 → 左
       t('done', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-05', status: 'done' }), // 期限内に完了
       t('early', { parentId: 'P', depth: 2, startDate: '2026-11-08', endDate: '2026-11-18', status: 'done' }), // 予定より早く完了
       t('earlyfuture', { parentId: 'P', depth: 2, startDate: '2026-11-15', endDate: '2026-11-20', status: 'done' }), // まだ始まる前の予定が、完了
@@ -101,9 +101,19 @@ describe('buildGantt', () => {
     const pts = lightning(g, today, 2, parents);
     const at = (id: string) => pts.find((p) => p.row === g.rows.findIndex((r) => r.task.id === id))!;
 
-    test('左に折れるのは、予定の期間に入っているのに未着手のタスクだけ', () => {
+    test('左に折れるのは、予定の期間に入っているのに未着手のタスクと、終了予定日を過ぎても完了していない進行中のタスク', () => {
       expect(at('late').days).toBeLessThan(-8);
       expect(at('late').x).toBeLessThan(at('nodate').x);
+      expect(at('overdue').days).toBe(-4); // 11/5 の終わり (=11/6 の始まり) から、今日 11/10 まで
+      expect(at('overdue').x).toBeLessThan(at('nodate').x);
+    });
+    test('終了予定日が昨日なら、棒の右端が今日の線に着くので、まだ左には出ない。2日過ぎると1日ぶん左へ', () => {
+      const ts = [t('P'), t('y', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-09', status: 'doing' }), t('z', { parentId: 'P', depth: 2, startDate: '2026-11-01', endDate: '2026-11-08', status: 'doing' })];
+      const g2 = buildGantt(ts, [], today);
+      const pts2 = lightning(g2, today, 2, (id) => id === 'P');
+      const d = (id: string) => pts2.find((p) => p.row === g2.rows.findIndex((r) => r.task.id === id))!.days;
+      expect(d('y')).toBe(0);
+      expect(d('z')).toBe(-1);
     });
     test('予定の開始日より前に着手していれば、右に折れる', () => {
       expect(at('earlystart').days).toBeGreaterThan(5); // 11/16 の始まりまで
@@ -114,8 +124,8 @@ describe('buildGantt', () => {
       expect(at('earlyfuture').days).toBeGreaterThan(at('early').days);
       expect(at('early').x).toBeGreaterThan(at('nodate').x);
     });
-    test('進行中・保留・期限内に完了・日付なし・まだ始まっていない未着手は、今日の線の上', () => {
-      for (const id of ['doing', 'overdue', 'done', 'hold', 'future', 'nodate']) expect(at(id).days).toBe(0);
+    test('期間内の進行中・保留・期限内に完了・日付なし・まだ始まっていない未着手は、今日の線の上', () => {
+      for (const id of ['doing', 'done', 'hold', 'future', 'nodate']) expect(at(id).days).toBe(0);
       expect(at('doing').x).toBeCloseTo(at('nodate').x);
     });
     test('子が表示されている親の行には、点を打たない (子を出さないときは、親に打つ)', () => {
