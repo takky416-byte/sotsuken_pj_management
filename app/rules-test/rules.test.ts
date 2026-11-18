@@ -595,6 +595,8 @@ describe('報告書に載せる文章 (reportNotes。チームの学生と教員
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summaryAt: 'きのう' }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ by: 'A2' }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ x: 1 }) }));
+    // 日本語で、ちょうど1000文字までは書ける (文字数で数える。バイト数ではない)
+    await assertSucceeds(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 'あ'.repeat(1000), issues: '改\n行'.repeat(333), next: '' }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 'あ'.repeat(1001) }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes({ summary: 1 }) }));
     await assertFails(updateDoc(doc(as(A1), 'teams/A'), { reportNotes: notes(), projectName: '書き換え' }));

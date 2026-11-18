@@ -17,27 +17,43 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
   const n = team.reportNotes;
   // 以前の保存にある「今後の方針」(next) は、「課題と今後の予定」(issues) に統合して見せる
   const base = { summary: n?.summary ?? '', issues: [n?.issues, n?.next].filter((x) => x && x.trim()).join('\n'), next: '' };
-  const [v, setV] = useState(base);
+  // 自分が書き換えた欄だけを、下書き (draft) に持つ。触っていない欄は、保存されている最新の内容に追いつく
+  // (ほかの人が保存した内容を、開きっぱなしの古い文章で、上書きしてしまわないため)
+  const [draft, setDraft] = useState<{ summary?: string; issues?: string }>({});
+  const v = { summary: draft.summary ?? base.summary, issues: draft.issues ?? base.issues, next: '' };
   const missingSummary = !(n?.summary ?? '').trim();
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const dirty = v.summary !== base.summary || v.issues !== base.issues;
+  const tooLong = v.summary.length > MAX || v.issues.length > MAX;
+  // 保存の直前に、いちばん新しい内容を読む (古い画面のまま保存しない)
+  const latest = useRef({ v, n, dirty, tooLong, teamId: team.id, actor });
+  latest.current = { v, n, dirty, tooLong, teamId: team.id, actor };
   const save = async () => {
+    const c = latest.current;
+    if (c.tooLong) return;
     setState('saving'); setErr('');
-    try { await saveReportNotes(team.id, actor, v, n); setState('saved'); }
+    try { await saveReportNotes(c.teamId, c.actor, c.v, c.n); setState('saved'); }
     catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); setState('idle'); }
   };
-  // 書きかけは、手を止めて少しすると自動で保存する。画面を離れるとき・閉じるときにも、保存する (書いた文章を失わない)
-  const latest = useRef({ v, n, dirty, teamId: team.id, actor });
-  latest.current = { v, n, dirty, teamId: team.id, actor };
+  // 保存された内容が、自分の下書きと同じになったら、下書きを手放す (その後は、ほかの人の保存にも追いつく)
   useEffect(() => {
-    if (!dirty || ro) return undefined;
+    setDraft((d) => {
+      const next = { ...d };
+      if (next.summary !== undefined && next.summary === base.summary) delete next.summary;
+      if (next.issues !== undefined && next.issues === base.issues) delete next.issues;
+      return Object.keys(next).length === Object.keys(d).length ? d : next;
+    });
+  }, [base.summary, base.issues]);
+  // 書きかけは、手を止めて少しすると自動で保存する。画面を離れるとき・閉じるときにも、保存する (書いた文章を失わない)
+  useEffect(() => {
+    if (!dirty || ro || tooLong) return undefined;
     const t = setTimeout(() => { void save(); }, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [v.summary, v.issues, dirty]);
+  }, [v.summary, v.issues, dirty, tooLong]);
   useEffect(() => {
-    const flush = () => { const c = latest.current; if (c.dirty && !ro) void saveReportNotes(c.teamId, c.actor, c.v, c.n).catch(() => undefined); };
+    const flush = () => { const c = latest.current; if (c.dirty && !ro && !c.tooLong) void saveReportNotes(c.teamId, c.actor, c.v, c.n).catch(() => undefined); };
     window.addEventListener('beforeunload', flush);
     return () => { window.removeEventListener('beforeunload', flush); flush(); };
   }, []);
@@ -49,16 +65,17 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
         <label key={f.key}>{f.label} <span className="hint">{f.hint}</span>
           {n?.[`${f.key}At`] && n[f.key] === v[f.key] && <span className="hint"> 記入日: {fmtDate(n[`${f.key}At`] as number)}(報告書に出ます)</span>}
           <textarea rows={3} maxLength={MAX} value={v[f.key]} aria-label={f.label} readOnly={ro}
-            onChange={(e) => { setV({ ...v, [f.key]: e.target.value }); setState('idle'); }} />
+            onChange={(e) => { const val = e.target.value; setDraft((d) => ({ ...d, [f.key]: val })); setState('idle'); }} />
         </label>
       ))}
       {!ro && <div className="row">
-        <button type="button" disabled={!dirty || state === 'saving'} onClick={save}>{state === 'saving' ? '保存中…' : '今すぐ保存'}</button>
+        <button type="button" disabled={!dirty || tooLong || state === 'saving'} onClick={save}>{state === 'saving' ? '保存中…' : '今すぐ保存'}</button>
         {dirty && state !== 'saving' && <span className="hint">書いたあと、少しすると自動で保存します</span>}
         {state === 'saved' && !dirty && <span className="ok" role="status">保存しました</span>}
         {n && <span className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</span>}
       </div>}
       {ro && n && <p className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</p>}
+      {tooLong && <p className="error">各欄は1000字までです(概要 {v.summary.length}字 / 課題と今後の予定 {v.issues.length}字)。短くすると、保存できます。</p>}
       {err && <p className="error">{err}</p>}
     </details>
   );
