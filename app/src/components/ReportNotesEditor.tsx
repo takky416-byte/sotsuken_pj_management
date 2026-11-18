@@ -4,7 +4,7 @@ import { useReadOnly } from '../auth/ReadOnly';
 import { jstDate } from '../lib/dates';
 import type { Team } from '../types';
 
-const MAX = 1000;
+const MAX = 3000;
 const fmtDate = (ms: number) => jstDate(new Date(ms)).replace(/-/g, '/');
 const FIELDS = [
   { key: 'summary', label: '1. プロジェクトの概要', hint: '何を、誰のために、何のために作るか。キックオフで自動で作られた文章を、あとから直せます。' },
@@ -75,7 +75,7 @@ export function ReportNotesEditor({ team, actor }: { team: Team; actor: string }
         {n && <span className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</span>}
       </div>}
       {ro && n && <p className="hint">最終更新: {new Date(n.at).toLocaleString('ja-JP')}</p>}
-      {tooLong && <p className="error">各欄は1000字までです(概要 {v.summary.length}字 / 課題と今後の予定 {v.issues.length}字)。短くすると、保存できます。</p>}
+      {tooLong && <p className="error">各欄は3000字までです(概要 {v.summary.length}字 / 課題と今後の予定 {v.issues.length}字)。短くすると、保存できます。</p>}
       {err && <p className="error">{err}</p>}
     </details>
   );

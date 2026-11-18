@@ -4,6 +4,7 @@ import type { Milestone, Task, TaskStatus } from '../types';
 import type { ProjectAnalysis } from './analysis';
 import type { CompanyReport } from './companyReport';
 import { mdLabel, overlapsWeek, wbsRows, weekColumns } from './report';
+import { chunkText, wrappedLines } from './paraChunks';
 
 export type ReportInput = {
   teamId: string;
@@ -41,7 +42,17 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   const range = (st: string | null, en: string | null) => (st ? `${mdLabel(st)}${en && en !== st ? `〜${mdLabel(en)}` : ''}` : en ? mdLabel(en) : '');
   const s1 = wb.addWorksheet('報告書', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   s1.columns = [{ width: 30 }, { width: 24 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 30 }];
-  const para = (text: string, date = '') => { text = date ? `${text}\n(記入日: ${date.replace(/-/g, '/')})` : text;  const r = s1.addRow([safe(text)]); s1.mergeCells(r.number, 1, r.number, 6); r.getCell(1).alignment = { wrapText: true, vertical: 'top' }; r.height = Math.max(18, Math.ceil(text.length / 60) * 17 + (date ? 17 : 0)); };
+  // 長い文章は、行の高さの上限 (Excel は約409pt) に収まるよう、いくつかの行に分ける
+  const para = (text: string, date = '') => {
+    const chunks = chunkText(text, 60, 20);
+    if (date) chunks[chunks.length - 1] += `\n(記入日: ${date.replace(/-/g, '/')})`;
+    for (const c of chunks) {
+      const r = s1.addRow([safe(c)]);
+      s1.mergeCells(r.number, 1, r.number, 6);
+      r.getCell(1).alignment = { wrapText: true, vertical: 'top' };
+      r.height = Math.min(400, Math.max(18, wrappedLines(c, 60) * 17));
+    }
+  };
   const title = (t: string) => { s1.addRow([]); const r = s1.addRow([t]); r.font = { bold: true, size: 12 }; r.eachCell((x) => { x.border = { bottom: { style: 'medium', color: { argb: HEAD } } }; }); s1.mergeCells(r.number, 1, r.number, 6); };
   s1.addRow([safe(c.title)]).font = { bold: true, size: 16 };
   s1.addRow(['チーム', `${c.teamId}チーム`]);

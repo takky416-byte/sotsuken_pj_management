@@ -35,13 +35,13 @@ test.describe.serial('報告書に載せる文章の保存', () => {
     expect((await db().doc('teams/A').get()).data()?.reportNotes.summary).toBe('ほかの人の概要'); // 触っていない欄を、古い内容に戻さない
   });
 
-  test('旧い「課題」と「今後の方針」を合わせて1000字を超えるときは、保存を試さず、字数を知らせる', async ({ page }) => {
-    await db().doc('teams/A').update({ reportNotes: notes('概要', 'あ'.repeat(600), 'い'.repeat(600)) });
+  test('旧い「課題」と「今後の方針」を合わせて3000字を超えるときは、保存を試さず、字数を知らせる', async ({ page }) => {
+    await db().doc('teams/A').update({ reportNotes: notes('概要', 'あ'.repeat(1600), 'い'.repeat(1600)) });
     await login(page, 'teacher@trident.ac.jp');
     await page.goto('/teacher/report/A');
     await page.getByText('報告書に載せる文章').click();
     await page.getByLabel('1. プロジェクトの概要').fill('概要を少し直した');
-    await expect(page.getByText(/1000字まで/)).toBeVisible();
+    await expect(page.getByText(/3000字まで/)).toBeVisible();
     await expect(page.getByRole('button', { name: '今すぐ保存' })).toBeDisabled();
   });
 });

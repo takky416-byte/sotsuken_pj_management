@@ -23,9 +23,11 @@ var ReportCore = (() => {
   var gasReportCore_exports = {};
   __export(gasReportCore_exports, {
     buildTeamReport: () => buildTeamReport,
+    chunkText: () => chunkText,
     jstDate: () => jstDate,
     mdLabel: () => mdLabel,
-    overlapsWeek: () => overlapsWeek
+    overlapsWeek: () => overlapsWeek,
+    wrappedLines: () => wrappedLines
   });
 
   // src/lib/wbs.ts
@@ -301,6 +303,37 @@ var ReportCore = (() => {
       upcoming,
       missing
     };
+  }
+
+  // src/lib/paraChunks.ts
+  function wrappedLines(text, perLine) {
+    return text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
+  }
+  function chunkText(text, perLine, maxLines) {
+    const out = [];
+    let cur = [];
+    let used = 0;
+    const flush = () => {
+      if (cur.length > 0) {
+        out.push(cur.join("\n"));
+        cur = [];
+        used = 0;
+      }
+    };
+    for (const line of text.split("\n")) {
+      const parts = [];
+      const cap = perLine * maxLines;
+      if (line.length > cap) for (let i = 0; i < line.length; i += cap) parts.push(line.slice(i, i + cap));
+      else parts.push(line);
+      for (const p of parts) {
+        const need = Math.max(1, Math.ceil(p.length / perLine));
+        if (used + need > maxLines) flush();
+        cur.push(p);
+        used += need;
+      }
+    }
+    flush();
+    return out.length > 0 ? out : [""];
   }
 
   // src/types.ts

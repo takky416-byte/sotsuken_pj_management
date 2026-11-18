@@ -162,7 +162,12 @@ function writeReportSheet_(sh, c, showAssignees) {
     rows.push(r);
     if (kind) marks.push({ row: rows.length, kind: kind });
   };
-  var para = function (text, date) { add([date ? text + '\n(記入日: ' + date.replace(/-/g, '/') + ')' : text], 'para'); };
+  // 長い文章 (3000字まで) は、行の高さの上限に収まるよう、いくつかの行に分ける
+  var para = function (text, date) {
+    var chunks = ReportCore.chunkText(text, 40, 20);
+    if (date) chunks[chunks.length - 1] += '\n(記入日: ' + date.replace(/-/g, '/') + ')';
+    chunks.forEach(function (ch) { add([ch], 'para'); });
+  };
   var title = function (t) { add([]); add([t], 'title'); };
 
   add([c.title], 'big');
@@ -208,7 +213,7 @@ function writeReportSheet_(sh, c, showAssignees) {
     else if (m.kind === 'bold') line.setFontWeight('bold');
     else if (m.kind === 'title') { line.setFontWeight('bold').setFontSize(12).setBorder(null, null, true, null, null, null, PROGRESS_HEAD, SpreadsheetApp.BorderStyle.SOLID_MEDIUM); }
     else if (m.kind === 'head') line.setFontWeight('bold').setFontColor('#ffffff').setBackground(PROGRESS_HEAD).setHorizontalAlignment('center');
-    else if (m.kind === 'para') { line.merge().setWrap(true); sh.setRowHeight(m.row, Math.max(20, Math.ceil(String(rows[m.row - 1][0]).length / 40) * 18 + 6)); }
+    else if (m.kind === 'para') { line.merge().setWrap(true); sh.setRowHeight(m.row, Math.min(600, Math.max(20, ReportCore.wrappedLines(String(rows[m.row - 1][0]), 40) * 18 + 6))); }
   });
 }
 

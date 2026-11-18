@@ -5,6 +5,7 @@ import type { Milestone, Task, Team } from '../types';
 import { analyze } from './analysis';
 import { buildCompanyReport } from './companyReport';
 import { jstDate } from './dates';
+import { chunkText, wrappedLines } from './paraChunks';
 import { mdLabel, overlapsWeek, wbsRows, weekColumns } from './report';
 
 /** 1チームぶんの、報告書の中身 (報告書シート・WBSシート・ガントチャートシートの元になるデータ) */
@@ -19,4 +20,4 @@ export function buildTeamReport(
   return { company, rows, weeks, analysis: analyze(tasks, milestones, team.members, today) };
 }
 
-export { jstDate, mdLabel, overlapsWeek };
+export { chunkText, jstDate, mdLabel, overlapsWeek, wrappedLines };
