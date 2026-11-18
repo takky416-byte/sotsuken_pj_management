@@ -11,7 +11,7 @@ const NOW = Date.parse('2026-11-18T03:00:00Z');
 const team = { id: 'A', projectName: '企画A', members: [{ sid: 'A1', name: '甲' }, { sid: 'A2', name: '乙' }], kickoffAt: Date.parse('2026-10-28T03:00:00Z') };
 const tasks = [
   T('設計'), T('画面を描く', { parentId: '設計', depth: 2, status: 'done', assignees: ['A1'], startDate: '2026-11-01', endDate: '2026-11-10', updatedAt: NOW }),
-  T('古い完了', { parentId: '設計', depth: 2, status: 'done', startDate: '2026-10-30', endDate: '2026-11-02', updatedAt: Date.parse('2026-10-31T00:00:00Z') }),
+  T('古い完了', { parentId: '設計', depth: 2, status: 'done', startDate: '2026-10-30', endDate: '2026-11-02', updatedAt: Date.parse('2026-10-10T00:00:00Z') }),
   T('遅れている', { parentId: '設計', depth: 2, status: 'doing', assignees: ['A2'], startDate: '2026-11-05', endDate: '2026-11-12' }),
   T('来週やる', { parentId: '設計', depth: 2, startDate: '2026-11-23', endDate: '2026-11-27' }),
   T('ずっと先', { parentId: '設計', depth: 2, startDate: '2027-01-10', endDate: '2027-01-20' }),
@@ -37,7 +37,7 @@ describe('buildCompanyReport', () => {
     expect(r.members).toEqual(['甲', '乙']);
     expect(r.summary).toBe('概要です');
   });
-  test('直近の実績は、2週間以内に完了したものだけ。工程名つき', () => {
+  test('直近の実績は、過去1か月 (30日) 以内に完了したものだけ。工程名つき', () => {
     expect(r.recent.map((x) => x.title)).toContain('画面を描く');
     expect(r.recent.map((x) => x.title)).not.toContain('古い完了');
     expect(r.recent[0].phase).toBe('設計');
@@ -51,6 +51,15 @@ describe('buildCompanyReport', () => {
     expect(y.doneBy).toBe(team.members.find((m) => m.sid === 'A2')?.name ?? '');
     const t3 = tasks.map((t) => (t.title === '画面を描く' ? { ...t, updatedBy: 'teacher' } : t));
     expect(buildCompanyReport(team, t3, ms, undefined, TODAY).recent.find((t) => t.title === '画面を描く')!.doneBy).toBe('');
+  });
+  test('直近の実績の範囲: 30日前まで入り、31日前は入らない。10件を超えても30件まで載る', () => {
+    const day = 86400000;
+    const mk = (id: string, daysAgo: number) => T(id, { parentId: '設計', depth: 2, status: 'done', updatedAt: Date.parse('2026-11-20T03:00:00Z') - daysAgo * day });
+    const ts = [T('設計'), mk('ちょうど30日前', 30), mk('31日前', 31), ...Array.from({ length: 14 }, (_, i) => mk(`k${i}`, 1 + i))];
+    const rr = buildCompanyReport(team, ts, ms, undefined, TODAY).recent.map((x) => x.title);
+    expect(rr).toContain('ちょうど30日前');
+    expect(rr).not.toContain('31日前');
+    expect(rr.length).toBe(15);
   });
   test('遅れているタスクと、4週間以内の予定', () => {
     expect(r.overdue.map((x) => x.title)).toEqual(['遅れている']);

@@ -74,7 +74,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
       </section>
 
       <section>
-        <h2>5. 直近の実績(過去2週間に完了したタスク)</h2>
+        <h2>5. 直近の実績(過去1か月に完了したタスク)</h2>
         {r.recent.length === 0 ? none : <ul>{r.recent.map((t) => <li key={t.title + t.phase}>{t.title}<span className="cr-phase">({t.phase})</span>{showAssignees && (t.assignees.length > 0 || t.doneBy) && <span className="cr-phase"> 担当: {t.assignees.join('・') || '—'}{t.doneBy ? ` / 完了: ${t.doneBy}` : ''}</span>}</li>)}</ul>}
       </section>
 

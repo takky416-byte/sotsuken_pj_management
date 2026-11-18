@@ -36,9 +36,10 @@ export type CompanyReport = {
   missing: ('summary' | 'issues')[];
 };
 
-const RECENT_DAYS = 14;
+const RECENT_DAYS = 30; // 過去1か月
 const UPCOMING_DAYS = 28;
 const MAX_LIST = 10;
+const MAX_RECENT = 30; // 1か月ぶんは、10件では足りないことがある
 
 /**
  * プロジェクトの概要の初期の文章。キックオフで、初期WBSと同時に作る (あとから、チームが直せる)。
@@ -73,7 +74,7 @@ export function buildCompanyReport(
   const judgement: Judgement = a.total - a.hold <= 0 ? '集計中' : a.gap <= -15 ? '遅れ' : a.gap < -5 ? 'やや遅れ' : '順調';
   const recent = leaves
     .filter((t) => t.status === 'done' && dayOf(t.updatedAt) >= addDays(today, -RECENT_DAYS))
-    .sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => ({
+    .sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_RECENT).map((t) => ({
       title: t.title, phase: phaseOf(t),
       assignees: (t.assignees ?? []).map((sid) => nameOf.get(sid) ?? '').filter(Boolean),
       doneBy: nameOf.get(t.updatedBy) ?? '',

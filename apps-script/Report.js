@@ -182,7 +182,7 @@ function writeReportSheet_(sh, c, showAssignees) {
   c.phases.forEach(function (p) { add([p.title, range_(p.start, p.end), p.done, p.total, p.pct + '%', p.state]); });
   title('3. ガントチャート / 4. WBS');
   add(['シート「ガントチャート」と、シート「WBS」を参照してください。']);
-  title('5. 直近の実績(過去2週間に完了したタスク)');
+  title('5. 直近の実績(過去1か月に完了したタスク)');
   if (c.recent.length === 0) add(['(特記事項なし)']);
   c.recent.forEach(function (t) {
     add(showAssignees ? [t.title, t.phase, t.assignees.length > 0 ? '担当: ' + t.assignees.join('・') : '', t.doneBy ? '完了: ' + t.doneBy : ''] : [t.title, t.phase]);

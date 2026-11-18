@@ -222,9 +222,10 @@ var ReportCore = (() => {
   }
 
   // src/lib/companyReport.ts
-  var RECENT_DAYS = 14;
+  var RECENT_DAYS = 30;
   var UPCOMING_DAYS = 28;
   var MAX_LIST = 10;
+  var MAX_RECENT = 30;
   var REPORT_TITLE = "\u5352\u696D\u7814\u7A76\u5236\u4F5C \u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u9032\u6357\u5831\u544A\u66F8";
   function buildCompanyReport(team, tasks, milestones, notes, today = jstDate()) {
     const live = tasks.filter((t) => !t.deleted);
@@ -241,7 +242,7 @@ var ReportCore = (() => {
     const nameOf = new Map(team.members.map((m) => [m.sid, m.name]));
     const dayOf2 = (ms) => Number.isFinite(ms) ? jstDate(new Date(ms)) : "";
     const judgement = a.total - a.hold <= 0 ? "\u96C6\u8A08\u4E2D" : a.gap <= -15 ? "\u9045\u308C" : a.gap < -5 ? "\u3084\u3084\u9045\u308C" : "\u9806\u8ABF";
-    const recent = leaves.filter((t) => t.status === "done" && dayOf2(t.updatedAt) >= addDays(today, -RECENT_DAYS)).sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => {
+    const recent = leaves.filter((t) => t.status === "done" && dayOf2(t.updatedAt) >= addDays(today, -RECENT_DAYS)).sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_RECENT).map((t) => {
       var _a, _b;
       return {
         title: t.title,

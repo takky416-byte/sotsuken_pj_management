@@ -60,7 +60,7 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   for (const p of c.phases) s1.addRow([safe(p.title), range(p.start, p.end), p.done, p.total, `${p.pct}%`, p.state]);
   title('3. ガントチャート / 4. WBS');
   s1.addRow(['シート「ガントチャート」と、シート「WBS」を参照してください。']);
-  title('5. 直近の実績(過去2週間に完了したタスク)');
+  title('5. 直近の実績(過去1か月に完了したタスク)');
   if (c.recent.length === 0) s1.addRow(['(特記事項なし)']);
   for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase), ...(input.showAssignees ? [safe(t.assignees.length > 0 ? `担当: ${t.assignees.join('・')}` : ''), safe(t.doneBy ? `完了: ${t.doneBy}` : '')] : [])]);
   title('6. 課題と今後の予定');
