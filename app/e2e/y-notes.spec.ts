@@ -35,6 +35,26 @@ test.describe.serial('報告書に載せる文章の保存', () => {
     expect((await db().doc('teams/A').get()).data()?.reportNotes.summary).toBe('ほかの人の概要'); // 触っていない欄を、古い内容に戻さない
   });
 
+  test('書いている途中に、ほかの人が同じ欄を保存したら、黙って上書きしない。選んで、切り替えるか上書きできる', async ({ page }) => {
+    await db().doc('teams/A').update({ reportNotes: notes('概要', '元の課題') });
+    await login(page, 'teacher@trident.ac.jp');
+    await page.goto('/teacher/report/A');
+    await page.getByText('報告書に載せる文章').click();
+    const iss = page.getByLabel('6. 課題と今後の予定');
+    await iss.fill('自分の書きかけ');
+    await db().doc('teams/A').update({ reportNotes: notes('概要', 'ほかの人が先に保存した課題') });
+    await expect(page.getByRole('alert')).toContainText('ほかの人が同じ欄を保存しました');
+    await page.waitForTimeout(3500);
+    expect((await db().doc('teams/A').get()).data()?.reportNotes.issues).toBe('ほかの人が先に保存した課題'); // 自動保存で上書きされない
+    await page.getByRole('button', { name: '最新の内容に切り替える(自分の文章は消えます)' }).click();
+    await expect(iss).toHaveValue('ほかの人が先に保存した課題');
+    await iss.fill('もう一度書いた');
+    await db().doc('teams/A').update({ reportNotes: notes('概要', '三人目の課題') });
+    await expect(page.getByRole('alert')).toBeVisible();
+    await page.getByRole('button', { name: '自分の文章で上書きする' }).click();
+    await expect.poll(async () => (await db().doc('teams/A').get()).data()?.reportNotes.issues, { timeout: 8000 }).toBe('もう一度書いた');
+  });
+
   test('旧い「課題」と「今後の方針」を合わせて3000字を超えるときは、保存を試さず、字数を知らせる', async ({ page }) => {
     await db().doc('teams/A').update({ reportNotes: notes('概要', 'あ'.repeat(1600), 'い'.repeat(1600)) });
     await login(page, 'teacher@trident.ac.jp');
