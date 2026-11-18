@@ -75,7 +75,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
 
       <section>
         <h2>5. 直近の実績(過去2週間に完了したタスク)</h2>
-        {r.recent.length === 0 ? none : <ul>{r.recent.map((t) => <li key={t.title + t.phase}>{t.title}<span className="cr-phase">({t.phase})</span></li>)}</ul>}
+        {r.recent.length === 0 ? none : <ul>{r.recent.map((t) => <li key={t.title + t.phase}>{t.title}<span className="cr-phase">({t.phase})</span>{showAssignees && (t.assignees.length > 0 || t.doneBy) && <span className="cr-phase"> 担当: {t.assignees.join('・') || '—'}{t.doneBy ? ` / 完了: ${t.doneBy}` : ''}</span>}</li>)}</ul>}
       </section>
 
       <section>
@@ -95,7 +95,7 @@ export function CompanyReportDoc({ r, rows, teamId, members, showAssignees }: {
             </table>
           </>
         )}
-        {r.issuesText ? <><p className="cr-text">{r.issuesText}</p>{wrote(r.issuesDate)}</> : r.overdue.length === 0 && r.upcoming.length === 0 ? none : <p className="cr-none">(課題への対応と今後の方針を記入してください)</p>}
+        {r.issuesText ? <><p className="cr-text">{r.issuesText}</p>{wrote(r.issuesDate)}</> : r.overdue.length === 0 && r.upcoming.length === 0 ? none : null}
       </section>
     </article>
   );

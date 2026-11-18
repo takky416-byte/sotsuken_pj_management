@@ -42,6 +42,16 @@ describe('buildCompanyReport', () => {
     expect(r.recent.map((x) => x.title)).not.toContain('古い完了');
     expect(r.recent[0].phase).toBe('設計');
   });
+  test('直近の実績に、担当と、完了にした人 (メンバーのときだけ) が付く', () => {
+    const x = r.recent.find((t) => t.title === '画面を描く')!;
+    expect(Array.isArray(x.assignees)).toBe(true);
+    expect(typeof x.doneBy).toBe('string');
+    const t2 = tasks.map((t) => (t.title === '画面を描く' ? { ...t, assignees: ['A1', 'A2'], updatedBy: 'A2' } : t));
+    const y = buildCompanyReport(team, t2, ms, undefined, TODAY).recent.find((t) => t.title === '画面を描く')!;
+    expect(y.doneBy).toBe(team.members.find((m) => m.sid === 'A2')?.name ?? '');
+    const t3 = tasks.map((t) => (t.title === '画面を描く' ? { ...t, updatedBy: 'teacher' } : t));
+    expect(buildCompanyReport(team, t3, ms, undefined, TODAY).recent.find((t) => t.title === '画面を描く')!.doneBy).toBe('');
+  });
   test('遅れているタスクと、4週間以内の予定', () => {
     expect(r.overdue.map((x) => x.title)).toEqual(['遅れている']);
     expect(r.upcoming.map((x) => x.title)).toContain('来週やる');

@@ -238,9 +238,21 @@ var ReportCore = (() => {
     };
     const leaves = live.filter((t) => isLeaf(live, t) && !isPlaceholder(live, t) && t.id !== ADHOC_ROOT_ID);
     const open = leaves.filter((t) => t.status !== "done" && t.status !== "hold");
+    const nameOf = new Map(team.members.map((m) => [m.sid, m.name]));
     const dayOf2 = (ms) => Number.isFinite(ms) ? jstDate(new Date(ms)) : "";
     const judgement = a.total - a.hold <= 0 ? "\u96C6\u8A08\u4E2D" : a.gap <= -15 ? "\u9045\u308C" : a.gap < -5 ? "\u3084\u3084\u9045\u308C" : "\u9806\u8ABF";
-    const recent = leaves.filter((t) => t.status === "done" && dayOf2(t.updatedAt) >= addDays(today, -RECENT_DAYS)).sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => ({ title: t.title, phase: phaseOf(t) }));
+    const recent = leaves.filter((t) => t.status === "done" && dayOf2(t.updatedAt) >= addDays(today, -RECENT_DAYS)).sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => {
+      var _a, _b;
+      return {
+        title: t.title,
+        phase: phaseOf(t),
+        assignees: ((_a = t.assignees) != null ? _a : []).map((sid) => {
+          var _a2;
+          return (_a2 = nameOf.get(sid)) != null ? _a2 : "";
+        }).filter(Boolean),
+        doneBy: (_b = nameOf.get(t.updatedBy)) != null ? _b : ""
+      };
+    });
     const horizon = addDays(today, UPCOMING_DAYS);
     const upcoming = open.filter((t) => {
       var _a, _b, _c;

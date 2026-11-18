@@ -143,7 +143,7 @@ function writeReportSheets_(ss, data, showAssignees) {
   var s1 = ss.getSheets()[0].setName('報告書');
   var s2 = ss.insertSheet('WBS');
   var s3 = ss.insertSheet('ガントチャート');
-  writeReportSheet_(s1, data.company);
+  writeReportSheet_(s1, data.company, showAssignees);
   writeWbsSheet_(s2, data.rows, showAssignees);
   writeGanttSheet_(s3, data.rows, data.weeks, data.company.today, showAssignees);
 }
@@ -153,7 +153,7 @@ function range_(st, en) {
   return en ? ReportCore.mdLabel(en) : '';
 }
 
-function writeReportSheet_(sh, c) {
+function writeReportSheet_(sh, c, showAssignees) {
   var COLS = 6;
   var rows = [];
   var marks = []; // { row, kind }
@@ -184,7 +184,9 @@ function writeReportSheet_(sh, c) {
   add(['シート「ガントチャート」と、シート「WBS」を参照してください。']);
   title('5. 直近の実績(過去2週間に完了したタスク)');
   if (c.recent.length === 0) add(['(特記事項なし)']);
-  c.recent.forEach(function (t) { add([t.title, t.phase]); });
+  c.recent.forEach(function (t) {
+    add(showAssignees ? [t.title, t.phase, t.assignees.length > 0 ? '担当: ' + t.assignees.join('・') : '', t.doneBy ? '完了: ' + t.doneBy : ''] : [t.title, t.phase]);
+  });
   title('6. 課題と今後の予定');
   if (c.overdue.length > 0) {
     add(['計画より遅れているタスク'], 'bold');
@@ -197,7 +199,6 @@ function writeReportSheet_(sh, c) {
   }
   if (c.issuesText) para(c.issuesText, c.issuesDate);
   else if (c.overdue.length === 0 && c.upcoming.length === 0) add(['(特記事項なし)']);
-  else add(['(課題への対応と今後の方針を記入してください)']);
 
   sh.getRange(1, 1, rows.length, COLS).setValues(rows).setVerticalAlignment('top');
   [210, 170, 110, 100, 100, 210].forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });

@@ -25,7 +25,8 @@ export type CompanyReport = {
   actualPct: number;
   counts: { total: number; done: number; doing: number; todo: number; hold: number };
   phases: { title: string; start: string | null; end: string | null; done: number; total: number; pct: number; state: string }[];
-  recent: { title: string; phase: string }[];
+  /** 直近に完了したタスク。assignees: 担当、doneBy: 完了にした人 (チームのメンバーのときだけ。先生が直したときは空) */
+  recent: { title: string; phase: string; assignees: string[]; doneBy: string }[];
   /** 計画より遅れているタスク (期限を過ぎて未完了) */
   overdue: { title: string; phase: string; end: string }[];
   /** 課題と今後の方針 (チームの文章) */
@@ -66,12 +67,17 @@ export function buildCompanyReport(
   };
   const leaves = live.filter((t) => isLeaf(live, t) && !isPlaceholder(live, t) && t.id !== ADHOC_ROOT_ID);
   const open = leaves.filter((t) => t.status !== 'done' && t.status !== 'hold');
+  const nameOf = new Map(team.members.map((m) => [m.sid, m.name]));
   const dayOf = (ms: number) => (Number.isFinite(ms) ? jstDate(new Date(ms)) : '');
 
   const judgement: Judgement = a.total - a.hold <= 0 ? '集計中' : a.gap <= -15 ? '遅れ' : a.gap < -5 ? 'やや遅れ' : '順調';
   const recent = leaves
     .filter((t) => t.status === 'done' && dayOf(t.updatedAt) >= addDays(today, -RECENT_DAYS))
-    .sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => ({ title: t.title, phase: phaseOf(t) }));
+    .sort((x, y) => y.updatedAt - x.updatedAt).slice(0, MAX_LIST).map((t) => ({
+      title: t.title, phase: phaseOf(t),
+      assignees: (t.assignees ?? []).map((sid) => nameOf.get(sid) ?? '').filter(Boolean),
+      doneBy: nameOf.get(t.updatedBy) ?? '',
+    }));
   const horizon = addDays(today, UPCOMING_DAYS);
   const upcoming = open
     .filter((t) => (t.startDate ?? t.endDate) !== null && (t.startDate ?? t.endDate as string) <= horizon && (t.endDate ?? t.startDate as string) >= today)

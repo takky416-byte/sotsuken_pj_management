@@ -55,7 +55,7 @@ export function ReportView({ team, actor }: { team: Team; actor: string }) {
       <div className="report-actions no-print">
         <button type="button" onClick={excel} disabled={busy}>{busy ? '作成中…' : 'Excelで保存(.xlsx)'}</button>
         <button type="button" className="ghost" onClick={() => window.print()}>PDFで保存(印刷)</button>
-        <label className="check"><input type="checkbox" checked={showAssignees} onChange={(e) => setShowAssignees(e.target.checked)} />WBSに担当者名を載せる</label>
+        <label className="check"><input type="checkbox" checked={showAssignees} onChange={(e) => setShowAssignees(e.target.checked)} />担当者名を載せる(WBS・直近の実績)</label>
         <span className="hint">企業に提出する報告書(下の「提出用の報告書」と同じ内容)が出ます。PDFは、印刷画面で「送信先: PDFに保存」を選びます(A4横)。報告書には、概要・進捗・ガントチャート・WBS・実績・課題と今後の予定が入ります(Excelは、報告書・WBS・ガントチャートの3シート)。下の「チームの分析」は、チーム内の振り返り用で、出力には入りません。</span>
       </div>
       <ReportNotesEditor team={team} actor={actor} />

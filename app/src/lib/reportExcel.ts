@@ -62,13 +62,12 @@ export async function buildReportWorkbook(input: ReportInput): Promise<Blob> {
   s1.addRow(['シート「ガントチャート」と、シート「WBS」を参照してください。']);
   title('5. 直近の実績(過去2週間に完了したタスク)');
   if (c.recent.length === 0) s1.addRow(['(特記事項なし)']);
-  for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase)]);
+  for (const t of c.recent) s1.addRow([safe(t.title), safe(t.phase), ...(input.showAssignees ? [safe(t.assignees.length > 0 ? `担当: ${t.assignees.join('・')}` : ''), safe(t.doneBy ? `完了: ${t.doneBy}` : '')] : [])]);
   title('6. 課題と今後の予定');
   if (c.overdue.length > 0) { s1.addRow(['計画より遅れているタスク']).font = { bold: true }; for (const t of c.overdue) s1.addRow([safe(t.title), safe(t.phase), `予定 ${mdLabel(t.end)}`]); }
   if (c.upcoming.length > 0) { s1.addRow(['今後4週間の予定']).font = { bold: true }; head(s1.addRow(['タスク', '工程', '期間', '', '', ''])); for (const t of c.upcoming) s1.addRow([safe(t.title), safe(t.phase), range(t.start, t.end)]); }
   if (c.issuesText) para(c.issuesText, c.issuesDate);
   else if (c.overdue.length === 0 && c.upcoming.length === 0) s1.addRow(['(特記事項なし)']);
-  else s1.addRow(['(課題への対応と今後の方針を記入してください)']);
 
   // ── WBS
   const s2 = wb.addWorksheet('WBS', { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
