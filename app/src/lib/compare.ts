@@ -8,26 +8,31 @@ import type { TaskLog } from './taskLog';
 
 export type ShareKey = 'total' | 'wbs' | 'created' | 'completed' | 'daily' | 'access' | 'promises' | 'thanks';
 export const SHARE_LABEL: Record<ShareKey, string> = {
-  total: '総合(下のすべての指標の割合の平均)',
+  total: '総合(各指標の割合を、重みをつけて平均)',
   wbs: 'WBSを変更した日数(直接+作業ログ経由。1日に何件変えても1日)', created: 'タスクを追加した日数(1日に何件足しても1日)',
   completed: '完了にした回数', daily: '作業ログの提出数', access: 'アクセス日数', promises: 'ミーティングの約束を果たした数', thanks: 'ありがとうを送った数',
 };
 /** 総合に含める指標 (記録のないものは、数えない) */
 export const TOTAL_KEYS: Exclude<ShareKey, 'total'>[] = ['wbs', 'created', 'completed', 'daily', 'access', 'promises', 'thanks'];
+/** 総合の重み。大きいほど、総合に強く効く。0 は、総合に含めない。倍率なので、比だけが意味を持つ */
+export const TOTAL_WEIGHT: Record<Exclude<ShareKey, 'total'>, number> = {
+  wbs: 3, created: 3, completed: 2, daily: 3, access: 2, promises: 0, thanks: 0.5,
+};
 const valueOf = (r: Contribution, k: Exclude<ShareKey, 'total'>): number =>
   k === 'wbs' ? r.wbsDays : k === 'created' ? r.createdDays : k === 'completed' ? r.completed : k === 'daily' ? r.daily.submitted
     : k === 'promises' ? r.promises.done : k === 'thanks' ? r.thanksSent : r.access?.days ?? 0;
 
 /**
  * チーム全体を100%として、各メンバーの割合。合計が0のときは、全員 null (割合を出さない)。
- * 総合 (total): 各指標の割合を出して、記録のある指標だけで平均する (単位の違う数を、そのまま足さない)。value は、その割合 (%)。
+ * 総合 (total): 各指標の割合を出して、記録のある指標だけで、重み (TOTAL_WEIGHT) をかけて平均する (単位の違う数を、そのまま足さない)。value は、その割合 (%)。
  */
 export function shares(rows: Contribution[], key: ShareKey): { sid: string; name: string; value: number; pct: number | null }[] {
   if (key === 'total') {
-    const per = TOTAL_KEYS.map((k) => shares(rows, k)).filter((s) => s.some((x) => x.pct !== null));
+    const per = TOTAL_KEYS.filter((k) => TOTAL_WEIGHT[k] > 0).map((k) => ({ w: TOTAL_WEIGHT[k], s: shares(rows, k) })).filter((p) => p.s.some((x) => x.pct !== null));
+    const wsum = per.reduce((n, p) => n + p.w, 0);
     return rows.map((r, i) => {
       if (per.length === 0) return { sid: r.sid, name: r.name, value: 0, pct: null };
-      const avg = per.reduce((n, s) => n + (s[i].pct ?? 0), 0) / per.length;
+      const avg = per.reduce((n, p) => n + p.w * (p.s[i].pct ?? 0), 0) / wsum;
       return { sid: r.sid, name: r.name, value: Math.round(avg * 10) / 10, pct: avg };
     });
   }

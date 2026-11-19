@@ -9,13 +9,15 @@ const row = (sid: string, over: Partial<Contribution> = {}): Contribution => ({
 const at = (d: string) => Date.parse(`${d}T12:00:00+09:00`);
 
 describe('割合と偏り', () => {
-  test('総合: 各指標の割合の平均。記録のない指標は、数えない。単位の違う数を、そのまま足さない', () => {
-    const rows = [row('A1', { wbsDays: 3, createdDays: 1, daily: { submitted: 4, days: 4, noWork: 0 } }), row('A2', { wbsDays: 1, createdDays: 3, daily: { submitted: 4, days: 4, noWork: 0 } })];
-    const t = shares(rows, 'total'); // wbs 75/25、created 25/75、daily 50/50 (ほかは記録なし) → 平均 50/50
-    expect(t.map((x) => Math.round(x.pct as number))).toEqual([50, 50]);
-    const rows2 = [row('A1', { wbsDays: 9, completed: 9 }), row('A2', { wbsDays: 1, completed: 1 })];
-    expect(shares(rows2, 'total').map((x) => Math.round(x.pct as number))).toEqual([90, 10]);
+  test('総合: 各指標の割合を、重みをつけて平均する。記録のない指標は数えない。重み0の指標 (約束) は含めない', () => {
+    // wbs(重み3) 75/25、created(3) 25/75、daily(3) 50/50 → 平均 50/50。約束 (重み0) は、偏っていても影響しない
+    const rows = [row('A1', { wbsDays: 3, createdDays: 1, daily: { submitted: 4, days: 4, noWork: 0 }, promises: { done: 9, total: 9 } }), row('A2', { wbsDays: 1, createdDays: 3, daily: { submitted: 4, days: 4, noWork: 0 } })];
+    expect(shares(rows, 'total').map((x) => Math.round(x.pct as number))).toEqual([50, 50]);
+    // 完了(2) 90/10 と WBS(3) 10/90 → (2*90 + 3*10) / 5 = 42、(2*10 + 3*90) / 5 = 58
+    const rows2 = [row('A1', { completed: 9, wbsDays: 1 }), row('A2', { completed: 1, wbsDays: 9 })];
+    expect(shares(rows2, 'total').map((x) => Math.round(x.pct as number))).toEqual([42, 58]);
     expect(shares([row('A1'), row('A2')], 'total').map((x) => x.pct)).toEqual([null, null]);
+    expect(shares([row('A1', { promises: { done: 3, total: 3 } }), row('A2')], 'total').map((x) => x.pct)).toEqual([null, null]); // 約束だけの記録は、総合に出ない
   });
   test('WBSの割合は、変更した日数で数える。1日に大量に直した人(初期WBSの見直しなど)が、突出しない', () => {
     // A1: 初期WBSの見直しで、1日に50件。A2: 週に1回ずつ、5日にわたって1件。回数なら A1 が 91% だが、日数なら 1:5

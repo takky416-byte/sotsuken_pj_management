@@ -92,7 +92,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
           </label>
         </div>
         <ShareBars items={shares(rows, key)} asTotal={key === 'total'} />
-        <p className="hint">チーム全体を100%として、メンバーごとの割合です。人数で均等に分けた割合({rows.length > 0 ? Math.round(100 / rows.length) : 0}%)が目安の線です。{key === 'total' && '総合は、WBSの変更日・タスクの追加日・完了・作業ログの提出・アクセス日・約束・ありがとうの、それぞれの割合を平均したものです(記録のない指標は除きます)。'}</p>
+        <p className="hint">チーム全体を100%として、メンバーごとの割合です。人数で均等に分けた割合({rows.length > 0 ? Math.round(100 / rows.length) : 0}%)が目安の線です。{key === 'total' && '総合は、各指標の割合に重みをつけて平均したものです(重み: WBSの変更日3・タスクの追加日3・作業ログの提出3・完了2・アクセス日2・ありがとう0.5。約束は含めません。記録のない指標は除きます)。'}</p>
       </div>
       {data && (
         <div className="cmp-block">
