@@ -8,10 +8,10 @@ import type { TaskLog } from './taskLog';
 
 export type ShareKey = 'wbs' | 'completed' | 'daily' | 'access';
 export const SHARE_LABEL: Record<ShareKey, string> = {
-  wbs: 'WBSの変更(直接+作業ログ経由)', completed: '完了にした回数', daily: '作業ログの提出数', access: 'アクセス日数',
+  wbs: 'WBSを変更した日数(直接+作業ログ経由。1日に何件変えても1日)', completed: '完了にした回数', daily: '作業ログの提出数', access: 'アクセス日数',
 };
 const valueOf = (r: Contribution, k: ShareKey): number =>
-  k === 'wbs' ? r.wbsEdits + r.viaDaily : k === 'completed' ? r.completed : k === 'daily' ? r.daily.submitted : r.access?.days ?? 0;
+  k === 'wbs' ? r.wbsDays : k === 'completed' ? r.completed : k === 'daily' ? r.daily.submitted : r.access?.days ?? 0;
 
 /** チーム全体を100%として、各メンバーの割合。合計が0のときは、全員 null (割合を出さない)。 */
 export function shares(rows: Contribution[], key: ShareKey): { sid: string; name: string; value: number; pct: number | null }[] {
@@ -19,7 +19,7 @@ export function shares(rows: Contribution[], key: ShareKey): { sid: string; name
   return rows.map((r) => ({ sid: r.sid, name: r.name, value: valueOf(r, key), pct: total === 0 ? null : (valueOf(r, key) / total) * 100 }));
 }
 
-/** 偏り: いちばん多い人の割合 (WBSの変更)。2人未満、または記録がないときは null。 */
+/** 偏り: いちばん多い人の割合 (WBSを変更した日数)。2人未満、または記録がないときは null。 */
 export function skew(rows: Contribution[]): number | null {
   if (rows.length < 2) return null;
   const s = shares(rows, 'wbs');
@@ -34,7 +34,7 @@ export function weekStart(date: string): string {
 
 export type Weekly = { weeks: string[]; rows: { sid: string; name: string; counts: number[] }[]; max: number };
 
-/** メンバー × 週 の、動いた回数 (WBSの変更・作業ログの提出・アクセスした日)。 */
+/** メンバー × 週 の、動いた回数 (WBSを変更した日・作業ログの提出・アクセスした日。それぞれ、1日1回)。 */
 export function weeklyActivity(input: {
   members: { sid: string; name: string }[]; from: string; today: string;
   taskLogs: TaskLog[]; dailies: Daily[]; access: AccessLog[] | null;
@@ -46,7 +46,8 @@ export function weeklyActivity(input: {
   const rows = input.members.map((m) => {
     const counts = weeks.map(() => 0);
     const bump = (date: string) => { const i = idx(date); if (i >= 0 && date >= input.from && date <= input.today) counts[i]++; };
-    for (const l of input.taskLogs) if (l.by === m.sid) bump(jstDate(new Date(l.at)));
+    // WBSの変更は、1日に何件あっても1回 (初期WBSの見直しなど、まとめて直した日が、突出しないように)
+    for (const date of new Set(input.taskLogs.filter((l) => l.by === m.sid).map((l) => jstDate(new Date(l.at))))) bump(date);
     for (const d of input.dailies) if (d.sid === m.sid && (d.entries?.length ?? 0) > 0) bump(d.date);
     for (const a of input.access ?? []) if (a.sid === m.sid) bump(a.date);
     return { sid: m.sid, name: m.name, counts };

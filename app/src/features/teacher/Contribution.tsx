@@ -61,7 +61,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
         <StackTable className="facts">
           <thead>
             <tr>
-              <th>メンバー</th><th>作業ログ<br />提出/授業日</th><th>WBSを直接変更</th><th>作業ログ経由の更新</th><th>追加した<br />タスク</th><th>完了に<br />した回数</th>
+              <th>メンバー</th><th>作業ログ<br />提出/授業日</th><th>WBSを直接変更</th><th>作業ログ経由の更新</th><th>WBSを変更した<br />日数</th><th>追加した<br />タスク</th><th>完了に<br />した回数</th>
               <th>いまの担当<br />完了/全体</th><th>期限超過</th>{withAccess && <><th>アクセス日数</th><th>画面表示</th></>}<th>ありがとう<br />送/受</th><th>約束<br />果たした/全体</th><th>最後に動いた日</th>
             </tr>
           </thead>
@@ -70,7 +70,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
               <tr key={r.sid}>
                 <td><strong>{r.name}</strong></td>
                 <td>{rate(r.daily.submitted, r.daily.days)}{r.daily.noWork > 0 && <small> (作業なし {r.daily.noWork})</small>}</td>
-                <td>{r.wbsEdits}</td><td>{r.viaDaily}</td><td>{r.created}</td><td>{r.completed}</td>
+                <td>{r.wbsEdits}</td><td>{r.viaDaily}</td><td>{r.wbsDays}</td><td>{r.created}</td><td>{r.completed}</td>
                 <td>{rate(r.assigned.done, r.assigned.total)}</td>
                 <td>{r.overdue}</td>
                 {withAccess && <><td>{r.access?.days ?? '—'}</td><td>{r.access?.views ?? '—'}</td></>}
@@ -98,7 +98,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
         <div className="cmp-block">
           <strong>週ごとの動き</strong>
           <Heatmap weekly={data.weekly} withAccess={withAccess} />
-          <p className="hint">1週間に動いた回数(WBSの変更・作業ログの提出{withAccess ? '・アクセスした日' : ''})の多さを、色の濃さで示します。週は月曜はじまりです。</p>
+          <p className="hint">1週間に動いた回数(WBSを変更した日・作業ログの提出{withAccess ? '・アクセスした日' : ''})の多さを、色の濃さで示します。週は月曜はじまりです。</p>
         </div>
       )}
     </section>
@@ -192,7 +192,7 @@ function CompareTeams({ teams, period, withAccess }: { teams: Team[]; period: Pe
       <ul className="hint">
         <li>率は、メンバーの率の平均です(人数の違いに左右されません)。並び順はチーム名順で、順位ではありません。</li>
         <li>ハード系は機材の待ち時間があり、ソフト系とは作業の量や進み方が違います。数の差が、そのまま取り組みの差とは限りません。</li>
-        <li><strong>偏り</strong>は、WBSの変更のうち、いちばん多い人が占める割合です(均等なら 100÷人数 %)。高いときは、特定の人に作業が集まっている可能性があります。</li>
+        <li><strong>偏り</strong>は、WBSを変更した日数のうち、いちばん多い人が占める割合です(1日に何件直しても1日。初期WBSの見直しなど、まとめて直した人が突出しないようにしています)(均等なら 100÷人数 %)。高いときは、特定の人に作業が集まっている可能性があります。</li>
       </ul>
     </>
   );

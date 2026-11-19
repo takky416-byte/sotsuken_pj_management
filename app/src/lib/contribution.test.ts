@@ -30,6 +30,8 @@ describe('メンバーごとの関与・貢献', () => {
   test('変更履歴から、直接の編集・作業ログ経由・追加・完了を数える。期間より前は数えない', () => {
     const [a1, a2] = contributions(base());
     expect(a1).toMatchObject({ wbsEdits: 3, viaDaily: 1, created: 1, completed: 1 });
+    expect(a1.wbsDays).toBeGreaterThanOrEqual(1);
+    expect(a1.wbsDays).toBeLessThanOrEqual(a1.wbsEdits + a1.viaDaily); // 日数は、件数を超えない
     expect(a2).toMatchObject({ wbsEdits: 1, viaDaily: 0, created: 0, completed: 0 });
   });
   test('いまの担当は、保留を除いて、完了/全体', () => {
