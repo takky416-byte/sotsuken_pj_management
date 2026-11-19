@@ -43,7 +43,7 @@ function useTeamNumbers(team: Team, period: Period, withAccess: boolean) {
 /** チームの中の比較: 表・メンバーの割合(積み上げ棒)・週ごとの動き(ヒートマップ) */
 function TeamContribution({ team, period, withAccess }: { team: Team; period: Period; withAccess: boolean }) {
   const data = useTeamNumbers(team, period, withAccess);
-  const [key, setKey] = useState<ShareKey>('wbs');
+  const [key, setKey] = useState<ShareKey>('total');
   const rows = data?.rows ?? null;
   const from = data?.from ?? '';
   const today = data?.today ?? '';
@@ -61,7 +61,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
         <StackTable className="facts">
           <thead>
             <tr>
-              <th>メンバー</th><th>作業ログ<br />提出/授業日</th><th>WBSを直接変更</th><th>作業ログ経由の更新</th><th>WBSを変更した<br />日数</th><th>追加した<br />タスク</th><th>完了に<br />した回数</th>
+              <th>メンバー</th><th>作業ログ<br />提出/授業日</th><th>WBSを直接変更</th><th>作業ログ経由の更新</th><th>WBSを変更した<br />日数</th><th>タスクを追加した<br />日数</th><th>完了に<br />した回数</th>
               <th>いまの担当<br />完了/全体</th><th>期限超過</th>{withAccess && <><th>アクセス日数</th><th>画面表示</th></>}<th>ありがとう<br />送/受</th><th>約束<br />果たした/全体</th><th>最後に動いた日</th>
             </tr>
           </thead>
@@ -70,7 +70,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
               <tr key={r.sid}>
                 <td><strong>{r.name}</strong></td>
                 <td>{rate(r.daily.submitted, r.daily.days)}{r.daily.noWork > 0 && <small> (作業なし {r.daily.noWork})</small>}</td>
-                <td>{r.wbsEdits}</td><td>{r.viaDaily}</td><td>{r.wbsDays}</td><td>{r.created}</td><td>{r.completed}</td>
+                <td>{r.wbsEdits}</td><td>{r.viaDaily}</td><td>{r.wbsDays}</td><td>{r.createdDays}</td><td>{r.completed}</td>
                 <td>{rate(r.assigned.done, r.assigned.total)}</td>
                 <td>{r.overdue}</td>
                 {withAccess && <><td>{r.access?.days ?? '—'}</td><td>{r.access?.views ?? '—'}</td></>}
@@ -91,8 +91,8 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
             </select>
           </label>
         </div>
-        <ShareBars items={shares(rows, key)} />
-        <p className="hint">チーム全体を100%として、メンバーごとの割合です。人数で均等に分けた割合({rows.length > 0 ? Math.round(100 / rows.length) : 0}%)が目安の線です。</p>
+        <ShareBars items={shares(rows, key)} asTotal={key === 'total'} />
+        <p className="hint">チーム全体を100%として、メンバーごとの割合です。人数で均等に分けた割合({rows.length > 0 ? Math.round(100 / rows.length) : 0}%)が目安の線です。{key === 'total' && '総合は、WBSの変更日・タスクの追加日・完了・作業ログの提出・アクセス日・約束・ありがとうの、それぞれの割合を平均したものです(記録のない指標は除きます)。'}</p>
       </div>
       {data && (
         <div className="cmp-block">
@@ -106,7 +106,7 @@ function TeamContribution({ team, period, withAccess }: { team: Team; period: Pe
 }
 
 /** メンバーの割合の積み上げ(横棒)。均等な割合の位置に線を引く。 */
-function ShareBars({ items }: { items: { sid: string; name: string; value: number; pct: number | null }[] }) {
+function ShareBars({ items, asTotal = false }: { items: { sid: string; name: string; value: number; pct: number | null }[]; asTotal?: boolean }) {
   if (items.every((i) => i.pct === null)) return <p className="hint">この期間は、記録がありません。</p>;
   const even = 100 / items.length;
   return (
@@ -118,7 +118,7 @@ function ShareBars({ items }: { items: { sid: string; name: string; value: numbe
             <i className="share-fill" style={{ width: `${i.pct ?? 0}%` }} />
             <i className="share-even" style={{ left: `${even}%` }} />
           </span>
-          <span className="share-val">{i.value}<small> ({Math.round(i.pct ?? 0)}%)</small></span>
+          <span className="share-val">{asTotal ? `${Math.round(i.pct ?? 0)}%` : <>{i.value}<small> ({Math.round(i.pct ?? 0)}%)</small></>}</span>
         </li>
       ))}
     </ul>

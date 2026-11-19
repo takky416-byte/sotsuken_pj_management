@@ -24,6 +24,8 @@ export type Contribution = {
   wbsDays: number;
   /** 追加したタスクの数 */
   created: number;
+  /** タスクを追加した日数 (1日に何件足しても1日)。初期WBSで大量に足した人だけが、極端に多くならないよう、表にはこちらを出す */
+  createdDays: number;
   /** 状態を「完了」にした回数 */
   completed: number;
   /** いま担当のタスク (いちばん下の階層、保留を除く): 全体 / 完了 */
@@ -85,6 +87,7 @@ export function contributions(input: ContributionInput): Contribution[] {
       viaDaily: mine.length - direct.length,
       wbsDays: new Set(mine.map((l) => dayOf(l.at)).filter(Boolean)).size,
       created: mine.filter((l) => l.kind === 'create').reduce((n, l) => n + (l.taskId ? 1 : 0), 0),
+      createdDays: new Set(mine.filter((l) => l.kind === 'create' && l.taskId).map((l) => dayOf(l.at)).filter(Boolean)).size,
       completed: mine.filter((l) => l.changes.some((c) => c.field === 'status' && c.to === 'done')).length,
       assigned: { total: leaves.length, done: leaves.filter((t) => t.status === 'done').length },
       overdue: leaves.filter((t) => t.status !== 'done' && t.endDate !== null && t.endDate < today).length,
@@ -107,7 +110,7 @@ export function periodFrom(period: Period, today: string, kickoffAt: number | nu
   return kickoffAt ? dayOf(kickoffAt) : dailyStart;
 }
 
-const CSV_HEAD = ['チーム', '学籍番号', '名前', '作業ログ提出', '作業ログ対象日', '作業なしで提出', 'WBS直接編集', '作業ログ経由の更新', 'WBSを変更した日数', '追加したタスク', '完了にした回数', '担当タスク', '担当のうち完了', '期限超過', 'アクセス日数', '画面表示回数', 'ありがとう送信', 'ありがとう受信', '約束(果たした)', '約束(全体)', '最後に動いた日'];
+const CSV_HEAD = ['チーム', '学籍番号', '名前', '作業ログ提出', '作業ログ対象日', '作業なしで提出', 'WBS直接編集', '作業ログ経由の更新', 'WBSを変更した日数', '追加したタスク(件数)', 'タスクを追加した日数', '完了にした回数', '担当タスク', '担当のうち完了', '期限超過', 'アクセス日数', '画面表示回数', 'ありがとう送信', 'ありがとう受信', '約束(果たした)', '約束(全体)', '最後に動いた日'];
 
 const cell = (v: string | number): string => {
   const s = String(v);
@@ -119,7 +122,7 @@ const cell = (v: string | number): string => {
 /** 成績や指導の資料に使える、CSV (表計算ソフトで開ける) */
 export function contributionCsv(rows: Contribution[]): string {
   const body = rows.map((r) => [
-    r.teamId, r.sid, r.name, r.daily.submitted, r.daily.days, r.daily.noWork, r.wbsEdits, r.viaDaily, r.wbsDays, r.created, r.completed, r.assigned.total, r.assigned.done, r.overdue,
+    r.teamId, r.sid, r.name, r.daily.submitted, r.daily.days, r.daily.noWork, r.wbsEdits, r.viaDaily, r.wbsDays, r.created, r.createdDays, r.completed, r.assigned.total, r.assigned.done, r.overdue,
     r.access?.days ?? '', r.access?.views ?? '', r.thanksSent, r.thanksReceived, r.promises.done, r.promises.total, r.lastActive ?? '',
   ].map(cell).join(','));
   return `﻿${[CSV_HEAD.map(cell).join(','), ...body].join('\r\n')}\r\n`;
