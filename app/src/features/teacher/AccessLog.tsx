@@ -1,8 +1,11 @@
 import { Fragment, useState } from 'react';
+import { collection, query } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { useQuery } from '../../data/util';
 import { useAccessLogs } from '../../data/access';
 import { useClassDays } from '../../data/calendar';
 import { useTeams } from '../../data/teams';
-import { SCREEN_LABEL, VIEWER_TEAM, accessSummary, isViewerSid, timeLabel } from '../../lib/access';
+import { SCREEN_LABEL, VIEWER_PREFIX, VIEWER_TEAM, accessSummary, isViewerSid, timeLabel } from '../../lib/access';
 import { addDays, formatDate, jstDate } from '../../lib/dates';
 
 const DAYS = 14;
@@ -13,15 +16,17 @@ export function AccessLogPage() {
   const from = addDays(today, -(DAYS - 1)); // 表示する日数ぶんだけ読む
   const { data: logs, error } = useAccessLogs(from);
   const { data: teams } = useTeams();
+  const { data: roster } = useQuery<{ id: string; name: string; role: string }>(query(collection(db, 'roster')), 'roster'); // 閲覧専用の先生は、記録がなくても行を出す
   const classDays = useClassDays();
   const [team, setTeam] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   if (error) return <p className="error">{error}</p>;
-  if (!logs || !teams || !classDays) return <p>読み込み中…</p>;
+  if (!logs || !teams || !classDays || !roster) return <p>読み込み中…</p>;
 
   const students = teams.flatMap((t) => t.members.map((m) => ({ sid: m.sid, name: m.name, teamId: t.id })));
-  // 閲覧専用の教員: 記録がある人だけ、行を出す (名前は、記録に入っている)
+  // 閲覧専用の教員: 名簿に登録されている人は、まだ記録がなくても行を出す (「記録なし」)。記録だけが残っている人 (登録を外した人) も出す
   const viewerNames = new Map<string, string>();
+  for (const d of roster) if (d.role === 'viewer') viewerNames.set(`${VIEWER_PREFIX}${d.id}`, d.name);
   for (const l of [...logs].sort((a, b) => a.date.localeCompare(b.date))) if (isViewerSid(l.sid)) viewerNames.set(l.sid, l.name ?? l.sid.slice('viewer:'.length));
   for (const [sid, name] of viewerNames) students.push({ sid, name: `${name}(閲覧専用)`, teamId: VIEWER_TEAM });
   const rows = accessSummary(logs, students, today, DAYS).filter((r) => !team || r.teamId === team);

@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { login } from './helpers';
 
 // 閲覧専用の教員: 全チームの状況を見られるが、変更の操作は出ない。変更は、セキュリティルールでも禁止している。
@@ -58,6 +60,20 @@ test.describe.serial('閲覧専用の教員', () => {
     await expect(row).toContainText('今日');
     await row.getByRole('button').click();
     await expect(page.locator('tr.access-detail')).toContainText('チーム');
+  });
+
+  test('登録した閲覧専用の先生は、まだアクセスがなくても、アクセス履歴に「記録なし」で出る', async ({ page }) => {
+    const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
+    await db.doc('roster/unvisited-viewer@trident.ac.jp').set({ name: '未訪問', role: 'viewer', teamId: null, sid: null });
+    try {
+      await login(page, 'teacher@trident.ac.jp');
+      await page.goto('/teacher/usage?tab=access');
+      const row = page.locator('table.access tbody tr', { hasText: '未訪問(閲覧専用)' });
+      await expect(row).toContainText('記録なし');
+      await expect(page.getByLabel('チームで絞り込む').locator('option', { hasText: '閲覧専用の先生' })).toHaveCount(1);
+    } finally {
+      await db.doc('roster/unvisited-viewer@trident.ac.jp').delete();
+    }
   });
 
   test('閲覧専用の教員が、設定などの変更の画面を直接開いても、チーム一覧に戻される', async ({ page }) => {
