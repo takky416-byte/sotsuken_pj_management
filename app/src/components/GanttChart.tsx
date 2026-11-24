@@ -9,7 +9,8 @@ import { addDays, formatDate, jstDate } from '../lib/dates';
 import { boltPolyline, buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { dayAt, dragDates, type DragKind } from '../lib/ganttDrag';
 import { parseQuickAdd } from '../lib/quickAdd';
-import { appendOrder, newlyCompletedParents, overallProgress } from '../lib/wbs';
+import { appendOrder, newlyCompletedParents, overallProgress, ownedWithAncestors } from '../lib/wbs';
+import { MemberFilter } from './MemberFilter';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 
 type Drag = { id: string; kind: DragKind; orig: { start: string; end: string }; delta: number; anchor?: string };
@@ -109,7 +110,14 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const ready = !!tasks && !!milestones;
   const today = jstDate();
   // 重い計算は、データ (tasks など) が変わったときだけやり直す。ドラッグ中の動きごとに、全行を作り直さない
-  const gm = useMemo(() => (tasks && milestones ? buildGantt(tasks, milestones, today, deep ? 3 : 2) : null), [tasks, milestones, today, deep]);
+  const [who, setWho] = useState(''); // 担当者で絞り込む (メンバーの sid。空は全員)
+  const gAll = useMemo(() => (tasks && milestones ? buildGantt(tasks, milestones, today, deep ? 3 : 2) : null), [tasks, milestones, today, deep]);
+  // 絞り込みは、全員ぶんで日付を求めたあとに、行を選ぶ (親の期間が、その人の分だけに縮まないように)。その人の担当と、その上の階層を残す
+  const gm = useMemo(() => {
+    if (!gAll || !tasks || !who) return gAll;
+    const keep = ownedWithAncestors(tasks, who);
+    return { ...gAll, rows: gAll.rows.filter((r) => keep.has(r.task.id)), undated: gAll.undated.filter((t) => t.assignees.includes(who)) };
+  }, [gAll, tasks, who]);
   const parentSet = useMemo(() => new Set((tasks ?? []).filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string)), [tasks]);
   const ticksM = useMemo(() => (gm ? weekTicks(gm) : []), [gm]);
   const tickLeftsM = useMemo(() => (gm ? ticksM.map((d) => `${pct(gm, d)}%`) : []), [gm, ticksM]);
@@ -218,12 +226,14 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   };
   const parentChoices = live.filter((t) => t.depth <= 2).sort((a, b) => a.depth - b.depth || a.order - b.order);
 
-  if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
+  if ((gAll?.rows.length ?? 0) === 0) return <p className="card">タスクがまだありません。</p>; // 絞り込みで0件のときは、絞り込みを戻せるよう、画面を出したままにする
   return (
     <>
+      {who && g.rows.length === 0 && <p className="hint">{members.find((m) => m.sid === who)?.name ?? ''}さんが担当のタスクは、まだありません。「担当で絞り込む」を「全員」にすると、すべて見られます。</p>}
       {!report && <p className="hint">棒は、タスクの開始日〜終了日です(薄い棒は、中のタスクの日付から求めた期間)。日付が空のタスクは、棒が出ません。</p>}
       <div className="row no-print" hidden={report}>
         <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>
+        <MemberFilter members={members} value={who} onChange={setWho} meSid={actor !== 'teacher' ? actor : null} />
         <label className="check"><input type="checkbox" checked={bolt} onChange={(e) => setBolt(e.target.checked)} />稲妻線を表示する</label>
         {!ro && <label className="check"><input type="checkbox" checked={direct} onChange={(e) => { setDirect(e.target.checked); setSel(null); }} />ガントチャートで編集する</label>}
         {!ro && <label className="check"><input type="checkbox" checked={edit} onChange={(e) => setEdit(e.target.checked)} />日付を入力する</label>}

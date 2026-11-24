@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { MdTextarea } from './MdTextarea';
 import { useReadOnly } from '../auth/ReadOnly';
+import { MemberFilter } from './MemberFilter';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 import {
@@ -30,7 +31,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const [msOpen, setMsOpenRaw] = useState(() => { try { return localStorage.getItem('wbs-ms-open') !== '0'; } catch { return true; } });
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [bolt, setBolt] = useState(true);
-  const [onlyMine, setOnlyMine] = useState(false);
+  const [who, setWho] = useState(''); // 担当者で絞り込む (メンバーの sid。空は全員)
   const [sp] = useSearchParams();
   const [onlyFree, setOnlyFree] = useState(() => sp.get('free') === '1'); // 見直しカードから、担当のない項目だけで開く
   const [openId, setOpenId] = useState<string | null>(null);
@@ -74,7 +75,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const { eff, g, ticks, tickLefts, todayX, periods } = derived;
   const periodFor = (t: Task) => periods.get(t.id) ?? periodOf(tasks, t);
 
-  const mineIds = actor !== 'teacher' && onlyMine ? ownedWithAncestors(tasks, actor) : null;
+  const mineIds = who ? ownedWithAncestors(tasks, who) : null;
   const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
   const rows = flatten(tasks, collapsed).filter((r) => (!mineIds || mineIds.has(r.task.id)) && (!freeIds || freeIds.has(r.task.id)));
   const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);
@@ -187,9 +188,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       )}
       {tasks.some((t) => !t.deleted) && (
         <div className="row wbs-tools">
-          {actor !== 'teacher' && (
-            <label className="check"><input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} />自分の担当だけ</label>
-          )}
+          <MemberFilter members={members} value={who} onChange={setWho} meSid={actor !== 'teacher' ? actor : null} />
           <label className="check"><input type="checkbox" checked={onlyFree} onChange={(e) => setOnlyFree(e.target.checked)} />担当が決まっていない項目だけ</label>
           <button type="button" className="ghost" onClick={() => setCollapsed(new Set(parentTaskIds))}>すべて閉じる</button>
           <button type="button" className="ghost" onClick={() => setCollapsed(new Set())}>すべて開く</button>
@@ -211,7 +210,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
           ))}
         </div>
       )}
-      {rows.length === 0 && orphans.length === 0 && mineIds && !freeIds && <p className="hint">あなたが担当のタスクは、まだありません。「自分の担当だけ」を外すと、すべて見られます。</p>}
+      {rows.length === 0 && orphans.length === 0 && mineIds && !freeIds && <p className="hint">{members.find((m) => m.sid === who)?.name ?? ''}さんが担当のタスクは、まだありません。「担当で絞り込む」を「全員」にすると、すべて見られます。</p>}
       {rows.length === 0 && orphans.length === 0 && freeIds && <p className="ok">担当が決まっていない項目は、ありません。</p>}
       {rows.length === 0 && orphans.length === 0 && !mineIds && !freeIds && <p className="hint">タスクはまだありません。下の入力欄に書いて Enter で追加できます。</p>}
 

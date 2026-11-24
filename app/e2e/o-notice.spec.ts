@@ -89,7 +89,7 @@ test.describe.serial('チームへのお知らせ', () => {
     await expect(t.getByText(/連絡事項を消しました/)).toBeVisible();
   });
 
-  test('WBS: 自分の担当だけ・すべて閉じる/開く', async ({ page }) => {
+  test('WBS: 担当で絞り込む (自分・全員)・すべて閉じる/開く', async ({ page }) => {
     await login(page, 'a1@trident.ac.jp');
     await page.getByRole('link', { name: 'WBS・ガントチャート', exact: true }).click();
     await page.locator('.wbs-row').first().waitFor();
@@ -99,9 +99,9 @@ test.describe.serial('チームへのお知らせ', () => {
     expect(closed).toBeLessThan(all);
     await page.getByRole('button', { name: 'すべて開く' }).click();
     await expect(page.locator('.wbs-row')).toHaveCount(all);
-    await page.getByLabel('自分の担当だけ').check();
+    await page.getByLabel('担当で絞り込む').selectOption('A1');
     expect(await page.locator('.wbs-row').count()).toBeLessThanOrEqual(all);
-    await page.getByLabel('自分の担当だけ').uncheck();
+    await page.getByLabel('担当で絞り込む').selectOption('');
     await expect(page.locator('.wbs-row')).toHaveCount(all);
   });
 
