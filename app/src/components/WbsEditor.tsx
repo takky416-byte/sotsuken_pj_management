@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { MdTextarea } from './MdTextarea';
 import { useReadOnly } from '../auth/ReadOnly';
 import { MemberFilter } from './MemberFilter';
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 import {
   applyPatches, createTasks, newTaskId, setDeleted, updateTask, updateTaskArray, useTasks,
@@ -32,6 +32,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const setMsOpen = (f: (v: boolean) => boolean) => setMsOpenRaw((v) => { const n = f(v); try { localStorage.setItem('wbs-ms-open', n ? '1' : '0'); } catch { /* 保存できなくても使える */ } return n; });
   const [bolt, setBolt] = useState(true);
   const [who, setWho] = useState(''); // 担当者で絞り込む (メンバーの sid。空は全員)
+  const whoShown = useDeferredValue(who); // 選んだ瞬間は、プルダウンだけ切り替え、一覧の入れ替えは、少し遅れて追いつく (多い行を入れ替える間、操作が固まらない)
   const [sp] = useSearchParams();
   const [onlyFree, setOnlyFree] = useState(() => sp.get('free') === '1'); // 見直しカードから、担当のない項目だけで開く
   const [openId, setOpenId] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const { eff, g, ticks, tickLefts, todayX, periods } = derived;
   const periodFor = (t: Task) => periods.get(t.id) ?? periodOf(tasks, t);
 
-  const mineIds = who ? ownedWithAncestors(tasks, who) : null;
+  const mineIds = whoShown ? ownedWithAncestors(tasks, whoShown) : null;
   const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
   const rows = flatten(tasks, collapsed).filter((r) => (!mineIds || mineIds.has(r.task.id)) && (!freeIds || freeIds.has(r.task.id)));
   const parentTaskIds = tasks.filter((t) => !t.deleted && tasks.some((c) => !c.deleted && c.parentId === t.id)).map((t) => t.id);

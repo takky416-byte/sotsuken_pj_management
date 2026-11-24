@@ -1,6 +1,6 @@
 import { StackTable } from './StackTable';
 import { useReadOnly } from '../auth/ReadOnly';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { createTasks, newTaskId, updateTask, updateTaskArray, useTasks } from '../data/tasks';
 import { celebrate } from '../lib/celebrate';
@@ -113,11 +113,12 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const [who, setWho] = useState(''); // 担当者で絞り込む (メンバーの sid。空は全員)
   const gAll = useMemo(() => (tasks && milestones ? buildGantt(tasks, milestones, today, deep ? 3 : 2) : null), [tasks, milestones, today, deep]);
   // 絞り込みは、全員ぶんで日付を求めたあとに、行を選ぶ (親の期間が、その人の分だけに縮まないように)。その人の担当と、その上の階層を残す
+  const whoShown = useDeferredValue(who); // 選んだ瞬間は、プルダウンだけ切り替え、行の入れ替えは、少し遅れて追いつく
   const gm = useMemo(() => {
-    if (!gAll || !tasks || !who) return gAll;
-    const keep = ownedWithAncestors(tasks, who);
-    return { ...gAll, rows: gAll.rows.filter((r) => keep.has(r.task.id)), undated: gAll.undated.filter((t) => t.assignees.includes(who)) };
-  }, [gAll, tasks, who]);
+    if (!gAll || !tasks || !whoShown) return gAll;
+    const keep = ownedWithAncestors(tasks, whoShown);
+    return { ...gAll, rows: gAll.rows.filter((r) => keep.has(r.task.id)), undated: gAll.undated.filter((t) => t.assignees.includes(whoShown)) };
+  }, [gAll, tasks, whoShown]);
   const parentSet = useMemo(() => new Set((tasks ?? []).filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string)), [tasks]);
   const ticksM = useMemo(() => (gm ? weekTicks(gm) : []), [gm]);
   const tickLeftsM = useMemo(() => (gm ? ticksM.map((d) => `${pct(gm, d)}%`) : []), [gm, ticksM]);
@@ -229,7 +230,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   if ((gAll?.rows.length ?? 0) === 0) return <p className="card">タスクがまだありません。</p>; // 絞り込みで0件のときは、絞り込みを戻せるよう、画面を出したままにする
   return (
     <>
-      {who && g.rows.length === 0 && <p className="hint">{members.find((m) => m.sid === who)?.name ?? ''}さんが担当のタスクは、まだありません。「担当で絞り込む」を「全員」にすると、すべて見られます。</p>}
+      {whoShown && g.rows.length === 0 && <p className="hint">{members.find((m) => m.sid === whoShown)?.name ?? ''}さんが担当のタスクは、まだありません。「担当で絞り込む」を「全員」にすると、すべて見られます。</p>}
       {!report && <p className="hint">棒は、タスクの開始日〜終了日です(薄い棒は、中のタスクの日付から求めた期間)。日付が空のタスクは、棒が出ません。</p>}
       <div className="row no-print" hidden={report}>
         <label className="check"><input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />小項目も表示する</label>

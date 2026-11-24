@@ -19,6 +19,8 @@ export type DraftItem = {
 
 /** 作業ログのカードに出す、予定の始まりの範囲 (今日から何日先まで)。これより先のタスクは、「ほかのタスクを選ぶ」から選べる */
 export const CARD_WINDOW_DAYS = 7;
+/** 作業ログのカードに自動で並べる、担当タスクの数の上限 (急ぎのものから)。これを超えるぶんは、「ほかのタスクを選ぶ」から選べる */
+export const CARD_MAX_TASKS = 8;
 
 export const ADHOC_PREFIX = 'adhoc:';
 export const isAdhocItem = (i: DraftItem) => !!i.adhoc;
@@ -33,7 +35,8 @@ export function candidateTasks(tasks: Task[], sid: string, today: string, within
   const rank = (t: Task) => (t.endDate && t.endDate < today ? 0 : t.status === 'doing' ? 1 : t.startDate && t.startDate <= today ? 2 : 3);
   return live
     .filter((t) => isLeaf(live, t) && (t.assignees ?? []).includes(sid) && t.status !== 'done' && t.status !== 'hold')
-    .filter((t) => !(limit && t.status === 'todo' && t.startDate && t.startDate > limit))
+    // 未着手で、始まりが先のもの。開始日がなければ、終了日で見る (終了日だけを入れたタスクが、だいぶ先でも並ばないように)
+    .filter((t) => !(limit && t.status === 'todo' && (t.startDate ?? t.endDate) && (t.startDate ?? t.endDate as string) > limit))
     .sort((a, b) => rank(a) - rank(b) || (a.endDate ?? '9999').localeCompare(b.endDate ?? '9999') || a.order - b.order);
 }
 
@@ -43,7 +46,7 @@ export function candidateTasks(tasks: Task[], sid: string, today: string, within
  * - なければ、前回の作業ログのあと (since 以降) に自分が更新したタスクを、「進んだ」(完了していれば「完了した」) で先に入れておく
  * どちらの場合も、候補のタスクは、結果が未選択のカードとして並べる。
  */
-export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string, today: string, since?: number): DraftItem[] {
+export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string, today: string, since?: number, opts: { prefill?: boolean } = {}): DraftItem[] {
   const from = since ?? Date.parse(`${today}T00:00:00+09:00`);
   const live = tasks.filter((t) => !t.deleted);
   const byId = new Map(live.map((t) => [t.id, t]));
@@ -55,15 +58,20 @@ export function initialItems(prev: Daily | undefined, tasks: Task[], sid: string
       if (e.kind === 'task' && e.taskId) items.push({ id: e.taskId, kind: 'task', taskId: e.taskId, result: e.result ?? 'progress', note: e.note });
       else if (e.kind !== 'task') items.push({ id: kindItemId(e.kind), kind: e.kind, result: null, note: e.note });
     }
-  } else {
+  } else if (opts.prefill !== false) {
+    // 前回の作業ログのあとに、自分が更新したタスク。着手・完了にしたものだけ (未着手のまま期間や担当を直しただけのタスクは、作業した記録ではない)
     for (const t of live) {
-      if (isLeaf(live, t) && t.updatedBy === sid && Number.isFinite(t.updatedAt) && t.updatedAt > from) {
+      if (isLeaf(live, t) && t.updatedBy === sid && Number.isFinite(t.updatedAt) && t.updatedAt > from && (t.status === 'doing' || t.status === 'done')) {
         items.push({ id: t.id, kind: 'task', taskId: t.id, result: t.status === 'done' ? 'done' : 'progress', note: '' });
       }
     }
   }
+  let cards = 0;
   for (const t of candidateTasks(tasks, sid, today, CARD_WINDOW_DAYS)) {
-    if (!has(t.id)) items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
+    if (has(t.id)) continue;
+    if (cards >= CARD_MAX_TASKS) break; // 急ぎのものから並んでいるので、上限を超えたぶんは、「ほかのタスクを選ぶ」へ
+    items.push({ id: t.id, kind: 'task', taskId: t.id, result: null, note: '' });
+    cards++;
   }
   // 共同の担当で、前回の作業ログのあとに (ほかの人が) 完了したタスクも、自分の作業ログに書けるよう候補に残す
   for (const t of live) {

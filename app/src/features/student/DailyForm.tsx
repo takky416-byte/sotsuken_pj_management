@@ -66,14 +66,21 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const base = useBase();
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
   const [items, setItems] = useState<DraftItem[]>(() => {
-    const base = initialItems(prev, tasks, sid, today, since);
+    const byIdLive = new Map(tasks.filter((t) => !t.deleted).map((t) => [t.id, t]));
     const d = prev ? null : loadDraft(key);
+    // 下書きがあるときは、「自分が更新したタスク」を、新しく足さない (WBSと行き来するたびに、作業ログのタスクが増えないように。最初に開いたときの分は、下書きに入っている)
+    const base = initialItems(prev, tasks, sid, today, since, { prefill: !d });
     if (!d) return base;
     // 下書きの内容を、いまのタスクの候補に重ねる (消えたタスクは捨てる)
     const saved = new Map(d.items.map((i) => [i.id, i]));
     const gone = new Set(d.removed ?? []);
     const merged = base.filter((i) => !gone.has(i.id)).map((i) => (saved.has(i.id) ? { ...i, result: saved.get(i.id)!.result, note: saved.get(i.id)!.note } : i));
-    for (const i of d.items) if ((i.kind !== 'task' || i.adhoc) && !merged.some((m) => m.id === i.id)) merged.push({ id: i.id, kind: i.kind, result: i.result, note: i.note, ...(i.adhoc ? { adhoc: i.adhoc } : {}) });
+    for (const i of d.items) {
+      if (merged.some((m) => m.id === i.id)) continue;
+      if (i.kind !== 'task' || i.adhoc) merged.push({ id: i.id, kind: i.kind, result: i.result, note: i.note, ...(i.adhoc ? { adhoc: i.adhoc } : {}) });
+      // 結果を選んだ・書いたタスクは、残す (「ほかのタスクを選ぶ」で足したものや、最初に入っていたものが、戻ったときに消えない)
+      else if (!gone.has(i.id) && byIdLive.has(i.id) && (i.result !== null || i.note.trim())) merged.push({ id: i.id, kind: 'task', taskId: i.id, result: i.result, note: i.note });
+    }
     return merged;
   });
   const [removed, setRemoved] = useState<string[]>(() => (prev ? [] : loadDraft(key)?.removed ?? [])); // 作業ログから外したタスク (下書きにも残す)

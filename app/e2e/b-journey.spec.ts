@@ -135,8 +135,7 @@ test.describe.serial('運用の流れ', () => {
     await expect(card.getByLabel('画面遷移図を描くの詳細の内容')).toBeVisible();
     await card.getByRole('button', { name: '画面遷移図を描くの詳細' }).click();
     await expect(card.getByLabel('画面遷移図を描くの詳細の内容')).toHaveCount(0);
-    // 間違って選んだ・手を付けなかったタスクは、作業ログから外せる。外したタスクは、「ほかのタスクを選ぶ」から選び直せる
-    await page.getByRole('button', { name: 'ワイヤーフレームを作るは今日は作業していない' }).click();
+    // WBSで追加しただけ (担当も着手もしていない) のタスクは、作業ログに自動では入らない。「ほかのタスクを選ぶ」から足せる
     await expect(page.locator('.dcard', { hasText: 'ワイヤーフレームを作る' })).toHaveCount(0);
     // 選択肢は「大項目 › … › タスク名」の形で、WBSの順に並ぶ。文字で絞り込める (部分一致)
     const picker = page.getByRole('combobox', { name: 'ほかのタスクを選ぶ' });
@@ -148,7 +147,7 @@ test.describe.serial('運用の流れ', () => {
     await picker.fill('ワイヤー');
     await choices.getByRole('option', { name: /ワイヤーフレームを作る/ }).click();
     await expect(page.getByLabel('ワイヤーフレームを作るの説明')).toBeVisible();
-    // ほかにも今日更新したタスク (ワイヤーフレーム) が、先に入っている。説明を書くか、「進んだ」を押して外す
+    // 「ほかのタスクを選ぶ」で足したタスクに、説明を書く
     await page.getByLabel('ワイヤーフレームを作るの説明').fill('枠線の配置を決めて、1枚目を描いた');
     await page.getByLabel('次にやること', { exact: true }).fill('下書きをレビューして、清書する');
     // 「完了した」を選ぶと、提出でタスクも完了になる

@@ -22,6 +22,21 @@ const tasks = [
   T('P'), T('kid', { parentId: 'P', depth: 2, assignees: ['A1'], order: 9 }),
 ];
 
+describe('initialItems: 自分が更新したタスクの先入れ', () => {
+  const since = Date.parse('2026-11-10T00:00:00+09:00');
+  const me = (o: Partial<Task>) => T('x', { updatedBy: 'A1', updatedAt: NOW, ...o });
+  test('着手・完了にしたものだけ。未着手のまま期間や担当を直しただけのタスクは、作業ログに入れない', () => {
+    const ts = [me({ id: 'todoEdit', title: 'todoEdit', status: 'todo', startDate: '2026-11-10', endDate: '2026-11-11' }), me({ id: 'started', title: 'started', status: 'doing' }), me({ id: 'finished', title: 'finished', status: 'done' })];
+    const items = initialItems(undefined, ts, 'A1', TODAY, since);
+    const pre = items.filter((i) => i.result !== null).map((i) => i.id).sort();
+    expect(pre).toEqual(['finished', 'started']);
+  });
+  test('prefill: false なら、先入れしない (下書きがあるときに、WBSと行き来するたびに増えないように)', () => {
+    const ts = [me({ id: 'started', title: 'started', status: 'doing' }), me({ id: 'finished', title: 'finished', status: 'done' })];
+    expect(initialItems(undefined, ts, 'A1', TODAY, since, { prefill: false }).filter((i) => i.result !== null)).toEqual([]);
+  });
+});
+
 describe('candidateTasks', () => {
   test('自分が担当の、子のないタスク。完了・保留は除く。急ぎのものから', () => {
     expect(candidateTasks(tasks, 'A1', TODAY).map((t) => t.id)).toEqual(['overdue', 'doing', 'inperiod', 'later', 'kid']);
@@ -30,6 +45,18 @@ describe('candidateTasks', () => {
     expect(candidateTasks(tasks, 'A1', TODAY, 7).map((t) => t.id)).toEqual(['overdue', 'doing', 'inperiod', 'kid']);
     expect(candidateTasks(tasks, 'A1', TODAY, 10).map((t) => t.id)).toContain('later');
     expect(initialItems(undefined, tasks, 'A1', TODAY).map((i) => i.id)).not.toContain('later'); // 作業ログのカードには、先のタスクを出さない
+  });
+  test('開始日がなく、終了日だけが先のタスクも、カードには出さない。日付のない未着手・進行中は出る', () => {
+    const ts = [T('farend', { endDate: '2027-01-31' }), T('nearend', { endDate: '2026-11-14' }), T('nodate')];
+    const ids = initialItems(undefined, ts, 'A1', TODAY).map((i) => i.id);
+    expect(ids).not.toContain('farend');
+    expect(ids).toEqual(expect.arrayContaining(['nearend', 'nodate']));
+  });
+  test('カードに自動で並べる担当タスクは、8件まで (急ぎのものから)。残りは「ほかのタスクを選ぶ」で選べる', () => {
+    const many = Array.from({ length: 30 }, (_, i) => T(`m${i}`, { startDate: '2026-11-10', endDate: `2026-11-${String(11 + (i % 18)).padStart(2, '0')}`, order: i }));
+    const items = initialItems(undefined, many, 'A1', TODAY);
+    expect(items.length).toBe(8);
+    expect(candidateTasks(many, 'A1', TODAY).length).toBe(30); // 候補そのものは減らさない (選び直せる)
   });
 });
 
