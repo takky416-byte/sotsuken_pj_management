@@ -1,4 +1,5 @@
 import type { Task } from '../types';
+import { taskIndex } from './taskIndex';
 import type { Daily } from './daily';
 import { statusOf } from './daily';
 import { TEMPLATE_NODES } from './template';
@@ -14,7 +15,7 @@ export const isPlaceholder = (tasks: Task[], t: Task) =>
   && t.assignees.length === 0 && t.startDate === null && t.endDate === null && isLeaf(tasks, t);
 
 /** 葉のタスク (生きている子を持たないタスク) */
-export const isLeaf = (tasks: Task[], t: Task) => !tasks.some((c) => !c.deleted && c.parentId === t.id);
+export const isLeaf = (tasks: Task[], t: Task) => !taskIndex(tasks).liveKids.get(t.id)?.length; // 引き当て表から (全件を探さない)
 
 /** 期限を過ぎていて、完了も保留もしていないタスク。 */
 export function delayedTasks(tasks: Task[], today: string): Task[] {

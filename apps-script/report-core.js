@@ -30,10 +30,32 @@ var ReportCore = (() => {
     wrappedLines: () => wrappedLines
   });
 
+  // src/lib/taskIndex.ts
+  var cache = /* @__PURE__ */ new WeakMap();
+  function taskIndex(tasks) {
+    var _a, _b, _c;
+    const hit = cache.get(tasks);
+    if (hit && hit.n === tasks.length) return hit;
+    const byId = /* @__PURE__ */ new Map();
+    const liveKids = /* @__PURE__ */ new Map();
+    const allKids = /* @__PURE__ */ new Map();
+    for (const t of tasks) {
+      byId.set(t.id, t);
+      const p = (_a = t.parentId) != null ? _a : null;
+      ((_b = allKids.get(p)) != null ? _b : allKids.set(p, []).get(p)).push(t);
+      if (!t.deleted) ((_c = liveKids.get(p)) != null ? _c : liveKids.set(p, []).get(p)).push(t);
+    }
+    for (const list of liveKids.values()) list.sort((a, b) => a.order - b.order);
+    const idx = { n: tasks.length, byId, liveKids, allKids };
+    cache.set(tasks, idx);
+    return idx;
+  }
+
   // src/lib/wbs.ts
   var isLive = (t) => !t.deleted;
   function childrenOf(tasks, parentId) {
-    return tasks.filter((t) => isLive(t) && t.parentId === parentId).sort((a, b) => a.order - b.order);
+    var _a;
+    return ((_a = taskIndex(tasks).liveKids.get(parentId != null ? parentId : null)) != null ? _a : []).slice();
   }
   function rollupStatus(children) {
     const active = children.filter((s) => s !== "hold");
@@ -47,7 +69,7 @@ var ReportCore = (() => {
     const visit = (t) => {
       const known = out.get(t.id);
       if (known) return known;
-      const kids = tasks.filter((c) => isLive(c) && c.parentId === t.id);
+      const kids = childrenOf(tasks, t.id);
       const s = kids.length === 0 ? t.status : rollupStatus(kids.map(visit));
       out.set(t.id, s);
       return s;
@@ -56,19 +78,18 @@ var ReportCore = (() => {
     return out;
   }
   function childSpan(live, t) {
-    var _a, _b;
+    var _a, _b, _c;
     const spans = [];
-    for (const c of live) {
-      if (c.parentId !== t.id || c.deleted) continue;
+    for (const c of (_a = taskIndex(live).liveKids.get(t.id)) != null ? _a : []) {
       const s = childSpan(live, c);
       if (s) spans.push(s);
-      else if (c.startDate || c.endDate) spans.push({ start: (_a = c.startDate) != null ? _a : c.endDate, end: (_b = c.endDate) != null ? _b : c.startDate });
+      else if (c.startDate || c.endDate) spans.push({ start: (_b = c.startDate) != null ? _b : c.endDate, end: (_c = c.endDate) != null ? _c : c.startDate });
     }
     if (spans.length === 0) return null;
     return { start: spans.map((x) => x.start).sort()[0], end: spans.map((x) => x.end).sort().reverse()[0] };
   }
   function periodOf(tasks, t) {
-    const s = childSpan(tasks.filter((x) => !x.deleted), t);
+    const s = childSpan(tasks, t);
     if (s) return { ...s, derived: true };
     return { start: t.startDate, end: t.endDate, derived: false };
   }
@@ -105,7 +126,10 @@ var ReportCore = (() => {
   // src/lib/meetingView.ts
   var TEMPLATE_TITLES = new Set(TEMPLATE_NODES.map((n) => n.title));
   var isPlaceholder = (tasks, t) => t.depth === 1 && t.createdBy === "teacher" && TEMPLATE_TITLES.has(t.title) && t.status === "todo" && t.assignees.length === 0 && t.startDate === null && t.endDate === null && isLeaf(tasks, t);
-  var isLeaf = (tasks, t) => !tasks.some((c) => !c.deleted && c.parentId === t.id);
+  var isLeaf = (tasks, t) => {
+    var _a;
+    return !((_a = taskIndex(tasks).liveKids.get(t.id)) == null ? void 0 : _a.length);
+  };
 
   // src/lib/analysis.ts
   var pct = (a, b) => b === 0 ? 0 : Math.round(a / b * 100);
@@ -218,7 +242,7 @@ var ReportCore = (() => {
     let p = t.parentId;
     for (let i = 0; i < 4 && p; i++) {
       if (p === ancestorId) return true;
-      p = (_b = (_a = live.find((x) => x.id === p)) == null ? void 0 : _a.parentId) != null ? _b : null;
+      p = (_b = (_a = taskIndex(live).byId.get(p)) == null ? void 0 : _a.parentId) != null ? _b : null;
     }
     return false;
   }

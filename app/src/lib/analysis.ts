@@ -1,4 +1,5 @@
 // プロジェクトの分析 (進み具合・遅れ・偏り・次のマイルストーンまでのペース)。
+import { taskIndex } from './taskIndex';
 // ミーティング画面とPJ分析で使う。タスクのデータだけから求める (学生に見せてよい情報だけ)。
 import type { Milestone, Task } from '../types';
 import { ADHOC_ROOT_ID } from './adhoc';
@@ -122,7 +123,7 @@ function isUnder(live: Task[], t: Task, ancestorId: string): boolean {
   let p = t.parentId;
   for (let i = 0; i < 4 && p; i++) {
     if (p === ancestorId) return true;
-    p = live.find((x) => x.id === p)?.parentId ?? null;
+    p = taskIndex(live).byId.get(p)?.parentId ?? null;
   }
   return false;
 }

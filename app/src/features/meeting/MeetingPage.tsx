@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MdTextarea } from '../../components/MdTextarea';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Markdown } from '../../components/Markdown';
@@ -299,7 +299,17 @@ function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
   const [owner, setOwner] = useState('');
   const nameOf = (sid: string) => members.find((x) => x.sid === sid)?.name ?? sid;
   const carry = carryOver(prevActions, actions);
-  useEffect(() => { setDecided(m?.decided ?? ''); setActions(m?.actions ?? []); }, [m?.decided, m?.actions]);
+  // 保存された内容が変わったら、追いつく。ただし「決まったこと」を書いている途中 (まだ保存していない) なら、書きかけを残す
+  // (以前は、記録の更新のたびに、書きかけが消えていた。actions は、毎回新しい配列なので、中身で比べる)
+  const lastDecided = useRef(m?.decided ?? '');
+  useEffect(() => {
+    const sv = m?.decided ?? '';
+    setDecided((cur) => (cur === lastDecided.current ? sv : cur));
+    lastDecided.current = sv;
+  }, [m?.decided]);
+  const actionsKey = JSON.stringify(m?.actions ?? []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setActions(m?.actions ?? []); }, [actionsKey]);
 
   const save = (next: MeetingAction[]) => { setActions(next); onSave({ actions: next }); };
   const add = () => { if (text.trim()) { save([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };

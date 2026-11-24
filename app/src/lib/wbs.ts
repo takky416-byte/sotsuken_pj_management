@@ -1,4 +1,5 @@
 import type { Task, TaskStatus } from '../types';
+import { taskIndex } from './taskIndex';
 
 export type Patch = { id: string; changes: Partial<Pick<Task, 'parentId' | 'depth' | 'order'>> };
 
@@ -7,7 +8,7 @@ const ORDER_STEP = 1024;
 export const isLive = (t: Task) => !t.deleted;
 
 export function childrenOf(tasks: Task[], parentId: string | null): Task[] {
-  return tasks.filter((t) => isLive(t) && t.parentId === parentId).sort((a, b) => a.order - b.order);
+  return (taskIndex(tasks).liveKids.get(parentId ?? null) ?? []).slice(); // 引き当て表から (全件を探さない)
 }
 
 export type Row = { task: Task; depth: number; hasChildren: boolean };
@@ -52,7 +53,7 @@ export function unassignedWithAncestors(tasks: Task[]): Set<string> {
 export function descendantsOf(tasks: Task[], id: string): Task[] {
   const out: Task[] = [];
   const walk = (pid: string) => {
-    for (const c of tasks.filter((t) => t.parentId === pid)) { out.push(c); walk(c.id); }
+    for (const c of taskIndex(tasks).allKids.get(pid) ?? []) { out.push(c); walk(c.id); }
   };
   walk(id);
   return out;
@@ -60,7 +61,7 @@ export function descendantsOf(tasks: Task[], id: string): Task[] {
 
 /** 葉タスクの完了数。保留は分母から除く。 */
 export function progressOf(tasks: Task[], id: string): { done: number; total: number } {
-  const self = tasks.find((t) => t.id === id);
+  const self = taskIndex(tasks).byId.get(id);
   if (!self) return { done: 0, total: 0 };
   const kids = childrenOf(tasks, id);
   if (kids.length === 0) {
@@ -232,7 +233,7 @@ export function effectiveStatuses(tasks: Task[]): Map<string, TaskStatus> {
   const visit = (t: Task): TaskStatus => {
     const known = out.get(t.id);
     if (known) return known;
-    const kids = tasks.filter((c) => isLive(c) && c.parentId === t.id);
+    const kids = childrenOf(tasks, t.id);
     const s = kids.length === 0 ? t.status : rollupStatus(kids.map(visit));
     out.set(t.id, s);
     return s;
@@ -255,8 +256,7 @@ export function newlyCompletedParents(tasks: Task[], id: string, status: TaskSta
  */
 export function childSpan(live: Task[], t: Task): { start: string; end: string } | null {
   const spans: { start: string; end: string }[] = [];
-  for (const c of live) {
-    if (c.parentId !== t.id || c.deleted) continue;
+  for (const c of taskIndex(live).liveKids.get(t.id) ?? []) { // 引き当て表から (全件を探さない)
     const s = childSpan(live, c);
     if (s) spans.push(s);
     else if (c.startDate || c.endDate) spans.push({ start: (c.startDate ?? c.endDate) as string, end: (c.endDate ?? c.startDate) as string });
@@ -267,7 +267,7 @@ export function childSpan(live: Task[], t: Task): { start: string; end: string }
 
 /** タスクの期間。子に日付があれば、子の期間の最小・最大から求める (derived)。なければ、自分の日付。 */
 export function periodOf(tasks: Task[], t: Task): { start: string | null; end: string | null; derived: boolean } {
-  const s = childSpan(tasks.filter((x) => !x.deleted), t);
+  const s = childSpan(tasks, t); // 削除済みの子は、引き当て表の liveKids に入らない
   if (s) return { ...s, derived: true };
   return { start: t.startDate, end: t.endDate, derived: false };
 }

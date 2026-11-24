@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Markdown } from '../../components/Markdown';
 import { MdTextarea } from '../../components/MdTextarea';
 import { useReadOnly } from '../../auth/ReadOnly';
@@ -54,7 +54,7 @@ export function MeetingRecords({ teamId, members }: { teamId: string; members: {
         </button>
       </div>
       {meetings.length === 0 && <p className="hint">記録はまだありません。</p>}
-      {meetings.map((m) => <Record key={`${m.id}-${m.updatedAt}`} teamId={teamId} m={m} run={run} members={members} />)}
+      {meetings.map((m) => <Record key={m.id} teamId={teamId} m={m} run={run} members={members} />)}
     </>
   );
 }
@@ -66,6 +66,22 @@ function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: 
   const [owner, setOwner] = useState('');
   const [sure, setSure] = useState(false);
   const changed = decided !== m.decided || JSON.stringify(actions) !== JSON.stringify(m.actions);
+  // ほかで (ミーティング画面など) 記録が更新されたら: 触っていない欄は、新しい内容に追いつく。書きかけの欄は、そのまま残して知らせる
+  // (以前は、更新のたびに入力欄を作り直していたので、書きかけが消えていた)
+  const prevM = useRef(m);
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    const p = prevM.current;
+    prevM.current = m;
+    if (p.updatedAt === m.updatedAt) return;
+    const keepD = decided !== p.decided; // 書き換えていた
+    const keepA = JSON.stringify(actions) !== JSON.stringify(p.actions);
+    if (!keepD) setDecided(m.decided);
+    if (!keepA) setActions(m.actions);
+    if ((keepD && decided !== m.decided) || (keepA && JSON.stringify(actions) !== JSON.stringify(m.actions))) setStale(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.updatedAt]);
+  const reload = () => { setDecided(m.decided); setActions(m.actions); setStale(false); };
 
   const addAction = () => { if (text.trim()) { setActions([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
 
@@ -96,8 +112,14 @@ function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: 
         <input aria-label={`やることを追加 ${m.id}`} placeholder="やることを入力して Enter" value={text} maxLength={200}
           onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) addAction(); }} />
       </div>
+      {stale && changed && (
+        <p className="error" role="alert">
+          書いている間に、ほかでこの記録が更新されました。保存すると、こちらの内容で上書きします。
+          <button type="button" className="ghost" onClick={reload}>最新の内容に戻す</button>
+        </p>
+      )}
       <div className="row">
-        <button disabled={!changed} onClick={() => run(() => saveMeeting(teamId, m.id, 'teacher', { decided, actions }))}>保存</button>
+        <button disabled={!changed} onClick={() => { setStale(false); void run(() => saveMeeting(teamId, m.id, 'teacher', { decided, actions })); }}>保存</button>
         {!sure
           ? <button className="ghost danger" onClick={() => { setSure(true); setTimeout(() => setSure(false), 4000); }}>この記録を削除</button>
           : <button className="ghost danger" onClick={() => run(() => deleteMeeting(teamId, m.id))}>本当に削除</button>}
