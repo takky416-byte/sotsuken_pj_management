@@ -54,12 +54,24 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
     try { await fn(); return true; } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); return false; }
   };
 
-  if (error) return <p className="error">読み込めませんでした: {error}</p>;
-  if (!tasks) return <p>読み込み中…</p>;
-  const eff = effectiveStatuses(tasks);
   const today = jstDate();
-  const g = timeline ? buildGantt(tasks, milestones ?? [], today, 3) : null;
-  const ticks = g ? weekTicks(g) : [];
+  // 行ごとに何度も使う値は、データ (tasks など) が変わったときだけ作る。開閉・入力のたびに、全行ぶんを計算し直さない
+  const derived = useMemo(() => {
+    if (!tasks) return null;
+    const g = timeline ? buildGantt(tasks, milestones ?? [], today, 3) : null;
+    const ticks = g ? weekTicks(g) : [];
+    const live = tasks.filter((t) => !t.deleted);
+    return {
+      eff: effectiveStatuses(tasks), g, ticks,
+      tickLefts: g ? ticks.map((d) => `${pct(g, d)}%`) : [],
+      todayX: g ? pct(g, today) : 0,
+      periods: new Map(live.map((t) => [t.id, periodOf(tasks, t)])),
+    };
+  }, [tasks, milestones, timeline, today]);
+  if (error) return <p className="error">読み込めませんでした: {error}</p>;
+  if (!tasks || !derived) return <p>読み込み中…</p>;
+  const { eff, g, ticks, tickLefts, todayX, periods } = derived;
+  const periodFor = (t: Task) => periods.get(t.id) ?? periodOf(tasks, t);
 
   const mineIds = actor !== 'teacher' && onlyMine ? ownedWithAncestors(tasks, actor) : null;
   const freeIds = onlyFree ? unassignedWithAncestors(tasks) : null;
@@ -266,8 +278,8 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
                 </PopCell>
               )}
             </div>
-            <div className={`w-period${periodOf(tasks, t).derived ? ' derived' : ''}`}>
-              {hasChildren || !canEdit ? (periodLabel(periodOf(tasks, t).start, periodOf(tasks, t).end) || '—') : (
+            <div className={`w-period${periodFor(t).derived ? ' derived' : ''}`}>
+              {hasChildren || !canEdit ? (periodLabel(periodFor(t).start, periodFor(t).end) || '—') : (
                 <PopCell
                   label={periodLabel(t.startDate, t.endDate) || '＋ 期間'} empty={!t.startDate && !t.endDate}
                   ariaLabel={`期間を変える: ${t.title}`} open={pop?.id === t.id && pop.kind === 'period'}
@@ -292,15 +304,15 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
               )}
             </div>
             {g && (() => {
-              const pr = periodOf(tasks, t);
+              const pr = periodFor(t);
               const a = pr.start ?? pr.end, b = pr.end ?? pr.start;
               const overdue = !!b && b < today && status !== 'done' && status !== 'hold';
               return (
                 <div className="w-bar" aria-hidden="true">
-                  {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: `${pct(g, d)}%` }} />)}
-                  <i className="tl-today" style={{ left: `${pct(g, today)}%` }} />
+                  {ticks.map((d, ti) => <i key={d} className="gantt-grid" style={{ left: tickLefts[ti] }} />)}
+                  <i className="tl-today" style={{ left: `${todayX}%` }} />
                   {bolt && (() => {
-                    const { xs, flat } = boltRows, tx = pct(g, today);
+                    const { xs, flat } = boltRows, tx = todayX;
                     const x = xs[ri];
                     // 親の行 (flat) は、今日の線の上を縦に通す。葉の行は、隣が親なら、今日の線から折れ始める
                     const prev = ri > 0 && !flat[ri - 1] ? (xs[ri - 1] + x) / 2 : tx;

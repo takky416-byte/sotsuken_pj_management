@@ -1,6 +1,6 @@
 import { StackTable } from './StackTable';
 import { useReadOnly } from '../auth/ReadOnly';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMilestones } from '../data/calendar';
 import { createTasks, newTaskId, updateTask, updateTaskArray, useTasks } from '../data/tasks';
 import { celebrate } from '../lib/celebrate';
@@ -17,6 +17,74 @@ const STATUSES: TaskStatus[] = ['todo', 'doing', 'done', 'hold'];
 
 const LANE_PX = 22;
 const ROW_PX = 30; // ガントチャートの1行の高さ (稲妻線の位置合わせのため、固定)
+
+type GanttRowData = ReturnType<typeof buildGantt>['rows'][number];
+type RowHandlers = {
+  down: (e: React.PointerEvent<HTMLElement>, r: { task: Task; start: string | null; end: string | null }, kind: DragKind) => void;
+  move: (e: React.PointerEvent<HTMLElement>) => void;
+  up: () => void;
+  pick: (id: string) => void;
+  plus: (id: string) => void;
+  cancel: () => void;
+};
+
+/**
+ * ガントチャートの1行。memo にして、自分の行のデータが変わらないかぎり、描き直さない
+ * (ドラッグ中は、動かしている行だけが変わる。全行を作り直すと、小項目まで出したときに、動きがもたつく)。
+ */
+const GanttRowView = memo(function GanttRowView({ r, g, ticks, tickLefts, leaf, selected, direct, ro, report, drag, assignText, onPick, onPlus, onDown, onMove, onUp, onCancel }: {
+  r: GanttRowData; g: ReturnType<typeof buildGantt>; ticks: string[]; tickLefts: string[]; leaf: boolean; selected: boolean; direct: boolean; ro: boolean; report: boolean;
+  drag: Drag | null; assignText: string;
+  onPick: (id: string) => void; onPlus: (id: string) => void;
+  onDown: RowHandlers['down']; onMove: RowHandlers['move']; onUp: () => void; onCancel: () => void;
+}) {
+  const pos = (d: string) => `${pct(g, d)}%`;
+  const who = assignText ? `担当: ${assignText}` : '担当: 未定';
+  const live1 = direct && leaf;
+  const pv = drag ? dragDates(drag.kind, drag.orig, drag.delta, drag.anchor) : r.start && r.end ? { start: r.start, end: r.end } : null;
+  const dragging = !!drag;
+  return (
+    <div className={`gantt-row${selected ? ' selected' : ''}`}>
+      <div
+        className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={`${r.task.title}\n${who}`}
+        onClick={direct ? () => onPick(r.task.id) : undefined}
+      >
+        <span className="gantt-name-text">
+          {r.task.title}
+          {r.task.assignees.length > 0 && <small> {assignText}</small>}
+        </span>
+        {!report && !ro && (
+          <button
+            type="button" className="ghost gantt-plus no-print" aria-label={`「${r.task.title}」に${r.depth >= 3 ? '同じ階層のタスクを' : 'タスクを中に'}追加`}
+            title={r.depth >= 3 ? 'この下に、同じ階層のタスクを追加' : 'この中に、タスクを追加'}
+            onClick={(e) => { e.stopPropagation(); onPlus(r.task.id); }}
+          >＋</button>
+        )}
+      </div>
+      <div
+        className={`gantt-track${live1 && !pv ? ' paintable' : ''}`}
+        onPointerDown={live1 && !pv ? (e) => onDown(e, r, 'new') : undefined}
+        onPointerMove={direct ? onMove : undefined} onPointerUp={direct ? onUp : undefined} onPointerCancel={direct ? onCancel : undefined}
+      >
+        {ticks.map((d, i) => <i key={d} className="gantt-grid" style={{ left: tickLefts[i] }} />)}
+        {pv && (
+          <span
+            className={`gantt-bar ${r.status}${r.derived ? ' derived' : ''}${r.overdue ? ' overdue' : ''}${live1 ? ' editable' : ''}${dragging ? ' dragging' : ''}`}
+            style={{ left: pos(pv.start), width: `max(${live1 ? 14 : 6}px, ${pct(g, addDays(pv.end, 1)) - pct(g, pv.start)}%)` }}
+            title={`${r.task.title}\n${who}\n${formatDate(pv.start)}〜${formatDate(pv.end)} / ${STATUS_LABEL[r.status]}${r.overdue ? ' / 期限超過' : ''}`}
+            onPointerDown={live1 ? (e) => onDown(e, r, 'move') : undefined}
+          >
+            {live1 && <>
+              <i className="grip l" onPointerDown={(e) => onDown(e, r, 'start')} />
+              <i className="grip r" onPointerDown={(e) => onDown(e, r, 'end')} />
+            </>}
+          </span>
+        )}
+        {dragging && pv && <span className="gantt-tip" style={{ left: pos(pv.start) }}>{formatDate(pv.start).replace(/\(.*\)/, '')}〜{formatDate(pv.end).replace(/\(.*\)/, '')}</span>}
+      </div>
+    </div>
+  );
+});
 
 /** 予定の全体像。大項目・中項目の期間を棒で表す。日付が未設定の大項目は、中の日付から求める。 */
 export function GanttChart({ teamId, actor, members, report = false }: { teamId: string; actor: string; members: Member[]; report?: boolean }) {
@@ -39,6 +107,20 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   const [inlineTitle, setInlineTitle] = useState('');
   const box = useRef<HTMLDivElement>(null);
   const ready = !!tasks && !!milestones;
+  const today = jstDate();
+  // 重い計算は、データ (tasks など) が変わったときだけやり直す。ドラッグ中の動きごとに、全行を作り直さない
+  const gm = useMemo(() => (tasks && milestones ? buildGantt(tasks, milestones, today, deep ? 3 : 2) : null), [tasks, milestones, today, deep]);
+  const parentSet = useMemo(() => new Set((tasks ?? []).filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string)), [tasks]);
+  const ticksM = useMemo(() => (gm ? weekTicks(gm) : []), [gm]);
+  const tickLeftsM = useMemo(() => (gm ? ticksM.map((d) => `${pct(gm, d)}%`) : []), [gm, ticksM]);
+  // 行の部品 (memo) に渡す操作は、いつも同じ関数にする (中身は、最新の画面の状態を見る)
+  const hr = useRef<RowHandlers>({ down: () => undefined, move: () => undefined, up: () => undefined, pick: () => undefined, plus: () => undefined, cancel: () => undefined });
+  const onDown = useCallback<RowHandlers['down']>((e, r, kind) => hr.current.down(e, r, kind), []);
+  const onMove = useCallback<RowHandlers['move']>((e) => hr.current.move(e), []);
+  const onUp = useCallback(() => hr.current.up(), []);
+  const onPick = useCallback((id: string) => hr.current.pick(id), []);
+  const onPlus = useCallback((id: string) => hr.current.plus(id), []);
+  const onCancel = useCallback(() => hr.current.cancel(), []);
   // 開いたときに、今日の線が見える位置までスクロールする (スマホなど、横にはみ出すとき)
   useEffect(() => {
     const el = box.current;
@@ -50,14 +132,12 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   if (error) return <p className="error">{error}</p>;
   if (!tasks || !milestones) return <p>読み込み中…</p>;
 
-  const today = jstDate();
-  const g = buildGantt(tasks, milestones, today, deep ? 3 : 2);
+  const g = gm as NonNullable<typeof gm>;
   const name = (sid: string) => members.find((m) => m.sid === sid)?.name ?? sid;
-  const who = (t: Task) => (t.assignees.length > 0 ? `担当: ${t.assignees.map(name).join('・')}` : '担当: 未定');
-  const ticks = weekTicks(g);
+  const ticks = ticksM;
   const pos = (d: string) => `${pct(g, d)}%`;
   const ms = placeMilestones(milestones, g);
-  const parents = new Set(tasks.filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string));
+  const parents = parentSet;
   const points = lightning(g, today, deep ? 3 : 2, (id) => parents.has(id));
   const todayX = pct(g, today);
   const H = g.rows.length * ROW_PX;
@@ -70,8 +150,6 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
     setErr('');
     return updateTask(teamId, actor, id, changes).catch((e) => setErr(`保存できませんでした: ${(e as Error).message}`));
   };
-  const preview = (r: { task: Task; start: string | null; end: string | null }) =>
-    drag && drag.id === r.task.id ? dragDates(drag.kind, drag.orig, drag.delta, drag.anchor) : r.start && r.end ? { start: r.start, end: r.end } : null;
 
   /** バー・空の行を押したときの、ドラッグの開始 */
   const down = (e: React.PointerEvent<HTMLElement>, r: { task: Task; start: string | null; end: string | null }, kind: DragKind) => {
@@ -132,6 +210,12 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
   };
   const addTask = () => { const t = addTitle; setAddTitle(''); submitAdd(t, addParent); };
   const addInline = () => { const t = inlineTitle; setInlineTitle(''); submitAdd(t, inline ?? ''); }; // 続けて、いくつも入れられるよう、閉じない
+  hr.current = {
+    down, move, up,
+    pick: (id) => { setSel(sel === id ? null : id); setAddParent(addParentFor(id)); },
+    plus: (id) => { setInline(addParentFor(id)); setInlineTitle(''); },
+    cancel: () => { meta.current = null; setDrag(null); },
+  };
   const parentChoices = live.filter((t) => t.depth <= 2).sort((a, b) => a.depth - b.depth || a.order - b.order);
 
   if (g.rows.length === 0) return <p className="card">タスクがまだありません。</p>;
@@ -167,53 +251,14 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
             })}
           </div>
         </div>}
-        {g.rows.map((r) => {
-          const leaf = !parents.has(r.task.id);
-          const live1 = direct && leaf;
-          const pv = preview(r);
-          const dragging = drag?.id === r.task.id;
-          return (
-            <div className={`gantt-row${sel === r.task.id ? ' selected' : ''}`} key={r.task.id}>
-              <div
-                className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={`${r.task.title}\n${who(r.task)}`}
-                onClick={direct ? () => { setSel(sel === r.task.id ? null : r.task.id); setAddParent(addParentFor(r.task.id)); } : undefined}
-              >
-                <span className="gantt-name-text">
-                  {r.task.title}
-                  {r.task.assignees.length > 0 && <small> {r.task.assignees.map(name).join('・')}</small>}
-                </span>
-                {!report && !ro && (
-                  <button
-                    type="button" className="ghost gantt-plus no-print" aria-label={`「${r.task.title}」に${r.depth >= 3 ? '同じ階層のタスクを' : 'タスクを中に'}追加`}
-                    title={r.depth >= 3 ? 'この下に、同じ階層のタスクを追加' : 'この中に、タスクを追加'}
-                    onClick={(e) => { e.stopPropagation(); setInline(addParentFor(r.task.id)); setInlineTitle(''); }}
-                  >＋</button>
-                )}
-              </div>
-              <div
-                className={`gantt-track${live1 && !pv ? ' paintable' : ''}`}
-                onPointerDown={live1 && !pv ? (e) => down(e, r, 'new') : undefined}
-                onPointerMove={direct ? move : undefined} onPointerUp={direct ? up : undefined} onPointerCancel={direct ? () => { meta.current = null; setDrag(null); } : undefined}
-              >
-                {ticks.map((d) => <i key={d} className="gantt-grid" style={{ left: pos(d) }} />)}
-                {pv && (
-                  <span
-                    className={`gantt-bar ${r.status}${r.derived ? ' derived' : ''}${r.overdue ? ' overdue' : ''}${live1 ? ' editable' : ''}${dragging ? ' dragging' : ''}`}
-                    style={{ left: pos(pv.start), width: `max(${live1 ? 14 : 6}px, ${pct(g, addDays(pv.end, 1)) - pct(g, pv.start)}%)` }}
-                    title={`${r.task.title}\n${who(r.task)}\n${formatDate(pv.start)}〜${formatDate(pv.end)} / ${STATUS_LABEL[r.status]}${r.overdue ? ' / 期限超過' : ''}`}
-                    onPointerDown={live1 ? (e) => down(e, r, 'move') : undefined}
-                  >
-                    {live1 && <>
-                      <i className="grip l" onPointerDown={(e) => down(e, r, 'start')} />
-                      <i className="grip r" onPointerDown={(e) => down(e, r, 'end')} />
-                    </>}
-                  </span>
-                )}
-                {dragging && pv && <span className="gantt-tip" style={{ left: pos(pv.start) }}>{formatDate(pv.start).replace(/\(.*\)/, '')}〜{formatDate(pv.end).replace(/\(.*\)/, '')}</span>}
-              </div>
-            </div>
-          );
-        })}
+        {g.rows.map((r) => (
+          <GanttRowView
+            key={r.task.id} r={r} g={g} ticks={ticks} tickLefts={tickLeftsM} leaf={!parents.has(r.task.id)} selected={sel === r.task.id}
+            direct={direct} ro={ro} report={report} drag={drag && drag.id === r.task.id ? drag : null}
+            assignText={r.task.assignees.map(name).join('・')}
+            onPick={onPick} onPlus={onPlus} onDown={onDown} onMove={onMove} onUp={onUp} onCancel={onCancel}
+          />
+        ))}
         {!report && (
           <div className="gantt-addrow no-print">
             {inline === null

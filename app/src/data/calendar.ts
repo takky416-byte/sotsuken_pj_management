@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ClassDay, Milestone } from '../types';
@@ -12,8 +13,12 @@ export function useMilestones(teamId: string | 'all'): Milestone[] | null {
     teamId === 'all' ? null : query(collection(db, 'milestones'), where('teamId', '==', null)), 'milestones:common');
   const mine = useQuery<Milestone>(
     teamId === 'all' ? null : query(collection(db, 'milestones'), where('teamId', '==', teamId)), `milestones:${teamId}`);
-  const list = teamId === 'all' ? all.data : common.data && mine.data ? [...common.data, ...mine.data] : null;
-  return list && [...list].sort((a, b) => a.date.localeCompare(b.date));
+  // データが変わらないかぎり、同じ配列を返す (毎回作り直すと、これを使う画面の計算が、描画のたびにやり直しになる)
+  const cd = common.data, md = mine.data, ad = all.data;
+  return useMemo(() => {
+    const list = teamId === 'all' ? ad : cd && md ? [...cd, ...md] : null;
+    return list && [...list].sort((a, b) => a.date.localeCompare(b.date));
+  }, [teamId, ad, cd, md]);
 }
 
 export const saveMilestone = (m: Omit<Milestone, 'id'> & { id?: string }) => {
