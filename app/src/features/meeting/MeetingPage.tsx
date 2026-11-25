@@ -76,6 +76,7 @@ function MeetingScreen({ team }: { team: Team }) {
   const { data: thanks } = useThanks(team.id, dailyWindowFrom(today));
   const [step, setStep] = useState(0);
   const [showAll, setShowAll] = useState(false);
+  const [saveErr, setSaveErr] = useState(''); // 保存できなかったとき (黙って捨てない)
   const show = (i: number) => showAll || step === i;
 
   // 作業ログ: 教員と、設定で閲覧が許可されているときはチーム全員分。それ以外は自分の分だけ。
@@ -121,13 +122,15 @@ function MeetingScreen({ team }: { team: Team }) {
   const stuckList = stuckItems(range);
   const nameOf = (sid: string) => team.members.find((m) => m.sid === sid)?.name ?? sid;
 
-  const run = (fn: () => Promise<unknown>) => fn().catch(() => undefined);
+  // 保存できなかったときは、画面に出す (以前は、黙って捨てていたので、書いた内容が残っていないことに気づけなかった)
+  const run = (fn: () => Promise<unknown>) => { setSaveErr(''); return fn().catch((e) => setSaveErr(`保存できませんでした: ${(e as Error).message}。通信を確かめて、もう一度入力してください`)); };
 
   return (
     <div className="meeting">
       <div className="meeting-head">
         <h2>{team.id}チーム {team.status === 'active' ? `「${team.projectName}」` : '(企画検討中)'}</h2>
         <span className="hint">{formatDate(today)}{isMeetingDay ? ' ミーティング' : ''}</span>
+        {saveErr && <p className="error" role="alert">{saveErr}</p>}
         <span className="spacer" />
         {staff && (
           <div className="switcher">

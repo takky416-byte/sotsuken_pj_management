@@ -13,7 +13,7 @@ import {
   ADHOC_PREFIX, initialItems, itemsToEntries, kindItemId, newAssignments, nextCandidates, statusChanges, type DraftItem,
 } from '../../lib/dailyDraft';
 import { ADHOC_ROOT_ID, ADHOC_ROOT_TITLE, MIN_ADHOC_TITLE, adhocParents, planAdhoc } from '../../lib/adhoc';
-import { formatDate } from '../../lib/dates';
+import { formatDate, jstDate } from '../../lib/dates';
 import { flatten, periodLabel } from '../../lib/wbs';
 import { TaskPicker } from '../../components/TaskPicker';
 import type { Task } from '../../types';
@@ -151,6 +151,8 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const submit = async () => {
     setShown(true);
     if (problems.length > 0) return;
+    // 画面を開いたまま日付が変わったとき (作業ログは、その日のうちだけ出せる)。書いた内容は、下書きに残っている
+    if (jstDate() !== today) { setErr('日付が変わりました。画面を再読み込みしてください(書いた内容は、この端末に残っています)。'); return; }
     // この画面を開いたあとで、ほかの端末 (スマホなど) から今日の作業ログが出し直されていたら、黙って上書きしない
     const latestAt = prev?.updatedAt ?? prev?.submittedAt ?? 0;
     if (latestAt > knownAt.current && !window.confirm('ほかの端末で、今日の作業ログが更新されています。この画面の内容で上書きしますか?\n(やめる場合は、画面を再読み込みすると、更新された内容が出ます)')) return;
@@ -175,9 +177,11 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       onSubmitted(first);
       // 結果に合わせて、タスクの状態も更新する (完了した → 完了。着手前なら、進行中に)
       if (noWork) return;
-      await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status }, '作業ログ')));
+      const r1 = await Promise.allSettled(statusChanges(items, tasks).map((c) => updateTask(teamId, sid, c.taskId, { status: c.status }, '作業ログ')));
       // 担当でないタスクを選んで書いたときは、その人も担当に加える
-      await Promise.allSettled(newAssignments(items, tasks, sid).map((id) => updateTaskArray(teamId, sid, id, 'assignees', 'add', sid)));
+      const r2 = await Promise.allSettled(newAssignments(items, tasks, sid).map((id) => updateTaskArray(teamId, sid, id, 'assignees', 'add', sid)));
+      // 作業ログは出せたが、タスクの状態・担当の更新ができなかったとき (黙って捨てない)
+      if ([...r1, ...r2].some((x) => x.status === 'rejected')) setErr('作業ログは提出しました。ただ、タスクの状態・担当の更新の一部ができませんでした。WBSで確かめてください。');
     } catch (e) {
       setState('idle');
       setErr(`提出できませんでした: ${(e as Error).message}`);

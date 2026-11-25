@@ -44,6 +44,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   const [editMode, setEditMode] = useState(() => actor !== 'teacher' && sp.get('edit') === '1'); // 学生は、ふだんは閲覧モード。「編集モードにする」で編集できる
   const [err, setErr] = useState('');
   const closeToast = useCallback(() => setToast(null), []);
+  const ro = useReadOnly(); // 閲覧専用の教員は、編集できない (フックなので、早い return より前で呼ぶ)
   const act = useRef<RowActions>(null as unknown as RowActions);
 
   const nameOf = useMemo(() => {
@@ -132,7 +133,6 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
   };
   const trash = tasks.filter((t) => t.deleted && !(t.parentId && byId.get(t.parentId)?.deleted));
   const orphans = orphansOf(tasks);
-  const ro = useReadOnly(); // 閲覧専用の教員は、編集できない
   const canEdit = !ro && (actor === 'teacher' || editMode);
   // 稲妻線の、その行ぶんの折れ線 (点のない行〔親〕は、今日の線の上を縦に通す。葉の行は、隣が親なら、今日の線から折れ始める)
   const boltPointsAt = (ri: number): string => {
