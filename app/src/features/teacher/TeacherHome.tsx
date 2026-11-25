@@ -1,4 +1,5 @@
 import { MessageField } from '../../components/MessageField';
+import { useDraftText } from '../../components/useDraftText';
 import { useReadOnly } from '../../auth/ReadOnly';
 import { MESSAGE_MAX } from '../../lib/teamMessage';
 import { WBS_REVIEW_ENABLED } from '../../lib/wbsReview';
@@ -145,7 +146,8 @@ function SubmitList({ teams }: { teams: Team[] }) {
 
 /** 全チーム(または選んだチーム)に、同じ連絡事項を一度に送る。学生のホームに出る。 */
 function Broadcast({ teams }: { teams: Team[] }) {
-  const [text, setText] = useState('');
+  const msg = useDraftText('msg:broadcast', ''); // 書きかけは、この端末に残す (画面を移っても消えない)
+  const text = msg.value;
   const [picked, setPicked] = useState<Set<string>>(() => new Set(teams.filter((t) => t.status === 'active').map((t) => t.id)));
   const [done, setDone] = useState('');
   const [err, setErr] = useState('');
@@ -157,13 +159,15 @@ function Broadcast({ teams }: { teams: Team[] }) {
       const message = text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null;
       await Promise.all(ids.map((id) => updateTeam(id, { message })));
       setDone(message ? `${ids.length}チームに送りました` : `${ids.length}チームの連絡事項を消しました`);
+      msg.clear(); // 送れたので、この端末の書きかけは消す (欄の文字は、続けて別のチームに送れるよう残す)
     } catch (e) { setErr(`送れませんでした: ${(e as Error).message}`); }
   };
   return (
     <details className="card broadcast">
       <summary><strong>全チームに連絡事項を送る</strong></summary>
       <p className="hint">学生のホームの上に出ます。送り直すと入れ替わります。空のまま送ると、連絡事項が消えます。1チームだけに送るときは、チームの詳細から。</p>
-      <MessageField value={text} label="全チームへの連絡事項" onChange={(v) => { setText(v); setDone(''); }} />
+      <MessageField value={text} label="全チームへの連絡事項" onChange={(v) => { msg.setValue(v); setDone(''); }} />
+      {msg.restored && msg.dirty && <p className="hint" role="note">送っていない書きかけを、戻しました。</p>}
       <div className="row broadcast-teams" role="group" aria-label="送るチーム">
         {teams.map((t) => <label key={t.id} className="check"><input type="checkbox" checked={picked.has(t.id)} onChange={() => toggle(t.id)} />{t.id}</label>)}
       </div>

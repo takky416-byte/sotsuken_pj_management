@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDraftText } from '../../components/useDraftText';
 import { Markdown } from '../../components/Markdown';
 import { MdTextarea } from '../../components/MdTextarea';
 import { deleteMinutes, publishMinutes, useAllMinutes } from '../../data/meetingMinutes';
@@ -9,7 +10,9 @@ import { checkMinutes, decodeTextFile } from '../../lib/meetingMinutes';
 export function MeetingMinutesEditor({ teamId }: { teamId: string }) {
   const { data: minutes, error } = useAllMinutes(teamId);
   const [date, setDate] = useState(jstDate());
-  const [text, setText] = useState('');
+  const draft = useDraftText(`minutes:${teamId}`, ''); // 書きかけ・貼り付けた本文は、この端末に残す (公開するまで消えない)
+  const text = draft.value;
+  const setText = draft.setValue;
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   if (error) return <p className="error">{error}</p>;
@@ -33,7 +36,7 @@ export function MeetingMinutesEditor({ teamId }: { teamId: string }) {
     const c = checkMinutes(text);
     if (!c.ok) { setErr(c.reason); setMsg(''); return; }
     if (exists && !window.confirm(`${formatDate(date)} の議事録を、置き換えます。よろしいですか?`)) return;
-    void run(async () => { await publishMinutes(teamId, date, c.text); setText(''); }, `${formatDate(date)} の議事録を公開しました`);
+    void run(async () => { await publishMinutes(teamId, date, c.text); draft.discard(); }, `${formatDate(date)} の議事録を公開しました`);
   };
 
   return (

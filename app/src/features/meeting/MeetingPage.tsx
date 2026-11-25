@@ -311,8 +311,10 @@ function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setActions(m?.actions ?? []); }, [actionsKey]);
 
+  // やることの一覧は、保存されている最新の一覧 (ほかの端末の変更も入っている) をもとに変える (古い一覧で、相手の変更を戻さない)
+  const latest = () => m?.actions ?? actions;
   const save = (next: MeetingAction[]) => { setActions(next); onSave({ actions: next }); };
-  const add = () => { if (text.trim()) { save([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
+  const add = () => { if (text.trim()) { save([...latest(), { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
 
   return (
     <div className="form">
@@ -326,11 +328,11 @@ function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
           <li key={i} className="row">
             <label className="check">
               <input type="checkbox" checked={a.done} disabled={!canEdit}
-                onChange={() => save(actions.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))} />
+                onChange={() => save(latest().map((x, j) => (j === i ? { ...x, done: !a.done } : x)))} />
               {a.owner && <span className="badge">{nameOf(a.owner)}</span>}
               <span className={a.done ? 'done-text' : ''}>{a.text}</span>
             </label>
-            {canEdit && <button className="ghost icon" aria-label="削除" onClick={() => save(actions.filter((_, j) => j !== i))}>×</button>}
+            {canEdit && <button className="ghost icon" aria-label="削除" onClick={() => save(latest().filter((x, j) => !(j === i && x.text === a.text)))}>×</button>}
           </li>
         ))}
       </ul>
@@ -348,7 +350,7 @@ function RecordForm({ doc: m, canEdit, members, prevActions, onSave }: {
         </div>
       )}
       {canEdit && carry.length > 0 && (
-        <button className="ghost" onClick={() => save([...actions, ...carry])}>前回の未完了 {carry.length}件を引き継ぐ</button>
+        <button className="ghost" onClick={() => save([...latest(), ...carry])}>前回の未完了 {carry.length}件を引き継ぐ</button>
       )}
       {!canEdit && <p className="hint">記録は先生が入力します。</p>}
     </div>

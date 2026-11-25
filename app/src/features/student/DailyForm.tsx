@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Markdown } from '../../components/Markdown';
 import { MdTextarea } from '../../components/MdTextarea';
 import { Link } from 'react-router-dom';
@@ -48,7 +48,7 @@ const PHRASES: Record<DailyResult, { label: string; text: string }[]> = {
 const addPhrase = (note: string, text: string) => `${note}${note && !/\n$/.test(note) ? '\n' : ''}${text}`;
 
 const draftKey = (sid: string, today: string) => `daily-draft:${sid}:${today}`;
-type Draft = { items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string; removed?: string[]; noWork?: boolean; reason?: NoWorkReason | null; undecided?: boolean };
+type Draft = { /** 下書きを保存した時刻。提出済みの作業ログより新しいときだけ、下書きを使う */ at?: number; items: { id: string; result: DailyResult | null; note: string; kind: DailyKind; adhoc?: DraftItem['adhoc'] }[]; next: string; removed?: string[]; noWork?: boolean; reason?: NoWorkReason | null; undecided?: boolean };
 const loadDraft = (key: string): Draft | null => { try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as Draft) : null; } catch { return null; } };
 const saveDraft = (key: string, d: Draft) => { try { localStorage.setItem(key, JSON.stringify(d)); } catch { /* 保存できなくても入力はできる */ } };
 const clearDraft = (key: string) => { try { localStorage.removeItem(key); } catch { /* 何もしない */ } };
@@ -65,9 +65,20 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const key = draftKey(sid, today);
   const base = useBase();
   const live = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
+  // 下書き: まだ提出していないとき、または、提出済みの作業ログより新しいとき (提出したあとに直している途中) に使う。
+  // ほかの端末で、あとから提出・更新されていたら (提出済みのほうが新しい)、その内容を優先する
+  const [draft] = useState<Draft | null>(() => {
+    const d = loadDraft(key);
+    if (!d) return null;
+    if (!prev) return d;
+    return (d.at ?? 0) > (prev.updatedAt ?? prev.submittedAt ?? 0) ? d : null;
+  });
+  const [draftDropped] = useState(() => !!prev && !draft && !!loadDraft(key)); // ほかの端末の提出のほうが新しかった
+  // 画面を開いたときに知っていた、提出済みの作業ログの時刻。提出の前に、ほかの端末で更新されていないかを見る
+  const knownAt = useRef(prev?.updatedAt ?? prev?.submittedAt ?? 0);
   const [items, setItems] = useState<DraftItem[]>(() => {
     const byIdLive = new Map(tasks.filter((t) => !t.deleted).map((t) => [t.id, t]));
-    const d = prev ? null : loadDraft(key);
+    const d = draft;
     // 下書きがあるときは、「自分が更新したタスク」を、新しく足さない (WBSと行き来するたびに、作業ログのタスクが増えないように。最初に開いたときの分は、下書きに入っている)
     const base = initialItems(prev, tasks, sid, today, since, { prefill: !d });
     if (!d) return base;
@@ -83,11 +94,11 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
     }
     return merged;
   });
-  const [removed, setRemoved] = useState<string[]>(() => (prev ? [] : loadDraft(key)?.removed ?? [])); // 作業ログから外したタスク (下書きにも残す)
-  const [next, setNext] = useState(() => (prev ? prev.next ?? '' : loadDraft(key)?.next ?? ''));
-  const [noWork, setNoWork] = useState(() => (prev ? prev.noWork === true : loadDraft(key)?.noWork ?? false)); // 今日は何も作業していない (正直に出せる)
-  const [reason, setReason] = useState<NoWorkReason | null>(() => (prev ? prev.noWorkReason ?? null : loadDraft(key)?.reason ?? null));
-  const [undecided, setUndecided] = useState(() => (prev ? prev.nextUndecided === true : loadDraft(key)?.undecided ?? false)); // 次にやることは、まだ決まっていない
+  const [removed, setRemoved] = useState<string[]>(() => draft?.removed ?? []); // 作業ログから外したタスク (下書きにも残す)
+  const [next, setNext] = useState(() => (draft ? draft.next ?? '' : prev?.next ?? ''));
+  const [noWork, setNoWork] = useState(() => (draft ? draft.noWork ?? false : prev?.noWork === true)); // 今日は何も作業していない (正直に出せる)
+  const [reason, setReason] = useState<NoWorkReason | null>(() => (draft ? draft.reason ?? null : prev?.noWorkReason ?? null));
+  const [undecided, setUndecided] = useState(() => (draft ? draft.undecided ?? false : prev?.nextUndecided === true)); // 次にやることは、まだ決まっていない
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [err, setErr] = useState('');
   const [focusId, setFocusId] = useState<string | null>(null); // 結果を押したら、そのまま説明を書き始められるように
@@ -97,7 +108,10 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const [open, setOpen] = useState<Set<string>>(new Set()); // 詳細を開いているタスクのカード
   const toggleOpen = (id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  useEffect(() => { if (!prev) saveDraft(key, { items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next, removed, noWork, reason, undecided }); }, [items, next, removed, noWork, reason, undecided, key, prev]);
+  // 入力を変えたら、この端末に下書きを残す (提出したあとに直しているときも。画面を移っても、閉じても消えない)
+  // 提出済みの作業ログを開いただけ (まだ何も変えていない) のときは、下書きを作らない (提出済みの内容を、そのまま見せるため)
+  const skipFirst = useRef(!!prev && !draft);
+  useEffect(() => { if (skipFirst.current) { skipFirst.current = false; return; } saveDraft(key, { at: Date.now(), items: items.map(({ id, result, note, kind, adhoc }) => ({ id, result, note, kind, ...(adhoc ? { adhoc } : {}) })), next, removed, noWork, reason, undecided }); }, [items, next, removed, noWork, reason, undecided, key, prev]);
   useEffect(() => setState('idle'), [items, next, noWork, reason, undecided]);
 
   const title = (i: DraftItem) => (i.adhoc ? i.adhoc.title.trim() || 'WBSにない作業' : i.taskId ? live.find((t) => t.id === i.taskId)?.title ?? '(削除されたタスク)' : FIXED_KINDS.find((k) => k.kind === i.kind)?.label ?? '');
@@ -137,6 +151,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const submit = async () => {
     setShown(true);
     if (problems.length > 0) return;
+    // この画面を開いたあとで、ほかの端末 (スマホなど) から今日の作業ログが出し直されていたら、黙って上書きしない
+    const latestAt = prev?.updatedAt ?? prev?.submittedAt ?? 0;
+    if (latestAt > knownAt.current && !window.confirm('ほかの端末で、今日の作業ログが更新されています。この画面の内容で上書きしますか?\n(やめる場合は、画面を再読み込みすると、更新された内容が出ます)')) return;
     setState('saving'); setErr('');
     try {
       const first = statusOf(prev) !== 'submitted';
@@ -152,6 +169,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
       }
       const real = noWork ? [] : entries.map((e) => (e.taskId && idOf.has(e.taskId) ? { ...e, taskId: idOf.get(e.taskId) } : e));
       await saveDaily(teamId, sid, today, real, prev?.blocker ?? '', prev, undecided ? '' : next.trim(), { ...(noWork ? { noWork: true, ...(reason ? { noWorkReason: reason } : {}) } : {}), ...(undecided ? { nextUndecided: true } : {}) }); // 以前の作業ログの「困っていること」は、そのまま残す (新しくは書かない)
+      knownAt.current = Date.now(); // 自分が出した内容は、上書きの確認の対象にしない
       setState('saved');
       clearDraft(key);
       onSubmitted(first);
@@ -176,6 +194,7 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
 
   return (
     <div className="daily-form">
+      {draftDropped && <p className="hint" role="note">ほかの端末で更新された、今日の作業ログを表示しています(この端末の書きかけより、新しいため)。</p>}
       <section className="card">
         <h3>1. やったこと</h3>
         <p className="hint">{prevDate ? `前回(${formatDate(prevDate)})のあと` : 'これまで'}にやったタスクを選んで、何をどこまでやったかを書きます。授業時間外の作業も含めます。</p>

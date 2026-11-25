@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDraftText } from '../../components/useDraftText';
 import { Markdown } from '../../components/Markdown';
 import { MdTextarea } from '../../components/MdTextarea';
 import { useReadOnly } from '../../auth/ReadOnly';
@@ -60,7 +61,9 @@ export function MeetingRecords({ teamId, members }: { teamId: string; members: {
 }
 
 function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: (fn: () => Promise<unknown>) => Promise<void>; members: { sid: string; name: string }[] }) {
-  const [decided, setDecided] = useState(m.decided);
+  const dd = useDraftText(`meetrec:${teamId}:${m.id}`, m.decided); // 「決まったこと」の書きかけは、この端末に残す
+  const decided = dd.value;
+  const setDecided = dd.setValue;
   const [actions, setActions] = useState<MeetingAction[]>(m.actions);
   const [text, setText] = useState('');
   const [owner, setOwner] = useState('');
@@ -74,14 +77,13 @@ function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: 
     const p = prevM.current;
     prevM.current = m;
     if (p.updatedAt === m.updatedAt) return;
-    const keepD = decided !== p.decided; // 書き換えていた
+    // 「決まったこと」は useDraftText が追いつく・残すを決める。やることの一覧は、ここで決める
     const keepA = JSON.stringify(actions) !== JSON.stringify(p.actions);
-    if (!keepD) setDecided(m.decided);
     if (!keepA) setActions(m.actions);
-    if ((keepD && decided !== m.decided) || (keepA && JSON.stringify(actions) !== JSON.stringify(m.actions))) setStale(true);
+    if (keepA && JSON.stringify(actions) !== JSON.stringify(m.actions)) setStale(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.updatedAt]);
-  const reload = () => { setDecided(m.decided); setActions(m.actions); setStale(false); };
+  const reload = () => { dd.discard(); setActions(m.actions); setStale(false); };
 
   const addAction = () => { if (text.trim()) { setActions([...actions, { text: text.trim(), done: false, owner: owner || null }]); setText(''); } };
 
@@ -112,14 +114,14 @@ function Record({ teamId, m, run, members }: { teamId: string; m: Meeting; run: 
         <input aria-label={`やることを追加 ${m.id}`} placeholder="やることを入力して Enter" value={text} maxLength={200}
           onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) addAction(); }} />
       </div>
-      {stale && changed && (
+      {(stale || dd.stale) && changed && (
         <p className="error" role="alert">
           書いている間に、ほかでこの記録が更新されました。保存すると、こちらの内容で上書きします。
           <button type="button" className="ghost" onClick={reload}>最新の内容に戻す</button>
         </p>
       )}
       <div className="row">
-        <button disabled={!changed} onClick={() => { setStale(false); void run(() => saveMeeting(teamId, m.id, 'teacher', { decided, actions })); }}>保存</button>
+        <button disabled={!changed} onClick={() => { setStale(false); void run(async () => { await saveMeeting(teamId, m.id, 'teacher', { decided, actions }); dd.clear(); }); }}>保存</button>
         {!sure
           ? <button className="ghost danger" onClick={() => { setSure(true); setTimeout(() => setSure(false), 4000); }}>この記録を削除</button>
           : <button className="ghost danger" onClick={() => run(() => deleteMeeting(teamId, m.id))}>本当に削除</button>}

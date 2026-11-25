@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useDraftText } from '../../components/useDraftText';
 import { addTeacherNote, deleteTeacherNote, useTeacherNotes } from '../../data/meetings';
 
 /** 教員専用メモ。学生の画面にも、共有ミーティング画面にも出ない。 */
 export function TeacherNotes({ teamId }: { teamId: string }) {
   const { data: notes, error } = useTeacherNotes(teamId);
-  const [v, setV] = useState('');
+  const draft = useDraftText(`tnote:${teamId}`, ''); // 書きかけのメモは、この端末に残す (追加するまで消えない。ログアウトで消える)
+  const v = draft.value;
+  const setV = draft.setValue;
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   if (error) return <p className="error">{error}</p>;
@@ -19,7 +22,7 @@ export function TeacherNotes({ teamId }: { teamId: string }) {
       <div className="card form">
         <textarea rows={3} maxLength={5000} value={v} onChange={(e) => setV(e.target.value)} placeholder="メモ(面談の内容、気になったこと、など)" />
         <div className="row">
-          <button disabled={!v.trim() || busy} onClick={() => run(async () => { await addTeacherNote(teamId, v.trim()); setV(''); })}>メモを追加</button>
+          <button disabled={!v.trim() || busy} onClick={() => run(async () => { await addTeacherNote(teamId, v.trim()); draft.discard(); })}>メモを追加</button>
         </div>
         {err && <p className="error">{err}</p>}
       </div>

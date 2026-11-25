@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDraftText } from '../../components/useDraftText';
 import { useReadOnly } from '../../auth/ReadOnly';
 import { Link, useParams } from 'react-router-dom';
 import { MeetingRecords } from './MeetingRecords';
@@ -135,7 +136,9 @@ function TeamDaily({ team }: { team: Team }) {
 
 /** 教員から、このチームへの連絡事項と、成果物の提出先 (Google ドライブ)。学生のホームに出る */
 function TeamNotice({ team }: { team: Team }) {
-  const [text, setText] = useState(team.message?.text ?? '');
+  // 書きかけは、この端末に残す (画面を移っても消えない)。ほかで送られた連絡事項で、書きかけを上書きしない
+  const msg = useDraftText(`msg:${team.id}`, team.message?.text ?? '');
+  const text = msg.value;
   const [url, setUrl] = useState(team.submitUrl ?? '');
   const [err, setErr] = useState('');
   const [saved, setSaved] = useState('');
@@ -144,15 +147,17 @@ function TeamNotice({ team }: { team: Team }) {
     setErr(''); setSaved('');
     try { await fn(); setSaved(what); } catch (e) { setErr(`保存できませんでした: ${(e as Error).message}`); }
   };
-  const sendMessage = () => run('連絡事項を送りました', () => updateTeam(team.id, { message: text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null }));
+  const sendMessage = () => run('連絡事項を送りました', async () => { await updateTeam(team.id, { message: text.trim() ? { text: text.trim().slice(0, MESSAGE_MAX), at: Date.now() } : null }); msg.discard(); });
   return (
     <div className="card team-notice">
       <h3>チームへのお知らせ</h3>
       <label className="label" htmlFor={`msg-${team.id}`}>連絡事項(学生のホームに出ます。送り直すと入れ替わります)</label>
-      <MessageField id={`msg-${team.id}`} value={text} label={`${team.id}チームへの連絡事項`} onChange={(v) => { setText(v); setSaved(''); }} />
+      <MessageField id={`msg-${team.id}`} value={text} label={`${team.id}チームへの連絡事項`} onChange={(v) => { msg.setValue(v); setSaved(''); }} />
+      {msg.restored && msg.dirty && <p className="hint" role="note">送っていない書きかけを、戻しました。</p>}
+      {msg.stale && <p className="error" role="alert">書いている間に、ほかで連絡事項が送られました。送ると、この内容で入れ替わります。<button type="button" className="ghost" onClick={msg.discard}>送られた内容に戻す</button></p>}
       <div className="row">
         <button type="button" onClick={sendMessage}>連絡事項を送る</button>
-        {team.message && <button type="button" className="ghost" onClick={() => { setText(''); run('連絡事項を消しました', () => updateTeam(team.id, { message: null })); }}>連絡事項を消す</button>}
+        {team.message && <button type="button" className="ghost" onClick={() => { run('連絡事項を消しました', async () => { await updateTeam(team.id, { message: null }); msg.discard(); }); }}>連絡事項を消す</button>}
         {team.message && <span className="hint">送信: {new Date(team.message.at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
       <label className="label" htmlFor={`submit-${team.id}`}>成果物の提出先(Google ドライブのフォルダのURL)</label>

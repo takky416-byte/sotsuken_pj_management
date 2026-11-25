@@ -1,4 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
+import { jstDate } from './lib/dates';
+import { draftKeysOf, removeDraft } from './lib/drafts';
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ReadOnlyContext } from './auth/ReadOnly';
@@ -20,6 +22,17 @@ import { Settings } from './features/teacher/Settings';
 import { TeacherReport } from './features/teacher/TeacherReport';
 import { TeacherHome } from './features/teacher/TeacherHome';
 import { TeacherTeam } from './features/teacher/TeacherTeam';
+
+/**
+ * ログアウト。保存していない書きかけ (この端末に残している) があるときは、確かめてから消す
+ * (共用のパソコンで、次の人に書きかけが残らないように。消したくないときは、ログアウトをやめて、保存・送信する)。
+ */
+function logoutSafely(email: string, sid: string | null, logout: () => Promise<void>) {
+  const keys = draftKeysOf(email, sid, jstDate());
+  if (keys.length > 0 && !window.confirm(`保存・送信していない書きかけが${keys.length}件あります。ログアウトすると、この端末から消えます。ログアウトしますか?`)) return;
+  keys.forEach(removeDraft);
+  void logout();
+}
 
 function Shell() {
   const { state, logout } = useAuth();
@@ -59,7 +72,7 @@ function Shell() {
         <span className="who">{profile.name}{profile.teamId ? `(${profile.teamId}チーム)` : viewer ? '(教員・閲覧のみ)' : '(教員)'}</span>
         <GuideButton />
         <ThemePicker />
-        <button className="ghost" onClick={logout}>ログアウト</button>
+        <button className="ghost" onClick={() => logoutSafely(profile.email, profile.sid ?? null, logout)}>ログアウト</button>
       </header>
       <Celebration />
       <main>
