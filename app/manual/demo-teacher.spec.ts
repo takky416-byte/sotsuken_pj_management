@@ -60,7 +60,7 @@ test('教員動画3: キックオフで、叩き台から計画を始める', as
   await caption(page, '2. 企画①・②のどちらを採用するか選びます。採用しなかった企画も、名前は残ります'); await pause(page, 3500);
   await page.getByLabel('叩き台の点検').scrollIntoViewIfNeeded();
   await caption(page, '3. 叩き台の点検: 項目数・日程・必要な成果物などを、自動でチェックします(目安です)'); await pause(page, 4500);
-  await caption(page, '4. 「キックオフする」で、タスクが作られます。学生のホームに「初期WBSの見直し」が出ます'); await pause(page, 2500);
+  await caption(page, '4. 「キックオフする」で、タスクが作られます。学生は、WBSで自分たちの計画に仕上げます'); await pause(page, 2500);
   await tap(page, page.getByRole('button', { name: 'キックオフする' })); await page.locator('.ok').first().waitFor({ timeout: 20000 }).catch(() => undefined); await pause(page, 3500);
   await saveVideo(page, 'demo-t-3-kickoff');
 });

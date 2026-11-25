@@ -1,6 +1,4 @@
 import { test } from '@playwright/test';
-import { getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { loginAs, shot, SHOTS } from './lib';
 
 // 学生編の画面写真。枠と番号は、manual/build.mjs の手順の説明と対応している。
@@ -42,29 +40,6 @@ test('学生編の画面写真', async ({ browser }) => {
   await page.locator('.meeting-summary').scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
   await page.locator('.meeting-summary').screenshot({ path: `${SHOTS}/06a-home-minutes.png` });
-
-  // 3-3. 初期WBSの見直し (キックオフ直後に出る案内。撮影のときだけ、見直しの記録を外す)
-  const adminDb = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
-  await adminDb.doc('teams/A').update({ wbsReview: null });
-  await page.reload();
-  await page.locator('.review-card').waitFor();
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await shot(page, '06b-review', [
-    { loc: page.locator('.review-card h3'), n: 1 },
-    { loc: page.locator('.review-steps'), n: 2 },
-    { loc: page.getByRole('link', { name: '編集モードでWBSを開く' }), n: 3 },
-    { loc: page.locator('.review-confirm'), n: 4 },
-  ], { maxH: 950 });
-  await page.getByRole('link', { name: '編集モードでWBSを開く' }).click();
-  await page.locator('.wbs-row').first().waitFor();
-  await page.waitForTimeout(1200);
-  await shot(page, '06c-review-wbs', [
-    { loc: page.getByRole('button', { name: '編集モードを終える' }), n: 1 },
-    { loc: page.getByLabel(/担当が決まっていない項目だけ/), n: 2 },
-  ], { maxH: 1000 });
-  await adminDb.doc('teams/A').update({ wbsReview: { at: Date.now(), by: 'A1' } });
-  await page.getByRole('link', { name: 'ホーム' }).click();
-  await page.waitForTimeout(800);
 
   // 4. 作業ログ
   await page.getByRole('link', { name: '作業ログ', exact: true }).click();

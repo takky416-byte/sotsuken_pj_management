@@ -1,6 +1,4 @@
 import { test } from '@playwright/test';
-import { getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { caption, loginAs, pause, saveVideo, tap, withCursor } from './lib';
 
 // 操作デモ動画 (学生編)。字幕つき。音声はありません。
@@ -121,32 +119,3 @@ test('動画4: はじめて使うとき(ログイン・ガイド)', async ({ bro
   await saveVideo(page, 'demo-4-start');
 });
 
-test('動画5: 初期WBSの見直し(キックオフのあと)', async ({ browser }) => {
-  const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: 'demo-sotsuken' }));
-  await db.doc('teams/A').update({ wbsReview: null }); // キックオフの直後の状態にする
-  try {
-    const page = await recordedPage(browser, 'a1@trident.ac.jp');
-    await page.locator('.review-card').waitFor();
-    await caption(page, '1. キックオフのあと、ホームに「最初にやること: 初期WBSの見直し」が出ます'); await pause(page, 3500);
-    await caption(page, '2. 叩き台は「たとえば」の案。みんなで1項目ずつ見て、自分たちの計画として完成させます'); await pause(page, 3500);
-    await caption(page, '3. 「編集モードでWBSを開く」を押します');
-    await tap(page, page.getByRole('link', { name: '編集モードでWBSを開く' }));
-    await page.locator('.wbs-row').first().waitFor(); await pause(page, 2500);
-    await caption(page, '4. 担当が決まっていない項目だけが、表示されます'); await pause(page, 3000);
-    const row = page.locator('.wbs-row', { has: page.locator('input.title-input[value="検索機能を作る"]') });
-    await caption(page, '5. 「詳細」を押すと、内容を読んで、直せます');
-    await tap(page, row.getByRole('button', { name: '詳細' })); await page.locator('.detail').first().waitFor(); await pause(page, 3000);
-    await tap(page, row.getByRole('button', { name: '詳細' })); await pause(page, 800);
-    await caption(page, '6. 行の「＋ 担当」を押して、担当を決めます');
-    await tap(page, row.getByRole('button', { name: /担当を変える/ })); await pause(page, 1500);
-    await tap(page, page.locator('.chip-btn', { hasText: '氷室' })); await pause(page, 2500);
-    await caption(page, '7. 要らない項目は削除、足りない項目は追加、言葉や期間は修正して、計画を完成させます'); await pause(page, 3500);
-    await tap(page, page.getByRole('link', { name: 'ホーム' })); await page.locator('.review-card').waitFor(); await pause(page, 1500);
-    await caption(page, '8. 全部見たら、チェックを入れて「見直しを終えた」を押します');
-    await tap(page, page.getByLabel(/全部の項目を見て/)); await pause(page, 1500);
-    await tap(page, page.getByRole('button', { name: '見直しを終えた' })); await pause(page, 3000);
-    await saveVideo(page, 'demo-5-review');
-  } finally {
-    await db.doc('teams/A').update({ wbsReview: { at: Date.now(), by: 'A1' } });
-  }
-});
