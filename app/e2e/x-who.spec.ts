@@ -15,6 +15,9 @@ test('WBS・ガントチャートを、メンバーごとに絞り込める (教
   const list = { filter: ({ hasText }: { hasText: string }) => page.locator('.wbs-row').filter({ has: page.locator(`input[value="${hasText}"]`) }) };
   await expect(list.filter({ hasText: '岩田だけの仕事' })).toHaveCount(1);
   await expect(list.filter({ hasText: '近内だけの仕事' })).toHaveCount(1);
+  // 一覧のタスク名の左にも、WBSの番号が出る (大項目は「1」の形、中項目は「1.2」の形)
+  await expect(list.filter({ hasText: '絞り込み確認の大項目' }).locator('.w-no')).toHaveText(/^\d+$/);
+  await expect(list.filter({ hasText: '岩田だけの仕事' }).locator('.w-no')).toHaveText(/^\d+\.\d+$/);
   await page.getByLabel('担当で絞り込む').selectOption('A2');
   await expect(list.filter({ hasText: '近内だけの仕事' })).toHaveCount(1);
   await expect(list.filter({ hasText: '岩田だけの仕事' })).toHaveCount(0);

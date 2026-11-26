@@ -10,8 +10,7 @@ import {
 import { planImport } from '../lib/importPlan';
 import { parseOutline } from '../lib/outline';
 import {
-  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, unassignedWithAncestors, shortDate, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf,
-} from '../lib/wbs';
+  appendOrder, childrenOf, descendantsOf, effectiveStatuses, flatten, newlyCompletedParents, periodLabel, periodOf, orderAfter, orphansOf, ownedWithAncestors, unassignedWithAncestors, shortDate, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf, wbsNumbers } from '../lib/wbs';
 import { celebrate } from '../lib/celebrate';
 import { say } from '../lib/tone';
 import { formatDate, jstDate } from '../lib/dates';
@@ -70,11 +69,12 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
       tickLefts: g ? ticks.map((d) => `${pct(g, d)}%`) : [],
       todayX: g ? pct(g, today) : 0,
       periods: new Map(live.map((t) => [t.id, periodOf(tasks, t)])),
+      nos: wbsNumbers(live), // WBSの番号 (1、1.2、1.2.3。ガントチャート・報告書と同じ)
     };
   }, [tasks, milestones, timeline, today]);
   if (error) return <p className="error">読み込めませんでした: {error}</p>;
   if (!tasks || !derived) return <p>読み込み中…</p>;
-  const { eff, g, ticks, tickLefts, todayX, periods } = derived;
+  const { eff, g, ticks, tickLefts, todayX, periods, nos } = derived;
   const periodFor = (t: Task) => periods.get(t.id) ?? periodOf(tasks, t);
 
   const mineIds = whoShown ? ownedWithAncestors(tasks, whoShown) : null;
@@ -243,7 +243,7 @@ export function WbsEditor({ teamId, actor, members, timeline = false }: Props) {
             key={t.id} t={t} hasChildren={hasChildren} status={eff.get(t.id) ?? t.status}
             collapsed={collapsed.has(t.id)} isOpen={openId === t.id} focus={focusId === t.id}
             pop={pop?.id === t.id ? pop.kind : null} adding={canEdit && addingUnder === t.id} canEdit={canEdit}
-            by={nameOf(t.updatedBy)} assignText={t.assignees.length > 0 ? t.assignees.map(nameOf).join('・') : ''}
+            no={nos.get(t.id) ?? ''} by={nameOf(t.updatedBy)} assignText={t.assignees.length > 0 ? t.assignees.map(nameOf).join('・') : ''}
             progress={hasChildren ? progressOf(tasks, t.id) : null}
             pStart={pr.start} pEnd={pr.end} pDerived={pr.derived}
             timeline={!!g} ticks={ticks} tickLefts={tickLefts} todayX={todayX} today={today} boltPts={bolt && g ? boltPointsAt(ri) : null}
@@ -291,7 +291,7 @@ type RowActions = {
 
 type RowProps = {
   t: Task; hasChildren: boolean; status: TaskStatus; collapsed: boolean; isOpen: boolean; focus: boolean;
-  pop: 'assign' | 'period' | null; adding: boolean; canEdit: boolean; by: string; assignText: string;
+  pop: 'assign' | 'period' | null; adding: boolean; canEdit: boolean; no: string; by: string; assignText: string;
   progress: { done: number; total: number } | null; pStart: string | null; pEnd: string | null; pDerived: boolean;
   timeline: boolean; ticks: string[]; tickLefts: string[]; todayX: number; today: string; boltPts: string | null; barLeft: string | null; barWidth: string | null;
   members: Member[]; nameOf: (sid: string) => string; detailTasks: Task[] | null; act: React.MutableRefObject<RowActions>;
@@ -316,6 +316,7 @@ const WbsRowView = memo(function WbsRowView(p: RowProps) {
             className="ghost icon" aria-label={collapsed ? '開く' : '閉じる'}
             style={{ visibility: hasChildren ? 'visible' : 'hidden' }} onClick={() => A().toggleCollapse(t.id)}
           >{collapsed ? '▸' : '▾'}</button>
+          {p.no && <span className="w-no" aria-label={`番号 ${p.no}`}>{p.no}</span>}
           <TitleInput
             task={t} by={p.by} autoFocus={p.focus} onFocused={() => A().clearFocus()}
             onSave={(title) => A().saveTitle(t, title)} onEnter={() => A().enter(t)} onIndent={() => A().indent(t)}

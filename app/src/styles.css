@@ -322,6 +322,7 @@ input[type=checkbox], input[type=radio] { width:20px; height:20px; accent-color:
 .wbs-row.depth-2 { --indent:22px; } .wbs-row.depth-3 { --indent:44px; }
 .w-title { display:flex; align-items:center; gap:4px; padding-left:var(--indent); min-width:0; }
 .w-title .title-input { flex:1; min-width:0; }
+.w-no { flex:none; min-width:2.6em; color:var(--muted); font-size:.9em; font-variant-numeric:tabular-nums; }
 .w-prog, .w-status, .w-assign, .w-period { min-width:0; }
 .w-assign { font-size:15px; color:var(--fg); }
 .w-period { font-size:15px; color:var(--muted); white-space:nowrap; }
