@@ -9,7 +9,7 @@ import { addDays, formatDate, jstDate } from '../lib/dates';
 import { boltPolyline, buildGantt, lightning, nextDates, pct, placeMilestones, weekTicks } from '../lib/gantt';
 import { dayAt, dragDates, type DragKind } from '../lib/ganttDrag';
 import { parseQuickAdd } from '../lib/quickAdd';
-import { appendOrder, newlyCompletedParents, overallProgress, ownedWithAncestors } from '../lib/wbs';
+import { appendOrder, newlyCompletedParents, overallProgress, ownedWithAncestors, wbsNumbers } from '../lib/wbs';
 import { MemberFilter } from './MemberFilter';
 import { STATUS_LABEL, type Member, type Task, type TaskStatus } from '../types';
 
@@ -33,8 +33,8 @@ type RowHandlers = {
  * ガントチャートの1行。memo にして、自分の行のデータが変わらないかぎり、描き直さない
  * (ドラッグ中は、動かしている行だけが変わる。全行を作り直すと、小項目まで出したときに、動きがもたつく)。
  */
-const GanttRowView = memo(function GanttRowView({ r, g, ticks, tickLefts, leaf, selected, direct, ro, report, drag, assignText, onPick, onPlus, onDown, onMove, onUp, onCancel }: {
-  r: GanttRowData; g: ReturnType<typeof buildGantt>; ticks: string[]; tickLefts: string[]; leaf: boolean; selected: boolean; direct: boolean; ro: boolean; report: boolean;
+const GanttRowView = memo(function GanttRowView({ r, g, no, ticks, tickLefts, leaf, selected, direct, ro, report, drag, assignText, onPick, onPlus, onDown, onMove, onUp, onCancel }: {
+  r: GanttRowData; g: ReturnType<typeof buildGantt>; no: string; ticks: string[]; tickLefts: string[]; leaf: boolean; selected: boolean; direct: boolean; ro: boolean; report: boolean;
   drag: Drag | null; assignText: string;
   onPick: (id: string) => void; onPlus: (id: string) => void;
   onDown: RowHandlers['down']; onMove: RowHandlers['move']; onUp: () => void; onCancel: () => void;
@@ -47,10 +47,11 @@ const GanttRowView = memo(function GanttRowView({ r, g, ticks, tickLefts, leaf, 
   return (
     <div className={`gantt-row${selected ? ' selected' : ''}`}>
       <div
-        className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={`${r.task.title}\n${who}`}
+        className={`gantt-name d${r.depth}${direct ? ' pickable' : ''}`} title={`${no ? `${no} ` : ''}${r.task.title}\n${who}`}
         onClick={direct ? () => onPick(r.task.id) : undefined}
       >
         <span className="gantt-name-text">
+          {no && <span className="gantt-no">{no}</span>}
           {r.task.title}
           {r.task.assignees.length > 0 && <small> {assignText}</small>}
         </span>
@@ -119,6 +120,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
     const keep = ownedWithAncestors(tasks, whoShown);
     return { ...gAll, rows: gAll.rows.filter((r) => keep.has(r.task.id)), undated: gAll.undated.filter((t) => t.assignees.includes(whoShown)) };
   }, [gAll, tasks, whoShown]);
+  const nos = useMemo(() => wbsNumbers((tasks ?? []).filter((t) => !t.deleted)), [tasks]); // WBSの番号 (タスク名の左に出す)
   const parentSet = useMemo(() => new Set((tasks ?? []).filter((t) => !t.deleted && t.parentId).map((t) => t.parentId as string)), [tasks]);
   const ticksM = useMemo(() => (gm ? weekTicks(gm) : []), [gm]);
   const tickLeftsM = useMemo(() => (gm ? ticksM.map((d) => `${pct(gm, d)}%`) : []), [gm, ticksM]);
@@ -266,7 +268,7 @@ export function GanttChart({ teamId, actor, members, report = false }: { teamId:
           <GanttRowView
             key={r.task.id} r={r} g={g} ticks={ticks} tickLefts={tickLeftsM} leaf={!parents.has(r.task.id)} selected={sel === r.task.id}
             direct={direct} ro={ro} report={report} drag={drag && drag.id === r.task.id ? drag : null}
-            assignText={r.task.assignees.map(name).join('・')}
+            assignText={r.task.assignees.map(name).join('・')} no={nos.get(r.task.id) ?? ''}
             onPick={onPick} onPlus={onPlus} onDown={onDown} onMove={onMove} onUp={onUp} onCancel={onCancel}
           />
         ))}

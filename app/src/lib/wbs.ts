@@ -282,3 +282,17 @@ export function periodLabel(start: string | null, end: string | null): string {
   if (start) return `${shortDate(start)}〜`;
   return '';
 }
+
+/** WBSの番号 (1、1.2、1.2.3)。報告書のWBSの表と同じ付け方 (削除済みは数えない。並び順のとおり) */
+export function wbsNumbers(tasks: Task[]): Map<string, string> {
+  const out = new Map<string, string>();
+  const walk = (parentId: string | null, prefix: string) => {
+    childrenOf(tasks, parentId).forEach((t, i) => {
+      const no = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+      out.set(t.id, no);
+      walk(t.id, no);
+    });
+  };
+  walk(null, '');
+  return out;
+}

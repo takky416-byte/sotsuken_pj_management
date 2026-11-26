@@ -4,7 +4,7 @@ import type { Milestone, Task, TaskStatus } from '../types';
 import { STATUS_LABEL } from '../types';
 import { addDays } from './dates';
 import { daysBetween } from './gantt';
-import { childrenOf, effectiveStatuses, periodOf } from './wbs';
+import { childrenOf, effectiveStatuses, periodOf, wbsNumbers } from './wbs';
 
 export type WbsRow = {
   id: string;
@@ -34,9 +34,10 @@ export function wbsRows(tasks: Task[], nameOf: (sid: string) => string): WbsRow[
     const kids = childrenOf(live, id);
     return kids.length === 0 ? [live.find((t) => t.id === id) as Task] : kids.flatMap((k) => leavesOf(k.id));
   };
-  const walk = (parentId: string | null, prefix: string) => {
-    childrenOf(live, parentId).forEach((t, i) => {
-      const no = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+  const nos = wbsNumbers(live); // ガントチャートと同じ番号
+  const walk = (parentId: string | null) => {
+    childrenOf(live, parentId).forEach((t) => {
+      const no = nos.get(t.id) ?? '';
       const kids = childrenOf(live, t.id);
       const p = periodOf(live, t);
       const leaves = kids.length === 0 ? [t] : leavesOf(t.id);
@@ -48,10 +49,10 @@ export function wbsRows(tasks: Task[], nameOf: (sid: string) => string): WbsRow[
         progress: active.length === 0 ? 0 : Math.round((active.filter((l) => l.status === 'done').length / active.length) * 100),
         detail: t.detail ?? '', leaf: kids.length === 0,
       });
-      walk(t.id, no);
+      walk(t.id);
     });
   };
-  walk(null, '');
+  walk(null);
   return out;
 }
 

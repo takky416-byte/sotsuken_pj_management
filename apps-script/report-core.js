@@ -93,6 +93,18 @@ var ReportCore = (() => {
     if (s) return { ...s, derived: true };
     return { start: t.startDate, end: t.endDate, derived: false };
   }
+  function wbsNumbers(tasks) {
+    const out = /* @__PURE__ */ new Map();
+    const walk = (parentId, prefix) => {
+      childrenOf(tasks, parentId).forEach((t, i) => {
+        const no = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+        out.set(t.id, no);
+        walk(t.id, no);
+      });
+    };
+    walk(null, "");
+    return out;
+  }
 
   // src/lib/adhoc.ts
   var ADHOC_ROOT_ID = "adhoc-root";
@@ -377,34 +389,35 @@ var ReportCore = (() => {
       const kids = childrenOf(live, id);
       return kids.length === 0 ? [live.find((t) => t.id === id)] : kids.flatMap((k) => leavesOf(k.id));
     };
-    const walk = (parentId, prefix) => {
-      childrenOf(live, parentId).forEach((t, i) => {
-        var _a, _b, _c;
-        const no = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+    const nos = wbsNumbers(live);
+    const walk = (parentId) => {
+      childrenOf(live, parentId).forEach((t) => {
+        var _a, _b, _c, _d;
+        const no = (_a = nos.get(t.id)) != null ? _a : "";
         const kids = childrenOf(live, t.id);
         const p = periodOf(live, t);
         const leaves = kids.length === 0 ? [t] : leavesOf(t.id);
         const active = leaves.filter((l) => l.status !== "hold");
-        const status = (_a = eff.get(t.id)) != null ? _a : t.status;
+        const status = (_b = eff.get(t.id)) != null ? _b : t.status;
         out.push({
           id: t.id,
           no,
           depth: t.depth,
           title: t.title,
-          assignees: kids.length === 0 ? ((_b = t.assignees) != null ? _b : []).map(nameOf).join("\u30FB") : "",
+          assignees: kids.length === 0 ? ((_c = t.assignees) != null ? _c : []).map(nameOf).join("\u30FB") : "",
           status,
           statusLabel: STATUS_LABEL[status],
           start: p.start,
           end: p.end,
           derived: p.derived,
           progress: active.length === 0 ? 0 : Math.round(active.filter((l) => l.status === "done").length / active.length * 100),
-          detail: (_c = t.detail) != null ? _c : "",
+          detail: (_d = t.detail) != null ? _d : "",
           leaf: kids.length === 0
         });
-        walk(t.id, no);
+        walk(t.id);
       });
     };
-    walk(null, "");
+    walk(null);
     return out;
   }
   function weekColumns(rows, milestones, today) {

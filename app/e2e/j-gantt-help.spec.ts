@@ -24,6 +24,8 @@ test.describe.serial('ガントチャートと使い方', () => {
     // タスク名と棒にカーソルを乗せると、担当(未定のときは「担当: 未定」)も出る
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-name')).toHaveAttribute('title', /ガントチャート確認用の大項目\n担当: /);
     await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-bar')).toHaveAttribute('title', /\n担当: /);
+    // タスク名の左に、WBSの番号 (1、1.2 など) が出る
+    await expect(page.locator('.gantt-row', { hasText: 'ガントチャート確認用の大項目' }).locator('.gantt-no')).toHaveText(/^\d+(\.\d+)*$/);
     // 稲妻線は、既定で出る。チェックで消せる
     await expect(page.getByRole('img', { name: '稲妻線' })).toBeVisible();
     await page.getByLabel('稲妻線を表示する').uncheck();

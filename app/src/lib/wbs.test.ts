@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Task } from '../types';
 import {
-  appendOrder, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf, rollupStatus, periodLabel, periodOf, ownedWithAncestors,
+  appendOrder, wbsNumbers, effectiveStatuses, flatten, newlyCompletedParents, orderAfter, orderBetween, orphansOf, overallProgress, parentChoices, planIndent, planMove, planOutdent, planReparent, planRescue, progressOf, rollupStatus, periodLabel, periodOf, ownedWithAncestors,
 } from './wbs';
 
 let seq = 0;
@@ -229,5 +229,18 @@ describe('親タスクを選び直す', () => {
     expect(ids).not.toContain('a2'); // 3階層を超える: a2 の子 (a2x) を持つので、小項目 (depth 3) の下には移せない
     expect(parentChoices(tasks, 'a2x').find((o) => o.id === 'a2')!.current).toBe(true);
     expect(parentChoices(tasks, 'c').find((o) => o.id === 'a2x')).toBeUndefined(); // 小項目の下は、4階層になる
+  });
+});
+
+describe('wbsNumbers', () => {
+  test('1、1.2、1.2.3 の形。並び順のとおり。削除済みは数えない', () => {
+    const ts = [
+      T('A', { order: 1 }), T('B', { order: 2 }),
+      T('a2', { parentId: 'A', depth: 2, order: 2 }), T('a1', { parentId: 'A', depth: 2, order: 1 }),
+      T('gone', { parentId: 'A', depth: 2, order: 0, deleted: true }),
+      T('x', { parentId: 'a2', depth: 3, order: 1 }),
+    ];
+    const n = wbsNumbers(ts);
+    expect([n.get('A'), n.get('a1'), n.get('a2'), n.get('x'), n.get('B'), n.get('gone')]).toEqual(['1', '1.1', '1.2', '1.2.1', '2', undefined]);
   });
 });
