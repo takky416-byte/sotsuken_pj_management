@@ -26,3 +26,21 @@ test('作業ログ: WBSと行き来しても、自分が更新したタスクが
   }
   await expect(page.getByText('行き来の確認用タスク')).toHaveCount(0);
 });
+
+test('作業ログ: ×でタスクを外すとき、確認のダイアログは出ない。「元に戻す」で、書いた説明ごと戻る', async ({ page }) => {
+  let dialog = false;
+  page.on('dialog', (d) => { dialog = true; void d.dismiss(); });
+  await login(page, 'a1@trident.ac.jp');
+  await page.getByRole('link', { name: '作業ログ', exact: true }).click();
+  const skip = page.getByRole('button', { name: /は今日は作業していない$/ }).first();
+  const label = (await skip.getAttribute('aria-label')) ?? '';
+  const name = label.replace(/は今日は作業していない$/, '');
+  const card = page.locator('.dcard', { hasText: name });
+  await card.getByRole('button', { name: '進んだ' }).click();
+  await card.getByLabel(`${name}の説明`).fill('外す前に書いておいた説明の文章です');
+  await skip.click();
+  await expect(page.locator('.dcard', { hasText: name })).toHaveCount(0);
+  expect(dialog).toBe(false);
+  await page.getByRole('button', { name: '元に戻す' }).click();
+  await expect(page.getByLabel(`${name}の説明`)).toHaveValue('外す前に書いておいた説明の文章です');
+});

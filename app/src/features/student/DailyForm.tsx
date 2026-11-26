@@ -130,12 +130,26 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
   const addAdhoc = () => setItems((xs) => [...xs, { id: `${ADHOC_PREFIX}${Date.now().toString(36)}`, kind: 'task', result: 'progress', note: '', adhoc: { title: '', parentId: null } }]);
   const removeKind = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
   // 間違って選んだタスクや、手を付けなかったタスクは、作業ログから外せる (外したタスクは、「ほかのタスクを選ぶ」から選び直せる)
+  // 確認のダイアログは出さない。そのかわり、外した直後に「元に戻す」を出す (書いた説明も、そのまま戻る)
+  const [undo, setUndo] = useState<DraftItem | null>(null);
+  const removedItems = useRef(new Map<string, DraftItem>()); // 外したカードの中身 (「ほかのタスクを選ぶ」で選び直したときにも、説明を戻す)
   const removeTask = (i: DraftItem) => {
-    if (i.note.trim() && !window.confirm(`「${title(i)}」は今日は作業していないことにして、書いた説明を消しますか。`)) return;
+    removedItems.current.set(i.id, i);
     removeKind(i.id);
     setRemoved((r) => (r.includes(i.id) ? r : [...r, i.id]));
+    setUndo(i);
   };
-  const addTaskBack = (id: string) => { setRemoved((r) => r.filter((x) => x !== id)); addTask(id); };
+  const restoreTask = (i: DraftItem) => {
+    setRemoved((r) => r.filter((x) => x !== i.id));
+    setItems((xs) => (xs.some((x) => x.id === i.id) ? xs : [...xs, i]));
+    removedItems.current.delete(i.id);
+    setUndo(null);
+  };
+  const addTaskBack = (id: string) => {
+    const kept = removedItems.current.get(id);
+    if (kept && (kept.note.trim() || kept.result)) { restoreTask({ ...kept, result: kept.result ?? 'progress' }); setFocusId(id); return; }
+    setRemoved((r) => r.filter((x) => x !== id)); addTask(id); setUndo(null);
+  };
 
   const shownIds = new Set(items.map((i) => i.id));
   // 「ほかのタスクを選ぶ」は、WBSに載っている順 (上から)。大項目 › 中項目 › タスク の形で出す
@@ -296,6 +310,9 @@ export function DailyForm({ teamId, sid, today, prev, tasks, since, prevDate, on
             </div>
           );
         })}
+        {undo && !items.some((x) => x.id === undo.id) && (
+          <p className="hint undo-line" role="status">「{title(undo)}」を外しました。<button type="button" className="linklike" onClick={() => restoreTask(undo)}>元に戻す</button></p>
+        )}
         {others.length > 0 && (
           <TaskPicker options={others} onPick={addTaskBack} label="ほかのタスクを選ぶ" placeholder="＋ ほかのタスクを選ぶ(文字で絞り込めます)" />
         )}
